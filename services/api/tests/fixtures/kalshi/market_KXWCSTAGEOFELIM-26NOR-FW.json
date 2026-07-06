@@ -1,0 +1,56 @@
+{
+ "market": {
+  "can_close_early": true,
+  "close_time": "2026-07-27T02:00:00Z",
+  "created_time": "2026-05-08T18:06:38.408083Z",
+  "custom_strike": {
+   "Sporting Outcome": "Wins the Final",
+   "soccer_team": "79ffa78e-4835-4735-a4eb-658eab4aa128"
+  },
+  "early_close_condition": "This market will close and expire early if the event occurs.",
+  "event_ticker": "KXWCSTAGEOFELIM-26NOR",
+  "expected_expiration_time": "2026-07-20T02:00:00Z",
+  "expiration_time": "2026-07-27T02:00:00Z",
+  "expiration_value": "",
+  "fractional_trading_enabled": true,
+  "last_price_dollars": "0.0600",
+  "latest_expiration_time": "2026-07-27T02:00:00Z",
+  "liquidity_dollars": "0.0000",
+  "market_type": "binary",
+  "no_ask_dollars": "0.9600",
+  "no_bid_dollars": "0.9300",
+  "no_sub_title": "Outright Winner",
+  "notional_value_dollars": "1.0000",
+  "occurrence_datetime": "2026-07-20T02:00:00Z",
+  "open_interest_fp": "43106.98",
+  "open_time": "2026-05-08T21:00:00Z",
+  "previous_price_dollars": "0.0400",
+  "previous_yes_ask_dollars": "0.0400",
+  "previous_yes_bid_dollars": "0.0000",
+  "price_level_structure": "linear_cent",
+  "price_ranges": [
+   {
+    "end": "1.0000",
+    "start": "0.0000",
+    "step": "0.0100"
+   }
+  ],
+  "response_price_units": "usd_cent",
+  "result": "",
+  "rules_primary": "If Norway wins the Final in the 2026 Men's FIFA World Cup, then the market resolves to Yes.",
+  "rules_secondary": "For the purposes of this Contract, if a team withdraws, forfeits or is disqualified at any point during the 2026 Men's FIFA World Cup, their stage of elimination will be determined by the farthest stage they reached prior to withdrawal, forfeit or disqualification. For example, if a team withdraws after winning their Round of 32 match, the market titled \"Round of 16\" will resolve to Yes since that would be the next stage where they would have been eliminated had they continued competing.\n\nNote: If a team loses in the Semifinals, the market titled \"Semifinals\" will resolve to Yes, regardless of whether they win the third-place match.\n\nThis market and these products have not been endorsed by FIFA. Any references to \"FIFA\", the \"FIFA World Cup,\" or any other associated marks are descriptive only, and do not indicate an endorsement of this product or any affiliation between FIFA and Kalshi.",
+  "settlement_timer_seconds": 300,
+  "status": "active",
+  "strike_type": "custom",
+  "ticker": "KXWCSTAGEOFELIM-26NOR-FW",
+  "title": "Will Norway win the Final of the 2026 Men's FIFA World Cup?",
+  "updated_time": "2026-05-08T21:00:01.456979Z",
+  "volume_24h_fp": "14079.00",
+  "volume_fp": "48117.71",
+  "yes_ask_dollars": "0.0700",
+  "yes_ask_size_fp": "6412.49",
+  "yes_bid_dollars": "0.0400",
+  "yes_bid_size_fp": "903.18",
+  "yes_sub_title": "Outright Winner"
+ }
+}

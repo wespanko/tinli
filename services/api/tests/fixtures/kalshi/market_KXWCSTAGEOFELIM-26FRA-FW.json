@@ -1,0 +1,57 @@
+{
+ "market": {
+  "can_close_early": true,
+  "close_time": "2026-07-27T02:00:00Z",
+  "created_time": "2026-05-07T21:08:18.314934Z",
+  "custom_strike": {
+   "Sporting Outcome": "Wins the Final",
+   "soccer_team": "e3176318-eb4f-4dd1-b4bf-ef93d4c78ba8"
+  },
+  "early_close_condition": "This market will close and expire early if the event occurs.",
+  "event_ticker": "KXWCSTAGEOFELIM-26FRA",
+  "expected_expiration_time": "2026-07-20T02:00:00Z",
+  "expiration_time": "2026-07-27T02:00:00Z",
+  "expiration_value": "",
+  "fractional_trading_enabled": true,
+  "last_price_dollars": "0.3500",
+  "latest_expiration_time": "2026-07-27T02:00:00Z",
+  "liquidity_dollars": "0.0000",
+  "market_type": "binary",
+  "no_ask_dollars": "0.6600",
+  "no_bid_dollars": "0.6500",
+  "no_sub_title": "Outright Winner",
+  "notional_value_dollars": "1.0000",
+  "occurrence_datetime": "2026-07-20T02:00:00Z",
+  "open_interest_fp": "124001.73",
+  "open_time": "2026-05-08T00:00:00Z",
+  "previous_price_dollars": "0.3800",
+  "previous_yes_ask_dollars": "0.3800",
+  "previous_yes_bid_dollars": "0.3700",
+  "price_level_structure": "linear_cent",
+  "price_ranges": [
+   {
+    "end": "1.0000",
+    "start": "0.0000",
+    "step": "0.0100"
+   }
+  ],
+  "response_price_units": "usd_cent",
+  "result": "",
+  "rules_primary": "If France wins the Final in the 2026 Men's FIFA World Cup, then the market resolves to Yes.",
+  "rules_secondary": "For the purposes of this Contract, if a team withdraws, forfeits or is disqualified at any point during the 2026 Men's FIFA World Cup, their stage of elimination will be determined by the farthest stage they reached prior to withdrawal, forfeit or disqualification. For example, if a team withdraws after winning their Round of 32 match, the market titled \"Round of 16\" will resolve to Yes since that would be the next stage where they would have been eliminated had they continued competing.\n\nNote: If a team loses in the Semifinals, the market titled \"Semifinals\" will resolve to Yes, regardless of whether they win the third-place match.\n\nThis market and these products have not been endorsed by FIFA. Any references to \"FIFA\", the \"FIFA World Cup,\" or any other associated marks are descriptive only, and do not indicate an endorsement of this product or any affiliation between FIFA and Kalshi.",
+  "settlement_timer_seconds": 300,
+  "status": "active",
+  "strike_type": "custom",
+  "subtitle": "Outright Winner",
+  "ticker": "KXWCSTAGEOFELIM-26FRA-FW",
+  "title": "Will France win the final of the 2026 Men's FIFA World Cup?",
+  "updated_time": "2026-05-08T18:46:57.102816Z",
+  "volume_24h_fp": "5240.62",
+  "volume_fp": "194694.87",
+  "yes_ask_dollars": "0.3500",
+  "yes_ask_size_fp": "1911.14",
+  "yes_bid_dollars": "0.3400",
+  "yes_bid_size_fp": "3020.58",
+  "yes_sub_title": "Outright Winner"
+ }
+}

@@ -55,8 +55,9 @@ shapes against recorded fixtures in M1; docs and reality drift.
 - Each level is `[price_string, contract_qty_string]`.
 - **Bids only, both sides.** There are no asks: a yes ask at P is a no bid at
   1−P. Best yes ask = 1 − best no bid.
-- Docs say levels are ordered best→worst; our probe hit an empty book.
-  **TODO(M1):** confirm ordering against a liquid-market fixture.
+- **Ordering confirmed against fixtures (2026-07-06): levels ascend by price
+  — the BEST bid is the LAST element**, contradicting the docs' "best to
+  worst". The adapter re-sorts to best-first; never index raw levels.
 
 ### Rate limits
 

@@ -1,0 +1,55 @@
+{
+ "market": {
+  "can_close_early": true,
+  "close_time": "2026-08-03T19:00:00Z",
+  "created_time": "2026-07-03T02:00:49.723268Z",
+  "custom_strike": {
+   "soccer_team": "564f28ed-8151-46d3-843b-b5706f2ef7f6"
+  },
+  "early_close_condition": "This market will close and expire after a winner is declared.",
+  "event_ticker": "KXWCADVANCE-26JUL06PORESP",
+  "expected_expiration_time": "2026-07-06T22:00:00Z",
+  "expiration_time": "2026-08-03T19:00:00Z",
+  "expiration_value": "",
+  "fractional_trading_enabled": true,
+  "last_price_dollars": "0.3400",
+  "latest_expiration_time": "2026-08-03T19:00:00Z",
+  "liquidity_dollars": "0.0000",
+  "market_type": "binary",
+  "no_ask_dollars": "0.6700",
+  "no_bid_dollars": "0.6600",
+  "no_sub_title": "Portugal advances",
+  "notional_value_dollars": "1.0000",
+  "occurrence_datetime": "2026-07-06T22:00:00Z",
+  "open_interest_fp": "4999492.25",
+  "open_time": "2026-07-03T02:05:00Z",
+  "previous_price_dollars": "0.3400",
+  "previous_yes_ask_dollars": "0.3400",
+  "previous_yes_bid_dollars": "0.3300",
+  "price_level_structure": "linear_cent",
+  "price_ranges": [
+   {
+    "end": "1.0000",
+    "start": "0.0000",
+    "step": "0.0100"
+   }
+  ],
+  "response_price_units": "usd_cent",
+  "result": "",
+  "rules_primary": "If Portugal advance past Spain in the Portugal vs Spain soccer match in the Round Of 16 of the FIFA World Cup, then the market resolves to Yes.",
+  "rules_secondary": "Any references to \"FIFA\", the \"FIFA World Cup,\" or any other associated marks are descriptive only, and do not indicate an endorsement of this product or any affiliation between FIFA and Kalshi",
+  "settlement_timer_seconds": 45,
+  "status": "active",
+  "strike_type": "structured",
+  "ticker": "KXWCADVANCE-26JUL06PORESP-POR",
+  "title": "Portugal vs Spain: To Advance",
+  "updated_time": "2026-07-03T02:05:00.692607Z",
+  "volume_24h_fp": "4018438.96",
+  "volume_fp": "5346779.78",
+  "yes_ask_dollars": "0.3400",
+  "yes_ask_size_fp": "6384914.51",
+  "yes_bid_dollars": "0.3300",
+  "yes_bid_size_fp": "638567.50",
+  "yes_sub_title": "Portugal advances"
+ }
+}
