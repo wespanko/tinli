@@ -15,6 +15,7 @@ dependencies = [
     "cachetools>=5",
     "tinli-schema",
     "tinli-risk",
+    "tinli-divergence",
 ]
 
 [tool.hatch.build.targets.wheel]

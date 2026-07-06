@@ -11,6 +11,8 @@
 #                      resolution rules. Unverified pairs are flagged and
 #                      sorted last by the divergence screener: an 'edge'
 #                      between mismatched contracts is a trap, not an arb.
+#   pm_fee_category:   Polymarket taker-fee category (curated, like the
+#                      mapping itself); the divergence fee model reads it.
 #   notes:             resolution-criteria differences, esp. tail cases.
 #
 # Curated 2026-07-05 from live top-volume markets on both venues.
@@ -22,6 +24,7 @@ pairs:
     pm_condition_id: "0x83d646ac5646bf847f2dc0ce9c18c4d8909bbb7b050b31075afb9b67d3802b33"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
 
   - event_key: wc26-advance-portugal-spain
@@ -30,6 +33,7 @@ pairs:
     pm_condition_id: "0x3c995fa852613961df5b34fc1b2d14eb6850145f5d28d349d1622f4ed8cd84ca"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
 
   - event_key: wc26-advance-argentina-egypt
@@ -38,6 +42,7 @@ pairs:
     pm_condition_id: "0x7f481c96a3bf0d8292a2515e3dd0e709e5bdd240189b81fc98f8003480b4eb14"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
 
   - event_key: wc26-advance-france-morocco
@@ -46,6 +51,7 @@ pairs:
     pm_condition_id: "0x9918c9f426379e48d5e6a6fbf591e75e5b4a9cd33807b097810fdbaf3aebd1b4"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
 
   - event_key: wc26-advance-switzerland-colombia
@@ -54,6 +60,7 @@ pairs:
     pm_condition_id: "0x6d621f9a6690d234786025521c650f3f65738e0f877ff776c8f50275a2b3aee7"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
 
   - event_key: wc26-champion-norway
@@ -62,6 +69,7 @@ pairs:
     pm_condition_id: "0x7b52405ad0e0d31bfe970940b67d77f24ecedeab8a2361c11148c02a006e325c"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Kalshi 'wins the Final' == PM 'wins the WC'. Tail: PM resolves Other if WC canceled/unfinished by Oct 13; Kalshi cancellation handling unstated."
 
   - event_key: wc26-champion-usa
@@ -70,6 +78,7 @@ pairs:
     pm_condition_id: "0xcdb1f0400949238a63d3e88243d2ada08cd9c2a71985ced9f0cfd5e66354cf90"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wc26-champion-norway."
 
   - event_key: wc26-champion-france
@@ -78,6 +87,7 @@ pairs:
     pm_condition_id: "0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wc26-champion-norway."
 
   - event_key: wc26-champion-england
@@ -86,6 +96,7 @@ pairs:
     pm_condition_id: "0x375409bc5eeeff961e82b479caeccc20f33d15738e5bce1186d628aa3d9dfb1f"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wc26-champion-norway."
 
   - event_key: wc26-champion-argentina
@@ -94,6 +105,7 @@ pairs:
     pm_condition_id: "0x0c4cd2055d6ea89354ffddc55d6dbcef9355748112ea952fc925f3db6a5c457f"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wc26-champion-norway."
 
   - event_key: wim26-mens-djokovic
@@ -102,6 +114,7 @@ pairs:
     pm_condition_id: "0x8ba7dc2b5682330a6064966b011f2a6dc6a95b4c6b8589157064f6331ab3e1cd"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Identical winner semantics. Tail: PM resolves Other if postponed past Aug 31."
 
   - event_key: wim26-mens-sinner
@@ -110,6 +123,7 @@ pairs:
     pm_condition_id: "0x16b3e96fc29f37ff8a5309e82e1ebd11b6658b171dd788104d9a88c12cceebb6"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wim26-mens-djokovic."
 
   - event_key: wim26-mens-fritz
@@ -118,6 +132,7 @@ pairs:
     pm_condition_id: "0xec3dc5cf04a4c0e9b0c8ab9991387bfdfc78d29dbbf76cdbccd31f90622cf523"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wim26-mens-djokovic."
 
   - event_key: wim26-mens-auger-aliassime
@@ -126,6 +141,7 @@ pairs:
     pm_condition_id: "0x4c6fb4e6b453cf648d0a985e3ce5249c60c2eaeb9e133ddf3c3413fce9acadf5"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wim26-mens-djokovic."
 
   - event_key: wim26-womens-osaka
@@ -134,6 +150,7 @@ pairs:
     pm_condition_id: "0x6e751a0341bc89c1467fd909ca851d5b0e10baf7ad8f49abd7ffb7a765dbe5cd"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same as wim26-mens-djokovic (women's draw)."
 
   - event_key: wim26-r16-deminaur-cobolli
@@ -142,6 +159,7 @@ pairs:
     pm_condition_id: "0xcf8482eb154c9e79b6b7ec3f698164448432494bc532037069bb1f5f8f3d140f"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Tail: match never starts -> PM 50-50, Kalshi requires 'a ball played' (handling unstated). Retirement mid-match: both give win to advancer."
 
   - event_key: wim26-r16-fritz-bublik
@@ -150,6 +168,7 @@ pairs:
     pm_condition_id: "0x84ceac327b0b2a76ced4315420c9f1ad695512b456c6ee565f134fc82384ffc3"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same tail note as wim26-r16-deminaur-cobolli."
 
   - event_key: wim26-r16-dimitrov-fery
@@ -158,6 +177,7 @@ pairs:
     pm_condition_id: "0xaa9814ea10240748005552c1a0cb9327defe6ecef2af432607a697cd87e75031"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: sports
     notes: "Same tail note as wim26-r16-deminaur-cobolli."
 
   - event_key: fed-jul26-cut-25bps
@@ -166,6 +186,7 @@ pairs:
     pm_condition_id: "0x4ede078cae84a5877ac32d7fb48811e5c23549a1904b7df06ff7935c6d79d831"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: finance
     notes: "Both keyed to upper bound of target range at July 29 meeting. PM rounds off-grid moves up to nearest 25bp bracket; Kalshi is exact-25 — divergence only if Fed moves off-grid (never has)."
 
   - event_key: fed-jul26-no-change
@@ -174,6 +195,7 @@ pairs:
     pm_condition_id: "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86"
     pm_yes_token: 0
     criteria_verified: true
+    pm_fee_category: finance
     notes: "Kalshi 'Hike of 0bps' == PM 'no change'. Same rounding tail as fed-jul26-cut-25bps."
 
   - event_key: wc26-best-host-usa
@@ -182,4 +204,5 @@ pairs:
     pm_condition_id: "0x5a947653669c8f71ac7b8951f53e3e538dc39025f91482bc606231cf017a3f25"
     pm_yes_token: 0
     criteria_verified: false
+    pm_fee_category: sports
     notes: "TRAP EXAMPLE: PM has explicit tie-breakers (wins -> goals scored -> conceded); Kalshi rules state none. If two hosts exit at the same stage the venues can settle opposite ways. Venues ~13c apart on 2026-07-05 — do not treat as edge until Kalshi's tie handling is confirmed."

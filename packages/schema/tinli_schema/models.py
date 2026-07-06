@@ -80,4 +80,25 @@ class PairMapping(BaseModel):
         description="True only after a human compared both venues' resolution rules. "
         "Divergence on unverified pairs is flagged and sorted last.",
     )
+    pm_fee_category: (
+        Literal[
+            "crypto",
+            "sports",
+            "finance",
+            "politics",
+            "mentions",
+            "tech",
+            "economics",
+            "culture",
+            "weather",
+            "geopolitical",
+            "other",
+        ]
+        | None
+    ) = Field(
+        default=None,
+        description="Polymarket taker-fee category, curated per pair like the "
+        "mapping itself. None -> fee model assumes the worst-case rate and "
+        "flags the result.",
+    )
     notes: str = ""

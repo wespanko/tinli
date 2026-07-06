@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tinli-divergence"
+version = "0.1.0"
+description = "Tinli cross-venue divergence engine: raw basis, fee-adjusted and size-aware lock edges"
+requires-python = ">=3.12"
+dependencies = ["tinli-schema"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["tinli_divergence"]

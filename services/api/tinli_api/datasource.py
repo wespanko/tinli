@@ -6,6 +6,7 @@ Live results are TTL-cached so UI polling (3s) never hammers the venues.
 
 import json
 import os
+import threading
 from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
@@ -57,10 +58,14 @@ def _tag(markets: list[Market], by_kalshi: dict[str, str], by_pm: dict[str, str]
 class LiveSource:
     def __init__(self) -> None:
         self._cache: TTLCache = TTLCache(maxsize=256, ttl=CACHE_TTL_S)
+        # cachetools structures are not thread-safe; /v1/divergence fetches
+        # books from a thread pool
+        self._lock = threading.Lock()
 
     def markets(self) -> list[Market]:
-        if "markets" in self._cache:
-            return self._cache["markets"]
+        with self._lock:
+            if "markets" in self._cache:
+                return self._cache["markets"]
         pairs = load_pairs()
         by_kalshi = {p.kalshi_ticker: p.event_key for p in pairs}
         by_pm = {p.pm_condition_id: p.event_key for p in pairs}
@@ -71,20 +76,23 @@ class LiveSource:
         for cid, gm in gamma.items():
             result.append(polymarket.parse_market(gm, pm_yes[cid], now))
         tagged = _tag(result, by_kalshi, by_pm)
-        self._cache["markets"] = tagged
+        with self._lock:
+            self._cache["markets"] = tagged
         return tagged
 
     def orderbook(self, pair: PairMapping, venue: str) -> Orderbook:
         key = ("book", venue, pair.event_key)
-        if key in self._cache:
-            return self._cache[key]
+        with self._lock:
+            if key in self._cache:
+                return self._cache[key]
         if venue == "kalshi":
             book = kalshi.get_orderbook(pair.kalshi_ticker)
         else:
             gamma = polymarket.get_gamma_market(pair.pm_condition_id)
             token = polymarket.yes_token_id(gamma, pair.pm_yes_token)
             book = polymarket.get_orderbook(pair.pm_condition_id, token)
-        self._cache[key] = book
+        with self._lock:
+            self._cache[key] = book
         return book
 
 

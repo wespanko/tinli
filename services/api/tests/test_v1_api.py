@@ -88,3 +88,24 @@ def test_pairs(client):
 def test_demo_fetched_at_is_recording_time_not_now(client):
     m = client.get("/v1/markets").json()[0]
     assert m["fetched_at"].startswith("2026-07-06"), "fixture data must not masquerade as fresh"
+
+
+def test_divergence_endpoint(client):
+    r = client.get("/v1/divergence")
+    assert r.status_code == 200
+    items = r.json()
+    assert len(items) == 21
+    # unverified pairs must be last regardless of edge size
+    verified_flags = [i["criteria_verified"] for i in items]
+    first_unverified = verified_flags.index(False)
+    assert all(not v for v in verified_flags[first_unverified:])
+    # items with edges are sorted by |fee_adjusted_edge| descending
+    edges = [abs(float(i["fee_adjusted_edge"])) for i in items if i["fee_adjusted_edge"] and i["criteria_verified"]]
+    assert edges == sorted(edges, reverse=True)
+    # decimals travel as strings; sign convention field present
+    with_edge = next(i for i in items if i["fee_adjusted_edge"])
+    assert isinstance(with_edge["fee_adjusted_edge"], str)
+    assert with_edge["direction"] in (
+        "buy_yes_kalshi_no_polymarket",
+        "buy_yes_polymarket_no_kalshi",
+    )
