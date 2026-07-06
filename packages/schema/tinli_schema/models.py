@@ -23,6 +23,9 @@ class Market(BaseModel):
         default=None, description="Tinli pair slug from event_map.yaml; None if unmapped"
     )
     question: str
+    status: Literal["open", "closed", "settled", "unknown"] = Field(
+        default="unknown", description="normalized from venue-specific vocabularies"
+    )
     yes_price: Decimal = Field(description="venue's last/reported YES price, dollars 0-1")
     no_price: Decimal
     best_bid: Decimal | None = Field(description="best executable YES bid; None if book empty")

@@ -30,6 +30,16 @@ def _price_or_none(raw: str | None, *, empty: Decimal) -> Decimal | None:
     return None if value == empty else value
 
 
+# market.status vocabulary differs from the ?status= query param (VENUES.md)
+_STATUS = {
+    "active": "open",
+    "closed": "closed",
+    "determined": "settled",
+    "finalized": "settled",
+    "settled": "settled",
+}
+
+
 def parse_market(raw: dict, fetched_at: datetime) -> Market:
     ticker = raw["ticker"]
     yes_price = Decimal(raw["last_price_dollars"])
@@ -37,6 +47,7 @@ def parse_market(raw: dict, fetched_at: datetime) -> Market:
         id=f"kalshi:{ticker}",
         venue="kalshi",
         question=raw.get("title") or raw.get("yes_sub_title") or ticker,
+        status=_STATUS.get(raw.get("status", ""), "unknown"),
         yes_price=yes_price,
         no_price=ONE - yes_price,
         best_bid=_price_or_none(raw.get("yes_bid_dollars"), empty=ZERO),
@@ -70,6 +81,13 @@ def parse_orderbook(ticker: str, raw: dict, fetched_at: datetime) -> Orderbook:
 def get_market(ticker: str) -> Market:
     raw = get_json(f"{BASE}/markets/{ticker}")
     return parse_market(raw["market"], datetime.now(UTC))
+
+
+def get_markets(tickers: list[str]) -> list[Market]:
+    """One batched request for up to 1000 tickers."""
+    raw = get_json(f"{BASE}/markets", params={"tickers": ",".join(tickers), "limit": 1000})
+    now = datetime.now(UTC)
+    return [parse_market(m, now) for m in raw.get("markets", [])]
 
 
 def get_orderbook(ticker: str, depth: int = 20) -> Orderbook:

@@ -36,10 +36,17 @@ def parse_market(gamma_market: dict, yes_index: int, fetched_at: datetime,
     prices = _decode_str_list(gamma_market["outcomePrices"])
     yes_price = Decimal(str(prices[yes_index]))
     condition_id = gamma_market["conditionId"]
+    if gamma_market.get("closed"):
+        status = "closed"
+    elif gamma_market.get("active"):
+        status = "open"
+    else:
+        status = "unknown"
     return Market(
         id=f"polymarket:{condition_id}",
         venue="polymarket",
         question=gamma_market["question"],
+        status=status,
         yes_price=yes_price,
         no_price=Decimal(str(prices[1 - yes_index])),
         best_bid=book.bids[0].price if book and book.bids else None,
@@ -77,6 +84,13 @@ def get_gamma_market(condition_id: str) -> dict:
     if not result:
         raise LookupError(f"no Gamma market for conditionId {condition_id}")
     return result[0]
+
+
+def get_gamma_markets(condition_ids: list[str]) -> dict[str, dict]:
+    """One batched request; Gamma accepts repeated condition_ids params."""
+    params = [("condition_ids", cid) for cid in condition_ids] + [("limit", str(len(condition_ids)))]
+    result = get_json(f"{GAMMA}/markets", params=params)
+    return {m["conditionId"]: m for m in result}
 
 
 def get_orderbook(condition_id: str, token_id: str) -> Orderbook:
