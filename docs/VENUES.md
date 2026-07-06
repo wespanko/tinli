@@ -96,6 +96,10 @@ is for user positions/trades — not needed in v0.)
 Response gotchas (verified):
 
 - Returns a bare **JSON array**, not a wrapped object.
+- **`condition_ids` queries silently omit resolved markets** unless
+  `closed=true` is passed (observed 2026-07-06 when tracked markets
+  resolved; undocumented). The adapter re-queries missing ids with
+  `closed=true`.
 - `outcomes`, `outcomePrices`, `clobTokenIds` are **JSON-encoded strings**
   (`"[\"Yes\", \"No\"]"`) — double-decode them.
 - Field names are camelCase: `conditionId`, `endDate`, `volume24hr`,

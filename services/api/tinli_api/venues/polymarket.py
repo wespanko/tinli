@@ -79,18 +79,36 @@ def parse_book(condition_id: str, raw_book: dict, fetched_at: datetime) -> Order
     )
 
 
+# Gamma silently omits resolved markets from condition_ids queries unless
+# closed=true is passed (observed 2026-07-06 when the Wimbledon R16 markets
+# resolved; docs don't mention it). Always follow up for the missing ids.
+
+
 def get_gamma_market(condition_id: str) -> dict:
     result = get_json(f"{GAMMA}/markets", params={"condition_ids": condition_id})
+    if not result:
+        result = get_json(
+            f"{GAMMA}/markets", params={"condition_ids": condition_id, "closed": "true"}
+        )
     if not result:
         raise LookupError(f"no Gamma market for conditionId {condition_id}")
     return result[0]
 
 
 def get_gamma_markets(condition_ids: list[str]) -> dict[str, dict]:
-    """One batched request; Gamma accepts repeated condition_ids params."""
-    params = [("condition_ids", cid) for cid in condition_ids] + [("limit", str(len(condition_ids)))]
-    result = get_json(f"{GAMMA}/markets", params=params)
-    return {m["conditionId"]: m for m in result}
+    """One batched request (plus one for any resolved markets Gamma hid)."""
+
+    def fetch(ids: list[str], closed: bool) -> dict[str, dict]:
+        params = [("condition_ids", cid) for cid in ids] + [("limit", str(len(ids)))]
+        if closed:
+            params.append(("closed", "true"))
+        return {m["conditionId"]: m for m in get_json(f"{GAMMA}/markets", params=params)}
+
+    found = fetch(condition_ids, closed=False)
+    missing = [cid for cid in condition_ids if cid not in found]
+    if missing:
+        found |= fetch(missing, closed=True)
+    return found
 
 
 def get_orderbook(condition_id: str, token_id: str) -> Orderbook:
