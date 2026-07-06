@@ -1,0 +1,26 @@
+# Tinli — make setup | dev | demo | test
+# Works from Git Bash (sh) and cmd/PowerShell (ezwinports make).
+
+ifeq ($(OS),Windows_NT)
+PY := .venv/Scripts/python.exe
+else
+PY := .venv/bin/python
+endif
+
+.PHONY: setup dev demo test
+
+setup:
+	python -m venv .venv
+	$(PY) -m pip install --upgrade pip
+	$(PY) -m pip install -r requirements-dev.txt
+	cd apps/terminal && npm install --no-fund --no-audit
+
+dev:
+	$(PY) scripts/dev.py
+
+demo:
+	$(PY) scripts/dev.py --demo
+
+test:
+	$(PY) -m pytest
+	cd apps/terminal && npx tsc --noEmit
