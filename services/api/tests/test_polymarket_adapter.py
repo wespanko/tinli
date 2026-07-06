@@ -50,3 +50,52 @@ def test_parse_market_with_book_fills_top_of_book(load_fixture):
     assert m.best_bid == book.bids[0].price
     assert m.best_ask == book.asks[0].price
     assert m.best_bid < m.best_ask
+
+
+def test_gamma_batch_refetches_resolved_markets_with_closed_flag(monkeypatch):
+    """Gamma omits resolved markets from plain condition_ids queries (found
+    live 2026-07-06 when the Wimbledon R16 markets settled). The batch fetch
+    must re-query missing ids with closed=true instead of dropping the pair."""
+    open_cid, resolved_cid = "0xaaa", "0xbbb"
+    calls = []
+
+    def fake_get_json(url, params=None):
+        calls.append(params)
+        params = params or []
+        closed = ("closed", "true") in params
+        if closed:
+            return [{"conditionId": resolved_cid}]
+        return [{"conditionId": open_cid}]  # Gamma silently hides 0xbbb
+
+    monkeypatch.setattr(polymarket, "get_json", fake_get_json)
+    result = polymarket.get_gamma_markets([open_cid, resolved_cid])
+    assert set(result) == {open_cid, resolved_cid}
+    assert len(calls) == 2
+    # the follow-up must ask only for the missing id, with closed=true
+    assert ("condition_ids", resolved_cid) in calls[1]
+    assert ("condition_ids", open_cid) not in calls[1]
+    assert ("closed", "true") in calls[1]
+
+
+def test_gamma_batch_skips_followup_when_nothing_missing(monkeypatch):
+    calls = []
+
+    def fake_get_json(url, params=None):
+        calls.append(params)
+        return [{"conditionId": "0xaaa"}]
+
+    monkeypatch.setattr(polymarket, "get_json", fake_get_json)
+    result = polymarket.get_gamma_markets(["0xaaa"])
+    assert set(result) == {"0xaaa"}
+    assert len(calls) == 1, "no resolved markets -> no second request"
+
+
+def test_gamma_single_falls_back_to_closed_then_raises(monkeypatch):
+    def fake_get_json(url, params=None):
+        return []
+
+    monkeypatch.setattr(polymarket, "get_json", fake_get_json)
+    import pytest as _pytest
+
+    with _pytest.raises(LookupError):
+        polymarket.get_gamma_market("0xdead")
