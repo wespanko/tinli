@@ -41,6 +41,9 @@ class Market(BaseModel):
     )
     close_ts: datetime
     resolution_url: str
+    icon_url: str | None = Field(
+        default=None, description="venue-hosted event image; Polymarket only in v0"
+    )
     fetched_at: datetime
 
 

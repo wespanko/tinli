@@ -57,6 +57,7 @@ def parse_market(gamma_market: dict, yes_index: int, fetched_at: datetime,
         liquidity=Decimal(str(gamma_market.get("liquidityNum") or 0)),
         close_ts=datetime.fromisoformat(gamma_market["endDate"].replace("Z", "+00:00")),
         resolution_url=f"https://polymarket.com/market/{gamma_market.get('slug', '')}",
+        icon_url=gamma_market.get("image") or gamma_market.get("icon"),
         fetched_at=fetched_at,
     )
 
