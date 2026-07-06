@@ -1,0 +1,25 @@
+# secrets — never committed
+.env
+*.pem
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# node
+node_modules/
+apps/terminal/dist/
+
+# data artifacts
+*.parquet
+*.sqlite
+data/history/
+
+# os / editor
+.DS_Store
+Thumbs.db

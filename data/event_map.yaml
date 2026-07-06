@@ -1,0 +1,16 @@
+# Curated cross-venue pair mappings — the ONLY source of Kalshi<->Polymarket
+# matching in Tinli. Hand-maintained; NLP auto-matching is out of scope.
+#
+# Each pair:
+#   event_key:        stable slug we own, used across the API and UI
+#   question:         human-readable description (for the watchlist)
+#   kalshi_ticker:    Kalshi market ticker (Trade API v2)
+#   pm_condition_id:  Polymarket conditionId (0x...)
+#   pm_yes_token:     which clobTokenIds entry is the YES outcome: 0 or 1
+#   notes:            resolution-criteria differences, if any. If the two
+#                     venues' resolution rules differ materially, say so here —
+#                     divergence on mismatched contracts is not edge.
+#
+# Populated in M1 with ~20 liquid pairs.
+
+pairs: []

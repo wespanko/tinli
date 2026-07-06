@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tinli-risk"
+version = "0.1.0"
+description = "Tinli portfolio risk engine: exposure, VaR, Kelly sizing"
+requires-python = ">=3.12"
+dependencies = ["tinli-schema"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["tinli_risk"]

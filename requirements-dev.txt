@@ -1,0 +1,6 @@
+# Dev environment: editable installs of all first-party packages + test deps.
+# Usage: make setup  (creates .venv and installs this file)
+-e ./packages/schema
+-e ./packages/risk
+-e ./services/api
+pytest>=8

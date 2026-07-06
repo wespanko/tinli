@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* Tinli design tokens — the only place colors are defined. Gold is for CTAs
+   and key numbers ONLY. Radius ≤ 4px, 1px borders, no shadows. */
+@theme {
+  --color-bg: #0a1524;
+  --color-panel: #0f1e33;
+  --color-line: #1e3a5c;
+  --color-primary: #2774ae;
+  --color-hover: #8bb8e8;
+  --color-gold: #ffd100;
+  --color-text: #e6edf5;
+  --color-muted: #8fa3b8;
+
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-mono);
+  }
+  body {
+    @apply bg-bg text-text;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+}

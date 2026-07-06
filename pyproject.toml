@@ -1,0 +1,9 @@
+# Root config only — the installable packages live in packages/* and services/*.
+
+[tool.pytest.ini_options]
+testpaths = ["packages/schema/tests", "packages/risk/tests", "services/api/tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
