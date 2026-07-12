@@ -15,12 +15,13 @@ from typing import Protocol
 import yaml
 from cachetools import TTLCache
 
-from tinli_schema import Market, Orderbook, PairMapping
+from tinli_schema import Market, Orderbook, PairMapping, Position
 
 from tinli_api.venues import kalshi, polymarket
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EVENT_MAP = REPO_ROOT / "data" / "event_map.yaml"
+POSITIONS = REPO_ROOT / "data" / "positions.yaml"
 FIXTURES = REPO_ROOT / "services" / "api" / "tests" / "fixtures"
 
 CACHE_TTL_S = 2.0
@@ -30,6 +31,17 @@ CACHE_TTL_S = 2.0
 def load_pairs() -> tuple[PairMapping, ...]:
     raw = yaml.safe_load(EVENT_MAP.read_text(encoding="utf-8"))
     return tuple(PairMapping(**p) for p in raw["pairs"])
+
+
+def load_positions() -> list[Position]:
+    """Self-reported user positions. Deliberately NOT cached: users edit the
+    file while the terminal runs, and it is tiny — re-read every request so
+    changes show up on the next poll."""
+    path = Path(os.environ.get("TINLI_POSITIONS", str(POSITIONS)))
+    if not path.exists():
+        return []
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return [Position(**p) for p in raw.get("positions", [])]
 
 
 def pair_for_market_id(market_id: str) -> PairMapping | None:

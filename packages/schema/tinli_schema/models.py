@@ -9,7 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 Venue = Literal["kalshi", "polymarket"]
 
@@ -65,6 +65,40 @@ class Orderbook(BaseModel):
     bids: list[OrderbookLevel]
     asks: list[OrderbookLevel]
     fetched_at: datetime
+
+
+class Position(BaseModel):
+    """One user-entered holding, marked to market by venue-qualified id.
+
+    v0 has no venue auth (BYOK comes later): positions are self-reported in
+    data/positions.yaml. `entry_price` is what the user paid per contract for
+    `side`, on the same 0-1 dollar scale as every other price in Tinli.
+    """
+
+    market_id: str = Field(description="venue-qualified id matching Market.id")
+    side: Literal["yes", "no"]
+    contracts: Decimal = Field(gt=0)
+    entry_price: Decimal = Field(ge=0, le=1, description="price paid per contract for `side`")
+    @field_validator("side", mode="before")
+    @classmethod
+    def _yaml_bool_side(cls, v: object) -> object:
+        # YAML 1.1 parses bare yes/no as booleans; hand-edited positions.yaml
+        # will contain them bare, so accept both spellings
+        if v is True:
+            return "yes"
+        if v is False:
+            return "no"
+        return v
+
+    est_prob: Decimal | None = Field(
+        default=None,
+        ge=0,
+        le=1,
+        description="user's OWN estimate of the YES probability. Enables Kelly "
+        "sizing; never inferred from market prices — Kelly on the market's own "
+        "mid is zero edge by construction.",
+    )
+    notes: str = ""
 
 
 class PairMapping(BaseModel):

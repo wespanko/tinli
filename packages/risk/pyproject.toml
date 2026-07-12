@@ -7,7 +7,7 @@ name = "tinli-risk"
 version = "0.1.0"
 description = "Tinli portfolio risk engine: exposure, VaR, Kelly sizing"
 requires-python = ">=3.12"
-dependencies = ["tinli-schema"]
+dependencies = ["tinli-schema", "numpy>=2"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["tinli_risk"]

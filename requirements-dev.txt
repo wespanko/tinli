@@ -5,3 +5,4 @@
 -e ./packages/divergence
 -e ./services/api
 pytest>=8
+hypothesis>=6

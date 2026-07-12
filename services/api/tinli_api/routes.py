@@ -6,9 +6,10 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from tinli_divergence import DivergenceItem, compute_pair, sort_items
+from tinli_risk import RiskReport, build_report
 from tinli_schema import Market, Orderbook, PairMapping
 
-from tinli_api.datasource import get_source, load_pairs, pair_for_market_id
+from tinli_api.datasource import get_source, load_pairs, load_positions, pair_for_market_id
 from tinli_api.venues.client import VenueHTTPError
 
 router = APIRouter(prefix="/v1")
@@ -85,6 +86,27 @@ def divergence() -> list[DivergenceItem]:
     with ThreadPoolExecutor(max_workers=8) as pool:
         items = list(pool.map(one, load_pairs()))
     return sort_items(items)
+
+
+@router.get("/risk")
+def risk() -> RiskReport:
+    """Risk report for the self-reported book in data/positions.yaml
+    (override with TINLI_POSITIONS), marked against the current feed.
+
+    Assumptions are IN THE PAYLOAD (report.assumptions) — the engine's
+    authoritative statement lives in tinli_risk.var's module docstring.
+    Positions missing from the feed come back unmarked and excluded from
+    aggregates, never silently dropped.
+    """
+    positions = load_positions()
+    try:
+        markets = get_source().markets()
+    except VenueHTTPError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    by_id = {m.id: m for m in markets}
+    marked_at = [m.fetched_at for m in markets if m.id in {p.market_id for p in positions}]
+    fetched_at = max(marked_at) if marked_at else datetime.now(UTC)
+    return build_report(positions, by_id, fetched_at=fetched_at)
 
 
 @router.get("/pairs")

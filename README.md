@@ -9,8 +9,13 @@ Site + waitlist: [tinli.dev](https://tinli.dev)
 ## Status
 
 v0, under active development. Read-only public market data — no order
-placement, no accounts. Milestones: M0 scaffold (done), M1 venue adapters,
-M2 API, M3 divergence engine, M4 risk engine, M5 terminal UI, M6 history.
+placement, no accounts. Milestones: M0 scaffold, M1 venue adapters, M2 API,
+M3 divergence engine, M4 risk engine (all done) · M5 terminal UI, M6 history
+(next).
+
+Positions for the risk engine (`/v1/risk`) are self-reported: edit
+`data/positions.yaml` (an example book ships with the repo). No venue auth
+in v0 — Tinli never sees your accounts.
 
 ## Quickstart
 

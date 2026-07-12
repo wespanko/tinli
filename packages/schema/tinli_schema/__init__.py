@@ -5,8 +5,9 @@ from tinli_schema.models import (
     Orderbook,
     OrderbookLevel,
     PairMapping,
+    Position,
     Venue,
 )
 
 __version__ = "0.1.0"
-__all__ = ["Market", "Orderbook", "OrderbookLevel", "PairMapping", "Venue"]
+__all__ = ["Market", "Orderbook", "OrderbookLevel", "PairMapping", "Position", "Venue"]
