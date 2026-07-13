@@ -1,8 +1,9 @@
 import type { BookLevel, DivergenceItem, MarketQuote, Orderbook, Pair } from '../types'
 import { cents, clock, qty } from '../format'
+import DepthChart from './DepthChart'
 import Signed from './Signed'
 
-const DEPTH = 8
+const DEPTH = 6
 
 type Mid = { mid: number | null; spread: number | null }
 
@@ -18,9 +19,11 @@ function VenueQuote({ label, book }: { label: string; book: Orderbook | null }) 
   return (
     <div className="flex-1 bg-panel-2 border border-line rounded-sm px-3 py-2">
       <div className="text-muted text-[10px] tracking-[0.15em]">{label}</div>
-      {/* big standalone number: proportional figures, not tabular */}
-      <div className="text-text text-[26px] leading-8">{mid == null ? '—' : mid.toFixed(1)}</div>
-      <div className="text-[11px] text-muted">
+      {/* big standalone number: mono, proportional figures, not tabular */}
+      <div className="font-mono text-text text-[26px] leading-8">
+        {mid == null ? '—' : mid.toFixed(1)}
+      </div>
+      <div className="font-mono text-[11px] text-muted">
         {book?.bids[0] ? <span className="text-up">{cents(book.bids[0].price)} bid</span> : 'no bid'}
         <span className="mx-1.5">·</span>
         {book?.asks[0] ? <span className="text-down">{cents(book.asks[0].price)} ask</span> : 'no ask'}
@@ -47,7 +50,10 @@ function Ladder({
   const maxSize = Math.max(1, ...[...asks, ...bids].map((l) => parseFloat(l.size)))
 
   const row = (level: BookLevel, side: 'bid' | 'ask') => (
-    <div key={`${side}${level.price}`} className="relative flex text-[12px] leading-[22px] px-2.5">
+    <div
+      key={`${side}${level.price}`}
+      className="relative flex font-mono text-[12px] leading-[22px] px-2.5"
+    >
       <div
         className={`absolute inset-y-[3px] right-0 rounded-l-sm ${
           side === 'ask' ? 'bg-down/12' : 'bg-up/12'
@@ -91,7 +97,7 @@ function LockEconomics({ item }: { item: DivergenceItem }) {
   const stat = (label: string, node: React.ReactNode) => (
     <div className="bg-panel-2 border border-line rounded-sm px-3 py-1.5">
       <div className="text-muted text-[10px] tracking-[0.12em]">{label}</div>
-      <div className="text-[15px]">{node}</div>
+      <div className="font-mono text-[15px]">{node}</div>
     </div>
   )
   return (
@@ -144,9 +150,12 @@ export default function MarketPanel({
   pmBook: Orderbook | null
 }) {
   if (!pair) return <div className="p-3 text-muted text-[12px]">select a pair</div>
-  const asOf = kalshiBook?.fetched_at ?? pmBook?.fetched_at
-  const k = midOf(kalshiBook)
-  const p = midOf(pmBook)
+  // guard against stale books from a previous selection still in state
+  const freshK = kalshiBook && pair.kalshi && kalshiBook.market_id === pair.kalshi.id ? kalshiBook : null
+  const freshP = pmBook && pair.polymarket && pmBook.market_id === pair.polymarket.id ? pmBook : null
+  const asOf = freshK?.fetched_at ?? freshP?.fetched_at
+  const k = midOf(freshK)
+  const p = midOf(freshP)
   const basis = k.mid != null && p.mid != null ? k.mid - p.mid : null
   return (
     <div className="p-3 flex flex-col gap-3 h-full">
@@ -161,21 +170,26 @@ export default function MarketPanel({
       </div>
 
       <div className="flex items-stretch gap-1.5">
-        <VenueQuote label="KALSHI" book={kalshiBook} />
+        <VenueQuote label="KALSHI" book={freshK} />
         <div className="flex flex-col items-center justify-center px-2">
           <div className="text-muted text-[10px] tracking-[0.12em]">BASIS</div>
           <Signed
             value={basis == null ? null : String(basis)}
             text={basis == null ? '—' : `${basis > 0 ? '+' : ''}${basis.toFixed(1)}¢`}
-            className="text-[15px]"
+            className="font-mono text-[15px]"
           />
         </div>
-        <VenueQuote label="POLYMARKET" book={pmBook} />
+        <VenueQuote label="POLYMARKET" book={freshP} />
+      </div>
+
+      <div className="flex gap-1.5 items-stretch">
+        <DepthChart label="KALSHI DEPTH" book={freshK} />
+        <DepthChart label="POLYMARKET DEPTH" book={freshP} />
       </div>
 
       <div className="flex gap-1.5 items-start">
-        <Ladder label="KALSHI BOOK" quote={pair.kalshi} book={kalshiBook} />
-        <Ladder label="POLYMARKET BOOK" quote={pair.polymarket} book={pmBook} />
+        <Ladder label="KALSHI BOOK" quote={pair.kalshi} book={freshK} />
+        <Ladder label="POLYMARKET BOOK" quote={pair.polymarket} book={freshP} />
       </div>
 
       {item && <LockEconomics item={item} />}

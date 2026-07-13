@@ -72,7 +72,7 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col gap-1 p-1">
       <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-9 shrink-0">
-        <span className="text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
+        <span className="font-mono text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
         <span className="text-muted text-[11px] tracking-[0.1em]">KALSHI × POLYMARKET</span>
         <nav className="ml-4 flex text-[10px] border border-line rounded-sm overflow-hidden">
           {(['terminal', 'cards'] as View[]).map((v) => (

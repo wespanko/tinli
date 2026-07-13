@@ -18,7 +18,10 @@
   --color-up: #2ebd85;
   --color-down: #e5484d;
 
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+  /* Inter carries labels and prose; JetBrains Mono carries ALL numbers
+     (and id slugs in tables). Both bundled via @fontsource-variable. */
+  --font-sans: "Inter Variable", Inter, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -26,7 +29,7 @@
 
 @layer base {
   html {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
   }
   body {
     @apply bg-bg text-text;

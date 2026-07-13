@@ -16,13 +16,15 @@ function Stat({
   return (
     <div className="bg-panel-2 border border-line rounded-sm px-3 py-1.5">
       <div className="text-muted text-[10px] tracking-[0.12em]">{label}</div>
-      {/* standalone numbers: proportional figures, not tabular */}
-      <div className={`${big ? 'text-[22px] leading-7' : 'text-[15px]'} ${tone}`}>{value}</div>
+      {/* standalone numbers: mono, proportional figures, not tabular */}
+      <div className={`font-mono ${big ? 'text-[22px] leading-7' : 'text-[15px]'} ${tone}`}>
+        {value}
+      </div>
     </div>
   )
 }
 
-const th = 'py-1 font-medium text-[10px] tracking-[0.12em] text-muted'
+const th = 'py-1 font-sans font-medium text-[10px] tracking-[0.12em] text-muted'
 
 export default function RiskPanel({ report }: { report: RiskReport | null }) {
   if (!report) return <div className="p-3 text-muted text-[12px]">loading risk…</div>
@@ -50,7 +52,7 @@ export default function RiskPanel({ report }: { report: RiskReport | null }) {
         </div>
       )}
 
-      <table className="w-full">
+      <table className="w-full font-mono">
         <thead>
           <tr className="border-b border-line">
             <th className={`${th} text-left`}>POSITION</th>
@@ -103,7 +105,7 @@ export default function RiskPanel({ report }: { report: RiskReport | null }) {
       {r.by_event.length > 0 && (
         <div>
           <div className="text-muted text-[10px] tracking-[0.15em] mb-1">EXPOSURE BY EVENT</div>
-          <table className="w-full">
+          <table className="w-full font-mono">
             <thead>
               <tr className="border-b border-line">
                 <th className={`${th} text-left`}>EVENT</th>

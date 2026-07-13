@@ -21,7 +21,7 @@ export function sortPairs(data: Pair[]): Pair[] {
   })
 }
 
-const th = 'py-1.5 font-medium text-[10px] tracking-[0.12em] text-muted'
+const th = 'py-1.5 font-sans font-medium text-[10px] tracking-[0.12em] text-muted'
 
 export default function WatchTable({
   pairs,
@@ -33,7 +33,7 @@ export default function WatchTable({
   onSelect: (eventKey: string) => void
 }) {
   return (
-    <table className="w-full text-[12px]">
+    <table className="w-full font-mono text-[12px]">
       <thead>
         <tr className="sticky top-0 bg-panel border-b border-line">
           <th className={`${th} text-left pl-3`}>PAIR</th>
