@@ -10,8 +10,12 @@ Site + waitlist: [tinli.dev](https://tinli.dev)
 
 v0, under active development. Read-only public market data — no order
 placement, no accounts. Milestones: M0 scaffold, M1 venue adapters, M2 API,
-M3 divergence engine, M4 risk engine (all done) · M5 terminal UI, M6 history
-(next).
+M3 divergence engine, M4 risk engine, M5 terminal UI (all done) · M6 history
+snapshots (next).
+
+The terminal is one dense screen: watchlist (click a pair to load its
+books), cross-venue orderbook ladders, the fee-adjusted divergence
+screener, and the risk panel — 3s polling, demo badge when on fixtures.
 
 Positions for the risk engine (`/v1/risk`) are self-reported: edit
 `data/positions.yaml` (an example book ships with the repo). No venue auth
