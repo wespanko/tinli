@@ -1,5 +1,6 @@
 import type { Pair } from '../types'
 import { cents } from '../format'
+import Signed from './Signed'
 
 function kalshiMid(p: Pair): number | null {
   const m = p.kalshi
@@ -20,6 +21,8 @@ export function sortPairs(data: Pair[]): Pair[] {
   })
 }
 
+const th = 'py-1.5 font-medium text-[10px] tracking-[0.12em] text-muted'
+
 export default function WatchTable({
   pairs,
   selected,
@@ -30,14 +33,14 @@ export default function WatchTable({
   onSelect: (eventKey: string) => void
 }) {
   return (
-    <table className="w-full text-[12px] leading-5">
+    <table className="w-full text-[12px]">
       <thead>
-        <tr className="text-muted text-[10px] tracking-wider sticky top-0 bg-panel">
-          <th className="text-left px-2 py-1 font-normal">PAIR</th>
-          <th className="text-right px-1 py-1 font-normal">K BID</th>
-          <th className="text-right px-1 py-1 font-normal">K ASK</th>
-          <th className="text-right px-1 py-1 font-normal">PM</th>
-          <th className="text-right px-2 py-1 font-normal">Δ¢</th>
+        <tr className="sticky top-0 bg-panel border-b border-line">
+          <th className={`${th} text-left pl-3`}>PAIR</th>
+          <th className={`${th} text-right px-1`}>K BID</th>
+          <th className={`${th} text-right px-1`}>K ASK</th>
+          <th className={`${th} text-right px-1`}>PM</th>
+          <th className={`${th} text-right px-3`}>Δ¢</th>
         </tr>
       </thead>
       <tbody>
@@ -48,29 +51,38 @@ export default function WatchTable({
             <tr
               key={p.event_key}
               onClick={() => onSelect(p.event_key)}
-              className={`border-t border-line/50 text-text cursor-pointer ${
-                active ? 'bg-line/30' : 'hover:bg-line/20'
+              className={`cursor-pointer border-b border-line/30 border-l-2 ${
+                active
+                  ? 'border-l-primary bg-primary/10'
+                  : 'border-l-transparent hover:bg-line/20'
               }`}
             >
-              <td className="px-2 py-0.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-44">
-                <span className={active ? 'text-hover' : ''}>
-                  {!p.criteria_verified && (
-                    <span className="text-gold mr-1" title="resolution criteria not verified">
-                      !
-                    </span>
-                  )}
-                  {p.event_key}
-                </span>
-              </td>
-              <td className="text-right px-1 tabular-nums">{cents(p.kalshi?.best_bid)}</td>
-              <td className="text-right px-1 tabular-nums">{cents(p.kalshi?.best_ask)}</td>
-              <td className="text-right px-1 tabular-nums">{cents(p.polymarket?.yes_price)}</td>
               <td
-                className={`text-right px-2 tabular-nums ${
-                  basis != null && Math.abs(basis) >= 1 ? 'text-gold' : 'text-muted'
+                className={`pl-3 pr-1 py-[5px] whitespace-nowrap overflow-hidden text-ellipsis max-w-44 ${
+                  active ? 'text-hover' : p.criteria_verified ? 'text-text' : 'text-muted'
                 }`}
               >
-                {basis == null ? '—' : basis.toFixed(1)}
+                {!p.criteria_verified && (
+                  <span className="text-gold mr-1" title="resolution criteria not verified">
+                    !
+                  </span>
+                )}
+                {p.event_key}
+              </td>
+              <td className="text-right px-1 tabular-nums text-text">
+                {cents(p.kalshi?.best_bid)}
+              </td>
+              <td className="text-right px-1 tabular-nums text-text">
+                {cents(p.kalshi?.best_ask)}
+              </td>
+              <td className="text-right px-1 tabular-nums text-text">
+                {cents(p.polymarket?.yes_price)}
+              </td>
+              <td className="text-right px-3">
+                <Signed
+                  value={basis == null ? null : String(basis)}
+                  text={basis == null ? '—' : `${basis > 0 ? '+' : ''}${basis.toFixed(1)}`}
+                />
               </td>
             </tr>
           )

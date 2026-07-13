@@ -11,9 +11,11 @@ export default function Panel({
 }) {
   return (
     <section className="flex flex-col border border-line bg-panel rounded-sm min-h-0 flex-1">
-      <header className="flex items-center border-b border-line px-2 py-1 text-muted text-[11px] tracking-widest shrink-0">
-        <span>{title}</span>
-        {extra && <span className="ml-auto tracking-normal">{extra}</span>}
+      <header className="flex items-center border-b border-line px-3 h-8 shrink-0">
+        <span className="text-muted text-[10px] font-medium tracking-[0.15em] uppercase">
+          {title}
+        </span>
+        {extra && <span className="ml-auto text-[11px] text-muted tracking-normal">{extra}</span>}
       </header>
       <div className="flex-1 overflow-y-auto min-h-0">{children}</div>
     </section>

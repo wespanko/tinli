@@ -1,16 +1,22 @@
 @import "tailwindcss";
 
 /* Tinli design tokens — the only place colors are defined. Gold is for CTAs
-   and key numbers ONLY. Radius ≤ 4px, 1px borders, no shadows. */
+   and key numbers ONLY. Radius ≤ 4px, 1px borders, no shadows.
+   up/down are direction semantics (bids/asks, signed P&L) — validated for
+   CVD separation and 3:1 contrast against --color-panel; never large fills,
+   only text and thin bars/washes. */
 @theme {
   --color-bg: #0a1524;
   --color-panel: #0f1e33;
+  --color-panel-2: #132540;
   --color-line: #1e3a5c;
   --color-primary: #2774ae;
   --color-hover: #8bb8e8;
   --color-gold: #ffd100;
   --color-text: #e6edf5;
   --color-muted: #8fa3b8;
+  --color-up: #2ebd85;
+  --color-down: #e5484d;
 
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 
@@ -25,6 +31,10 @@
   body {
     @apply bg-bg text-text;
     font-size: 13px;
-    line-height: 1.4;
+    line-height: 1.45;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
   }
 }

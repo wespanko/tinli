@@ -47,6 +47,7 @@ export default function App() {
 
   const activeKey = selected ?? pairs[0]?.event_key ?? null
   const activePair = pairs.find((p) => p.event_key === activeKey) ?? null
+  const activeItem = divergence.find((d) => d.event_key === activeKey) ?? null
 
   // books ride the same cadence: `pairs` is replaced every heartbeat, which
   // re-runs this effect — no second timer needed
@@ -70,15 +71,15 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col gap-1 p-1">
-      <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-2 py-1 shrink-0">
-        <span className="text-gold font-bold tracking-widest">TINLI</span>
-        <span className="text-muted text-[11px]">KALSHI × POLYMARKET</span>
-        <nav className="ml-4 flex text-[11px] border border-line rounded-sm overflow-hidden">
+      <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-9 shrink-0">
+        <span className="text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
+        <span className="text-muted text-[11px] tracking-[0.1em]">KALSHI × POLYMARKET</span>
+        <nav className="ml-4 flex text-[10px] border border-line rounded-sm overflow-hidden">
           {(['terminal', 'cards'] as View[]).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-2 py-0.5 tracking-wider uppercase ${
+              className={`px-2.5 py-1 tracking-[0.12em] uppercase ${
                 view === v ? 'bg-primary text-text' : 'text-muted hover:text-hover'
               }`}
             >
@@ -88,13 +89,13 @@ export default function App() {
         </nav>
         <span className="ml-auto text-[11px]">
           {health === null ? (
-            <span className="text-muted">API OFFLINE</span>
+            <span className="text-down">API OFFLINE</span>
           ) : health.mode === 'demo' ? (
-            <span className="border border-gold text-gold px-1.5 py-0.5 rounded-sm">
+            <span className="border border-gold text-gold px-2 py-0.5 rounded-sm text-[10px] tracking-[0.12em]">
               SIMULATED DATA
             </span>
           ) : (
-            <span className="text-primary">LIVE</span>
+            <span className="text-up text-[10px] tracking-[0.12em]">● LIVE</span>
           )}
         </span>
       </header>
@@ -106,7 +107,12 @@ export default function App() {
             <WatchTable pairs={pairs} selected={activeKey} onSelect={setSelected} />
           </Panel>
           <Panel title="MARKET">
-            <MarketPanel pair={activePair} kalshiBook={kalshiBook} pmBook={pmBook} />
+            <MarketPanel
+              pair={activePair}
+              item={activeItem}
+              kalshiBook={kalshiBook}
+              pmBook={pmBook}
+            />
           </Panel>
           <div className="flex flex-col gap-1 min-h-0">
             <Panel title="DIVERGENCE · FEE-ADJUSTED LOCK EDGES">
