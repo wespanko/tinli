@@ -33,7 +33,7 @@ export default function WatchTable({
   onSelect: (eventKey: string) => void
 }) {
   return (
-    <table className="w-full font-mono text-[12px]">
+    <table className="w-full font-mono text-[13px]">
       <thead>
         <tr className="sticky top-0 bg-panel border-b border-line">
           <th className={`${th} text-left pl-3`}>PAIR</th>
@@ -57,8 +57,9 @@ export default function WatchTable({
                   : 'border-l-transparent hover:bg-line/20'
               }`}
             >
+              {/* slugs are names, not numbers — Inter reads better than mono here */}
               <td
-                className={`pl-3 pr-1 py-[5px] whitespace-nowrap overflow-hidden text-ellipsis max-w-44 ${
+                className={`font-sans pl-3 pr-1 py-1.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-44 ${
                   active ? 'text-hover' : p.criteria_verified ? 'text-text' : 'text-muted'
                 }`}
               >

@@ -19,7 +19,7 @@ export default function DivergencePanel({
   onSelect: (eventKey: string) => void
 }) {
   return (
-    <table className="w-full font-mono text-[12px]">
+    <table className="w-full font-mono text-[13px]">
       <thead>
         <tr className="sticky top-0 bg-panel border-b border-line">
           <th className={`${th} text-left pl-3`}>PAIR</th>
@@ -58,8 +58,9 @@ export default function DivergencePanel({
                   : 'border-l-transparent hover:bg-line/20'
               }`}
             >
+              {/* slugs are names, not numbers — Inter reads better than mono here */}
               <td
-                className={`pl-3 pr-1 py-[5px] whitespace-nowrap overflow-hidden text-ellipsis max-w-36 ${
+                className={`font-sans pl-3 pr-1 py-1.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-36 ${
                   active ? 'text-hover' : it.criteria_verified ? 'text-text' : 'text-muted'
                 }`}
               >
@@ -74,7 +75,7 @@ export default function DivergencePanel({
                 {it.event_key}
               </td>
               <td
-                className="px-1 text-[11px] text-muted whitespace-nowrap"
+                className="px-1 text-[12px] text-muted whitespace-nowrap"
                 title={
                   it.direction == null
                     ? 'no executable lock'

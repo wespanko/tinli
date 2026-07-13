@@ -30,7 +30,7 @@ export default function RiskPanel({ report }: { report: RiskReport | null }) {
   if (!report) return <div className="p-3 text-muted text-[12px]">loading risk…</div>
   const r = report
   return (
-    <div className="p-3 flex flex-col gap-3 text-[12px]">
+    <div className="p-3 flex flex-col gap-3 text-[13px]">
       <div className="grid grid-cols-2 gap-1.5">
         <Stat label="VAR 95 · MONTE CARLO" value={usd(r.var_95_monte_carlo)} tone="text-gold" big />
         <Stat
@@ -73,7 +73,7 @@ export default function RiskPanel({ report }: { report: RiskReport | null }) {
           {r.positions.map((row, i) => (
             <tr key={i} className="border-b border-line/30">
               <td
-                className={`py-[5px] pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-36 ${
+                className={`font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-36 ${
                   row.mark == null ? 'text-muted' : 'text-text'
                 }`}
                 title={row.question ?? row.position.market_id}
@@ -123,7 +123,7 @@ export default function RiskPanel({ report }: { report: RiskReport | null }) {
             <tbody>
               {r.by_event.map((e) => (
                 <tr key={e.event_id} className="border-b border-line/30">
-                  <td className="py-[5px] pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-40 text-text">
+                  <td className="font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-40 text-text">
                     {e.event_id}
                   </td>
                   <td className="text-right px-1 tabular-nums text-text">
