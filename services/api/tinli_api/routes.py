@@ -2,8 +2,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Literal
 
+import yaml
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from tinli_divergence import DivergenceItem, compute_pair, sort_items
 from tinli_risk import RiskReport, build_report
@@ -98,7 +99,14 @@ def risk() -> RiskReport:
     Positions missing from the feed come back unmarked and excluded from
     aggregates, never silently dropped.
     """
-    positions = load_positions()
+    try:
+        positions = load_positions()
+    except (ValidationError, yaml.YAMLError) as exc:
+        # positions.yaml is hand-edited; a typo is the USER'S file, not a
+        # server fault — 422 with the pydantic/yaml detail, never a 500
+        raise HTTPException(
+            status_code=422, detail=f"positions.yaml is invalid: {exc}"
+        ) from exc
     try:
         markets = get_source().markets()
     except VenueHTTPError as exc:

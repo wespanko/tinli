@@ -72,6 +72,22 @@ def test_unknown_position_is_unmarked_not_dropped(client, tmp_path, monkeypatch)
     assert any("EXCLUDED" in a for a in report["assumptions"])
 
 
+def test_typoed_positions_file_is_422_not_500(client, tmp_path, monkeypatch):
+    book = tmp_path / "positions.yaml"
+    book.write_text(
+        "positions:\n"
+        '  - market_id: "kalshi:KXFEDDECISION-26JUL-H0"\n'
+        "    side: yes\n"
+        '    contracts: "10"\n'
+        '    entry_price: "1.55"\n',  # out of range: hand-edit typo
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("TINLI_POSITIONS", str(book))
+    r = client.get("/v1/risk")
+    assert r.status_code == 422
+    assert "entry_price" in r.json()["detail"]
+
+
 def test_missing_positions_file_is_an_empty_report(client, tmp_path, monkeypatch):
     monkeypatch.setenv("TINLI_POSITIONS", str(tmp_path / "nope.yaml"))
     report = client.get("/v1/risk").json()
