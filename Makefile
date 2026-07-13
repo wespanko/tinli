@@ -1,4 +1,4 @@
-# Tinli — make setup | dev | demo | test
+# Tinli — make setup | dev | demo | test | snapshot
 # Works from Git Bash (sh) and cmd/PowerShell (ezwinports make).
 
 ifeq ($(OS),Windows_NT)
@@ -7,7 +7,7 @@ else
 PY := .venv/bin/python
 endif
 
-.PHONY: setup dev demo test
+.PHONY: setup dev demo test snapshot
 
 setup:
 	python -m venv .venv
@@ -24,3 +24,7 @@ demo:
 test:
 	$(PY) -m pytest
 	cd apps/terminal && npx tsc --noEmit
+
+# one snapshot; for continuous recording: .venv/Scripts/python scripts/snapshot.py --loop 30
+snapshot:
+	$(PY) scripts/snapshot.py

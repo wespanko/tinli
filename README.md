@@ -8,10 +8,9 @@ Site + waitlist: [tinli.dev](https://tinli.dev)
 
 ## Status
 
-v0, under active development. Read-only public market data — no order
-placement, no accounts. Milestones: M0 scaffold, M1 venue adapters, M2 API,
-M3 divergence engine, M4 risk engine, M5 terminal UI (all done) · M6 history
-snapshots (next).
+v0 feature-complete: M0 scaffold, M1 venue adapters, M2 API, M3 divergence
+engine, M4 risk engine, M5 terminal UI, M6 history snapshots — all done.
+Read-only public market data — no order placement, no accounts.
 
 The terminal is one dense screen: watchlist (click a pair to load its
 books), cross-venue orderbook ladders, the fee-adjusted divergence
@@ -30,6 +29,11 @@ Prereqs: Python 3.12, Node 20+, GNU make
     make dev      # API on :8000, UI on :5173, live public data
     make demo     # same, but recorded fixtures + SIMULATED DATA badge
     make test     # pytest + TypeScript checks
+    make snapshot # record one history snapshot to data/history/ (parquet)
+
+Continuous recording (feeds the basis-over-time chart):
+
+    .venv/Scripts/python scripts/snapshot.py --loop 30
 
 Copy `.env.example` to `.env` for local overrides. v0 needs no API keys.
 
@@ -40,4 +44,6 @@ Copy `.env.example` to `.env` for local overrides. v0 needs no API keys.
     packages/schema     shared pydantic models + generated TS types
     apps/terminal       React terminal UI
     data/event_map.yaml curated Kalshi↔Polymarket pair mappings
+    data/positions.yaml self-reported positions for /v1/risk
+    data/history/       parquet snapshots (gitignored; make snapshot)
     docs/VENUES.md      venue API notes (endpoints, limits, gotchas)

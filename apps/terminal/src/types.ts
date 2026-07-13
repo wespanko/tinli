@@ -94,6 +94,21 @@ export type RiskReport = {
   fetched_at: string
 }
 
+export type HistoryPoint = {
+  ts: string
+  k_mid: string | null
+  p_mid: string | null
+  raw_basis_cents: string | null
+  fee_adjusted_edge: string | null
+  edge_at_size: string | null
+}
+
+export type HistoryResponse = {
+  event_key: string
+  hours: number
+  points: HistoryPoint[]
+}
+
 export type BookLevel = { price: string; size: string }
 
 export type Orderbook = {

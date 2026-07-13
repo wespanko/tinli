@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 
-import type { DivergenceItem, Health, Orderbook, Pair, RiskReport } from './types'
+import type {
+  DivergenceItem,
+  Health,
+  HistoryPoint,
+  HistoryResponse,
+  Orderbook,
+  Pair,
+  RiskReport,
+} from './types'
 import DivergencePanel from './components/DivergencePanel'
 import MarketPanel from './components/MarketPanel'
 import PairCards from './components/PairCards'
@@ -25,6 +33,7 @@ export default function App() {
   const [risk, setRisk] = useState<RiskReport | null>(null)
   const [kalshiBook, setKalshiBook] = useState<Orderbook | null>(null)
   const [pmBook, setPmBook] = useState<Orderbook | null>(null)
+  const [history, setHistory] = useState<HistoryPoint[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [view, setView] = useState<View>('terminal')
 
@@ -69,6 +78,24 @@ export default function App() {
     }
   }, [pairs, activeKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // history moves at snapshot cadence, not tick cadence: refetch on selection
+  // change and every 30s, not every 3s heartbeat
+  useEffect(() => {
+    if (!activeKey) return
+    let alive = true
+    setHistory([])
+    const load = () =>
+      getJson<HistoryResponse>(`/v1/history/${encodeURIComponent(activeKey)}?hours=24`).then(
+        (h) => alive && h && h.event_key === activeKey && setHistory(h.points),
+      )
+    load()
+    const id = setInterval(load, 30_000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [activeKey])
+
   return (
     <div className="h-screen flex flex-col gap-1 p-1">
       <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-9 shrink-0">
@@ -110,6 +137,7 @@ export default function App() {
             <MarketPanel
               pair={activePair}
               item={activeItem}
+              history={history}
               kalshiBook={kalshiBook}
               pmBook={pmBook}
             />

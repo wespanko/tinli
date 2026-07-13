@@ -1,5 +1,6 @@
-import type { BookLevel, DivergenceItem, MarketQuote, Orderbook, Pair } from '../types'
+import type { BookLevel, DivergenceItem, HistoryPoint, MarketQuote, Orderbook, Pair } from '../types'
 import { cents, clock, qty } from '../format'
+import BasisChart from './BasisChart'
 import DepthChart from './DepthChart'
 import Signed from './Signed'
 
@@ -141,11 +142,13 @@ function LockEconomics({ item }: { item: DivergenceItem }) {
 export default function MarketPanel({
   pair,
   item,
+  history,
   kalshiBook,
   pmBook,
 }: {
   pair: Pair | null
   item: DivergenceItem | null
+  history: HistoryPoint[]
   kalshiBook: Orderbook | null
   pmBook: Orderbook | null
 }) {
@@ -181,6 +184,8 @@ export default function MarketPanel({
         </div>
         <VenueQuote label="POLYMARKET" book={freshP} />
       </div>
+
+      <BasisChart points={history} />
 
       <div className="flex gap-1.5 items-stretch">
         <DepthChart label="KALSHI DEPTH" book={freshK} />

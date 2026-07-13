@@ -1,16 +1,18 @@
-from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Literal
 
 import yaml
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ValidationError
 
-from tinli_divergence import DivergenceItem, compute_pair, sort_items
+from tinli_divergence import DivergenceItem
 from tinli_risk import RiskReport, build_report
-from tinli_schema import Market, Orderbook, PairMapping
+from tinli_schema import Market, Orderbook
 
 from tinli_api.datasource import get_source, load_pairs, load_positions, pair_for_market_id
+from tinli_api.history import read_history
+from tinli_api.screener import compute_all
 from tinli_api.venues.client import VenueHTTPError
 
 router = APIRouter(prefix="/v1")
@@ -66,27 +68,48 @@ def divergence() -> list[DivergenceItem]:
     means Kalshi prices YES richer than Polymarket. Edges are computed from
     executable top-of-book asks only, never mids or last trades.
     """
-    source = get_source()
+    return compute_all(get_source())
 
-    def one(pair: PairMapping) -> DivergenceItem:
-        try:
-            k_book = source.orderbook(pair, "kalshi")
-            pm_book = source.orderbook(pair, "polymarket")
-        except Exception:
-            # a resolved/delisted leg must not take down the screener; an
-            # empty book yields null edges for this pair
-            empty = {"bids": [], "asks": [], "fetched_at": datetime.now(UTC)}
-            k_book = Orderbook(market_id=f"kalshi:{pair.kalshi_ticker}", venue="kalshi", **empty)
-            pm_book = Orderbook(
-                market_id=f"polymarket:{pair.pm_condition_id}", venue="polymarket", **empty
-            )
-        return compute_pair(
-            pair, k_book, pm_book, fetched_at=max(k_book.fetched_at, pm_book.fetched_at)
+
+class HistoryPoint(BaseModel):
+    ts: datetime
+    k_mid: Decimal | None
+    p_mid: Decimal | None
+    raw_basis_cents: Decimal | None
+    fee_adjusted_edge: Decimal | None
+    edge_at_size: Decimal | None
+
+
+class HistoryResponse(BaseModel):
+    event_key: str
+    hours: int
+    points: list[HistoryPoint]
+
+
+def _mid(bid: Decimal | None, ask: Decimal | None) -> Decimal | None:
+    if bid is None or ask is None:
+        return None
+    return (bid + ask) / 2
+
+
+@router.get("/history/{event_key}")
+def history(event_key: str, hours: int = Query(default=24, ge=1, le=168)) -> HistoryResponse:
+    """Recorded snapshots for one pair (see tinli_api.history). Empty points
+    just means nothing recorded in the window — run `make snapshot`."""
+    if not any(p.event_key == event_key for p in load_pairs()):
+        raise HTTPException(status_code=404, detail=f"unknown event_key: {event_key}")
+    points = [
+        HistoryPoint(
+            ts=r["ts"],
+            k_mid=_mid(r["k_bid"], r["k_ask"]),
+            p_mid=_mid(r["p_bid"], r["p_ask"]),
+            raw_basis_cents=r["raw_basis_cents"],
+            fee_adjusted_edge=r["fee_adjusted_edge"],
+            edge_at_size=r["edge_at_size"],
         )
-
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        items = list(pool.map(one, load_pairs()))
-    return sort_items(items)
+        for r in read_history(event_key, hours)
+    ]
+    return HistoryResponse(event_key=event_key, hours=hours, points=points)
 
 
 @router.get("/risk")
