@@ -124,9 +124,9 @@ def risk() -> RiskReport:
     """
     try:
         positions = load_positions()
-    except (ValidationError, yaml.YAMLError) as exc:
+    except (ValidationError, yaml.YAMLError, ValueError) as exc:
         # positions.yaml is hand-edited; a typo is the USER'S file, not a
-        # server fault — 422 with the pydantic/yaml detail, never a 500
+        # server fault — 422 with the pydantic/yaml/shape detail, never a 500
         raise HTTPException(
             status_code=422, detail=f"positions.yaml is invalid: {exc}"
         ) from exc

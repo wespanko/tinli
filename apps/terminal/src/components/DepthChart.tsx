@@ -70,7 +70,9 @@ export default function DepthChart({ label, book }: { label: string; book: Order
   const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const price = lo + ((e.clientX - rect.left) / rect.width) * (hi - lo)
-    if (mid != null && price <= mid) {
+    // one-sided books hover whichever side exists; two-sided split at center
+    const wantBid = asks.length === 0 || (bids.length > 0 && price <= center)
+    if (wantBid) {
       // deepest bid level at or above this price (bids run best→worst downward)
       const pt = bids.filter((p) => p.price >= price).at(-1)
       setHover(pt ? { x: x(pt.price), side: 'bid', pt } : null)

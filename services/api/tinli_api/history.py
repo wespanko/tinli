@@ -59,23 +59,31 @@ def _q(v: Decimal | None) -> Decimal | None:
     return None if v is None else v.quantize(SIX_DP, rounding=ROUND_FLOOR)
 
 
+def _qs(v: Decimal | None) -> Decimal | None:
+    """Sizes/prices quantized to storage resolution. A venue CAN send a scale
+    finer than 1e-6 (Polymarket fractional shares); unquantized, pyarrow
+    raises ArrowInvalid and would kill the recorder loop. Floor: understate
+    depth rather than invent it."""
+    return None if v is None else v.quantize(SIX_DP, rounding=ROUND_FLOOR)
+
+
 def rows_from_items(items: list[DivergenceItem], ts: datetime) -> list[dict]:
     return [
         {
             "ts": ts,
             "event_key": it.event_key,
-            "k_bid": it.kalshi.bid,
-            "k_ask": it.kalshi.ask,
-            "k_bid_size": it.kalshi.bid_size,
-            "k_ask_size": it.kalshi.ask_size,
-            "p_bid": it.polymarket.bid,
-            "p_ask": it.polymarket.ask,
-            "p_bid_size": it.polymarket.bid_size,
-            "p_ask_size": it.polymarket.ask_size,
+            "k_bid": _qs(it.kalshi.bid),
+            "k_ask": _qs(it.kalshi.ask),
+            "k_bid_size": _qs(it.kalshi.bid_size),
+            "k_ask_size": _qs(it.kalshi.ask_size),
+            "p_bid": _qs(it.polymarket.bid),
+            "p_ask": _qs(it.polymarket.ask),
+            "p_bid_size": _qs(it.polymarket.bid_size),
+            "p_ask_size": _qs(it.polymarket.ask_size),
             "raw_basis_cents": _q(it.raw_basis_cents),
             "fee_adjusted_edge": _q(it.fee_adjusted_edge),
             "edge_at_size": _q(it.edge_at_size),
-            "max_lock_size": it.max_lock_size,
+            "max_lock_size": _qs(it.max_lock_size),
         }
         for it in items
     ]

@@ -31,6 +31,7 @@ export default function App() {
   const [pairs, setPairs] = useState<Pair[]>([])
   const [divergence, setDivergence] = useState<DivergenceItem[]>([])
   const [risk, setRisk] = useState<RiskReport | null>(null)
+  const [riskError, setRiskError] = useState<string | null>(null)
   const [kalshiBook, setKalshiBook] = useState<Orderbook | null>(null)
   const [pmBook, setPmBook] = useState<Orderbook | null>(null)
   const [history, setHistory] = useState<HistoryPoint[]>([])
@@ -42,9 +43,29 @@ export default function App() {
     let alive = true
     const tick = () => {
       getJson<Health>('/healthz').then((h) => alive && setHealth(h))
-      getJson<Pair[]>('/v1/pairs').then((d) => alive && d && setPairs(sortPairs(d)))
+      getJson<Pair[]>('/v1/pairs').then((d) => {
+        if (!alive || !d) return
+        const sorted = sortPairs(d)
+        setPairs(sorted)
+        // pin the initial selection ONCE — the list re-sorts every poll, and
+        // a pairs[0] fallback would flip the MARKET panel under the reader
+        setSelected((prev) => prev ?? sorted[0]?.event_key ?? null)
+      })
       getJson<DivergenceItem[]>('/v1/divergence').then((d) => alive && d && setDivergence(d))
-      getJson<RiskReport>('/v1/risk').then((d) => alive && d && setRisk(d))
+      // risk errors are surfaced, not swallowed: a 4xx names the user's
+      // positions.yaml mistake, and the stale report must be labeled as such
+      fetch('/v1/risk')
+        .then(async (r) => {
+          if (!alive) return
+          if (r.ok) {
+            setRisk((await r.json()) as RiskReport)
+            setRiskError(null)
+          } else {
+            const body = await r.json().catch(() => null)
+            setRiskError(body?.detail ?? `HTTP ${r.status}`)
+          }
+        })
+        .catch(() => {}) // network-level failure: header already shows API OFFLINE
     }
     tick()
     const id = setInterval(tick, POLL_MS)
@@ -147,7 +168,7 @@ export default function App() {
               <DivergencePanel items={divergence} selected={activeKey} onSelect={setSelected} />
             </Panel>
             <Panel title="RISK · SELF-REPORTED BOOK">
-              <RiskPanel report={risk} />
+              <RiskPanel report={risk} error={riskError} />
             </Panel>
           </div>
         </main>

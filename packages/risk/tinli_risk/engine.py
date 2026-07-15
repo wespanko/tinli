@@ -28,8 +28,8 @@ BASE_ASSUMPTIONS = [
     "Outcome probabilities are current venue mids (price ~ probability), not independent forecasts.",
     "Events are independent; positions sharing an event_key are perfectly correlated.",
     "VaR horizon is resolution of each event, not a fixed number of days.",
-    "Parametric VaR is a normal approximation and is capped at max_loss; "
-    "Monte Carlo samples the actual Bernoulli outcomes (seeded, reproducible).",
+    "Parametric VaR is a normal approximation; Monte Carlo samples the actual "
+    "Bernoulli outcomes (seeded, reproducible). Both are capped at max_loss.",
     "Kelly uses the user's est_prob against the mid, ignoring spread and fees; "
     "sizing guidance only.",
 ]

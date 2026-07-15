@@ -8,8 +8,6 @@ from hypothesis import strategies as st
 
 from tinli_risk import EventPnl, kelly_fraction, max_loss, monte_carlo_var, parametric_var
 
-CENT = Decimal("0.01")
-
 probs = st.decimals(min_value="0", max_value="1", places=2, allow_nan=False, allow_infinity=False)
 deltas = st.decimals(
     min_value="-500", max_value="500", places=2, allow_nan=False, allow_infinity=False
@@ -39,10 +37,9 @@ def test_parametric_var_bounded_by_max_loss_and_nonnegative(events):
 @given(event_books(max_size=4))
 @settings(max_examples=40, deadline=None)
 def test_monte_carlo_var_bounded_by_max_loss_and_nonnegative(events):
+    # exact bound: the cap inside monte_carlo_var absorbs float dust
     var = monte_carlo_var(events, draws=500)
-    # CENT of slack: the simulation crosses the float boundary, and float
-    # dust must not fail an exact Decimal comparison
-    assert 0 <= var <= max_loss(events) + CENT
+    assert 0 <= var <= max_loss(events)
 
 
 @given(event_books())

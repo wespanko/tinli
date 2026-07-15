@@ -1,5 +1,10 @@
 """M4 endpoint tests — /v1/risk against recorded fixtures (TINLI_DEMO=1)
-and the checked-in example book in data/positions.yaml."""
+and the TEST-OWNED example book (fixtures/positions_example.yaml).
+
+data/positions.yaml is the user's editable file: the only assertion tests
+may make about it is that it parses."""
+
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,11 +12,13 @@ from fastapi.testclient import TestClient
 from tinli_api import datasource
 from tinli_api.main import app
 
+EXAMPLE_BOOK = Path(__file__).parent / "fixtures" / "positions_example.yaml"
+
 
 @pytest.fixture(autouse=True)
 def demo_mode(monkeypatch):
     monkeypatch.setenv("TINLI_DEMO", "1")
-    monkeypatch.delenv("TINLI_POSITIONS", raising=False)
+    monkeypatch.setenv("TINLI_POSITIONS", str(EXAMPLE_BOOK))
     datasource.reset_source()
     yield
     datasource.reset_source()
@@ -86,6 +93,38 @@ def test_typoed_positions_file_is_422_not_500(client, tmp_path, monkeypatch):
     r = client.get("/v1/risk")
     assert r.status_code == 422
     assert "entry_price" in r.json()["detail"]
+
+
+def test_shipped_positions_file_parses(client, monkeypatch):
+    """The ONLY assertion allowed about the user's file: it loads."""
+    monkeypatch.delenv("TINLI_POSITIONS", raising=False)
+    assert isinstance(datasource.load_positions(), list)
+
+
+def test_bare_positions_key_is_empty_book_not_error(client, tmp_path, monkeypatch):
+    book = tmp_path / "positions.yaml"
+    book.write_text("positions:\n", encoding="utf-8")  # user deleted the examples
+    monkeypatch.setenv("TINLI_POSITIONS", str(book))
+    r = client.get("/v1/risk")
+    assert r.status_code == 200
+    assert r.json()["positions"] == []
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        '- market_id: "kalshi:X"\n',  # top-level list, not a mapping
+        "positions: 5\n",  # positions not a list
+        "positions:\n  - just-a-string\n",  # entry not a mapping
+    ],
+)
+def test_malformed_shapes_are_422_not_500(client, tmp_path, monkeypatch, content):
+    book = tmp_path / "positions.yaml"
+    book.write_text(content, encoding="utf-8")
+    monkeypatch.setenv("TINLI_POSITIONS", str(book))
+    r = client.get("/v1/risk")
+    assert r.status_code == 422
+    assert "positions.yaml is invalid" in r.json()["detail"]
 
 
 def test_missing_positions_file_is_an_empty_report(client, tmp_path, monkeypatch):

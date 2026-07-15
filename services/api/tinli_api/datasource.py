@@ -36,12 +36,26 @@ def load_pairs() -> tuple[PairMapping, ...]:
 def load_positions() -> list[Position]:
     """Self-reported user positions. Deliberately NOT cached: users edit the
     file while the terminal runs, and it is tiny — re-read every request so
-    changes show up on the next poll."""
+    changes show up on the next poll.
+
+    Structural mistakes raise ValueError (not TypeError/AttributeError) so the
+    route's 422 handler catches EVERY malformed shape of a hand-edited file:
+    a bare `positions:` key is an empty book, not an error."""
     path = Path(os.environ.get("TINLI_POSITIONS", str(POSITIONS)))
     if not path.exists():
         return []
-    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    return [Position(**p) for p in raw.get("positions", [])]
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if raw is None:
+        return []
+    if not isinstance(raw, dict):
+        raise ValueError("positions.yaml must be a mapping with a 'positions' list")
+    entries = raw.get("positions") or []
+    if not isinstance(entries, list):
+        raise ValueError("'positions' must be a list")
+    for i, p in enumerate(entries):
+        if not isinstance(p, dict):
+            raise ValueError(f"positions[{i}] must be a mapping of fields, got {type(p).__name__}")
+    return [Position(**p) for p in entries]
 
 
 def pair_for_market_id(market_id: str) -> PairMapping | None:

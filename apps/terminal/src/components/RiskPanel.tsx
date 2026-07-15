@@ -26,11 +26,26 @@ function Stat({
 
 const th = 'py-1 font-sans font-medium text-[10px] tracking-[0.12em] text-muted'
 
-export default function RiskPanel({ report }: { report: RiskReport | null }) {
-  if (!report) return <div className="p-3 text-muted text-[12px]">loading risk…</div>
+export default function RiskPanel({
+  report,
+  error,
+}: {
+  report: RiskReport | null
+  error: string | null
+}) {
+  if (!report && !error) return <div className="p-3 text-muted text-[12px]">loading risk…</div>
+  if (!report) return <div className="p-3 text-gold text-[12px]">! {error}</div>
   const r = report
   return (
     <div className="p-3 flex flex-col gap-3 text-[13px]">
+      {error && (
+        <div className="border border-gold text-gold text-[11px] rounded-sm px-2 py-1.5">
+          ! {error}
+          <div className="text-muted mt-0.5">
+            showing the last good report — numbers below are STALE
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-1.5">
         <Stat label="VAR 95 · MONTE CARLO" value={usd(r.var_95_monte_carlo)} tone="text-gold" big />
         <Stat

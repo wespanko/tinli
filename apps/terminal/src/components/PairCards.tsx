@@ -7,7 +7,7 @@ function DeltaChip({ basis }: { basis: number | null }) {
   const hot = Math.abs(basis) >= 1
   return (
     <span
-      className={`tabular-nums text-base px-1.5 py-0.5 rounded-sm border ${
+      className={`font-mono tabular-nums text-base px-1.5 py-0.5 rounded-sm border ${
         hot ? 'text-gold border-gold' : 'text-muted border-line'
       }`}
       title="Kalshi mid minus Polymarket price, in cents"
@@ -51,15 +51,15 @@ function PairCard({ pair }: { pair: Pair }) {
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="border border-line rounded-sm py-1.5">
           <div className="text-muted text-[10px] tracking-wider">KALSHI BID</div>
-          <div className="text-text text-xl tabular-nums">{cents(pair.kalshi?.best_bid)}</div>
+          <div className="font-mono text-text text-xl tabular-nums">{cents(pair.kalshi?.best_bid)}</div>
         </div>
         <div className="border border-line rounded-sm py-1.5">
           <div className="text-muted text-[10px] tracking-wider">KALSHI ASK</div>
-          <div className="text-text text-xl tabular-nums">{cents(pair.kalshi?.best_ask)}</div>
+          <div className="font-mono text-text text-xl tabular-nums">{cents(pair.kalshi?.best_ask)}</div>
         </div>
         <div className="border border-line rounded-sm py-1.5">
           <div className="text-muted text-[10px] tracking-wider">POLYMARKET</div>
-          <div className="text-text text-xl tabular-nums">{cents(pair.polymarket?.yes_price)}</div>
+          <div className="font-mono text-text text-xl tabular-nums">{cents(pair.polymarket?.yes_price)}</div>
         </div>
       </div>
       {!pair.criteria_verified && (

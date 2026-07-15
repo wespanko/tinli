@@ -17,7 +17,9 @@ echoes these so the UI can show them next to the numbers:
 4. PARAMETRIC = NORMAL APPROXIMATION of a sum of Bernoulli P&Ls. It is only
    trustworthy with many similar-sized independent events; with few events
    it can exceed the maximum possible loss, so it is CAPPED at max_loss.
-   Monte Carlo samples the actual Bernoullis and has no such defect.
+   Monte Carlo samples the actual Bernoullis, but is capped too: it crosses
+   the float boundary, and dust in the summed P&L plus ROUND_CEILING could
+   otherwise report a VaR one cent above the maximum possible loss.
 
 Everything is Decimal except inside the Monte Carlo simulation, which
 converts to float64 at the numpy boundary. Results are rounded UP to the
@@ -82,4 +84,5 @@ def monte_carlo_var(events: list[EventPnl], draws: int = 20_000, seed: int = 7) 
     yes = rng.random((draws, len(events))) < p
     pnl = yes @ if_yes + (~yes) @ if_no
     q05 = float(np.quantile(pnl, 0.05))
-    return Decimal(str(max(0.0, -q05))).quantize(CENT, rounding=ROUND_CEILING)
+    var = Decimal(str(max(0.0, -q05))).quantize(CENT, rounding=ROUND_CEILING)
+    return min(var, max_loss(events))

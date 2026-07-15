@@ -80,10 +80,17 @@ export default function WatchTable({
                 {cents(p.polymarket?.yes_price)}
               </td>
               <td className="text-right px-3">
-                <Signed
-                  value={basis == null ? null : String(basis)}
-                  text={basis == null ? '—' : `${basis > 0 ? '+' : ''}${basis.toFixed(1)}`}
-                />
+                {/* |Δ| >= 1¢ is a KEY NUMBER: gold overrides the sign color */}
+                {basis != null && Math.abs(basis) >= 1 ? (
+                  <span className="tabular-nums text-gold">
+                    {`${basis > 0 ? '+' : ''}${basis.toFixed(1)}`}
+                  </span>
+                ) : (
+                  <Signed
+                    value={basis == null ? null : String(basis)}
+                    text={basis == null ? '—' : `${basis > 0 ? '+' : ''}${basis.toFixed(1)}`}
+                  />
+                )}
               </td>
             </tr>
           )
