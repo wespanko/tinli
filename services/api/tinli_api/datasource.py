@@ -55,6 +55,10 @@ def load_positions() -> list[Position]:
     for i, p in enumerate(entries):
         if not isinstance(p, dict):
             raise ValueError(f"positions[{i}] must be a mapping of fields, got {type(p).__name__}")
+        # YAML 1.1 parses bare yes/no as booleans — a YAML quirk, absorbed at
+        # the YAML boundary, not in the shared Position model
+        if isinstance(p.get("side"), bool):
+            p["side"] = "yes" if p["side"] else "no"
     return [Position(**p) for p in entries]
 
 

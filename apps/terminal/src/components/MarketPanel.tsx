@@ -177,7 +177,7 @@ export default function MarketPanel({
         <div className="flex flex-col items-center justify-center px-2">
           <div className="text-muted text-[10px] tracking-[0.12em]">BASIS</div>
           <Signed
-            value={basis == null ? null : String(basis)}
+            value={basis}
             text={basis == null ? '—' : `${basis > 0 ? '+' : ''}${basis.toFixed(1)}¢`}
             className="font-mono text-[15px]"
           />

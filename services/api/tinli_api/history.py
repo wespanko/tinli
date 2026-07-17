@@ -102,6 +102,18 @@ def write_rows(rows: list[dict]) -> Path | None:
     return path
 
 
+def _file_may_overlap(f: Path, day, cutoff: datetime) -> bool:
+    """Files are named for their LAST row's timestamp, so every row in a file
+    is <= its name time: a file named before the cutoff cannot contain window
+    rows and is skipped without being read. Unparseable names are read rather
+    than silently dropped."""
+    try:
+        t = datetime.strptime(f.stem, "%H%M%S_%f").time()
+    except ValueError:
+        return True
+    return datetime.combine(day, t, tzinfo=UTC) >= cutoff
+
+
 def read_history(event_key: str, hours: int, now: datetime | None = None) -> list[dict]:
     """All rows for one pair within the window, ts-ascending, downsampled to
     MAX_POINTS by even stride (always keeping the newest row)."""
@@ -113,6 +125,8 @@ def read_history(event_key: str, hours: int, now: datetime | None = None) -> lis
         day_dir = history_dir() / day.isoformat()
         if day_dir.is_dir():
             for f in sorted(day_dir.glob("*.parquet")):
+                if not _file_may_overlap(f, day, cutoff):
+                    continue
                 for row in pq.read_table(f).to_pylist():
                     if row["event_key"] == event_key and cutoff <= row["ts"] <= now:
                         rows.append(row)

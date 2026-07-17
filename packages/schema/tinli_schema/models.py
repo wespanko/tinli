@@ -9,7 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 Venue = Literal["kalshi", "polymarket"]
 
@@ -79,17 +79,6 @@ class Position(BaseModel):
     side: Literal["yes", "no"]
     contracts: Decimal = Field(gt=0)
     entry_price: Decimal = Field(ge=0, le=1, description="price paid per contract for `side`")
-    @field_validator("side", mode="before")
-    @classmethod
-    def _yaml_bool_side(cls, v: object) -> object:
-        # YAML 1.1 parses bare yes/no as booleans; hand-edited positions.yaml
-        # will contain them bare, so accept both spellings
-        if v is True:
-            return "yes"
-        if v is False:
-            return "no"
-        return v
-
     est_prob: Decimal | None = Field(
         default=None,
         ge=0,

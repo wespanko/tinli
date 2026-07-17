@@ -41,7 +41,9 @@ hypothesis (Python) · @fontsource-variable/inter and
 
 `make setup` venv + editable installs + npm install · `make dev` live ·
 `make demo` fixtures with SIMULATED DATA badge · `make test` pytest + tsc ·
-`make snapshot` record one history snapshot.
+`make snapshot` record one history snapshot · `make types` regenerate
+apps/terminal/src/types.gen.ts from the pydantic models (a drift test fails
+if you change a model without regenerating).
 Windows: make is ezwinports (`winget install ezwinports.make`).
 
 ## Architecture (bottom to top)
@@ -107,8 +109,10 @@ bg `#0A1524`, panel `#0F1E33`, panel-2 `#132540`, border/line `#1E3A5C`,
 primary `#2774AE`, hover `#8BB8E8`, gold `#FFD100`, text `#E6EDF5`,
 muted `#8FA3B8`, up `#2EBD85`, down `#E5484D`.
 Gold is for CTAs and KEY numbers only (badge, executable edges, MC VaR,
-≥1¢ basis hot-flags); up/down are direction semantics (bids/asks, signed
-P&L) — text and thin marks, never large fills. JetBrains Mono for ALL
+≥1¢ basis hot-flags), and doubles as the WARNING accent (`!` flags,
+worst-case-fee markers, stale-data banners) — it is the palette's only
+amber; do not add a separate warning color. up/down are direction semantics
+(bids/asks, signed P&L) — text and thin marks, never large fills. JetBrains Mono for ALL
 numbers; Inter for labels and prose. Dense terminal layout: 1px borders,
 radius ≤ 4px, no shadows, no emojis. Verify UI work with a rendered
 screenshot before calling it done.

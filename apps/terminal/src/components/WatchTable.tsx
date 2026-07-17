@@ -87,7 +87,7 @@ export default function WatchTable({
                   </span>
                 ) : (
                   <Signed
-                    value={basis == null ? null : String(basis)}
+                    value={basis}
                     text={basis == null ? '—' : `${basis > 0 ? '+' : ''}${basis.toFixed(1)}`}
                   />
                 )}

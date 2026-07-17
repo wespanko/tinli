@@ -7,7 +7,7 @@ else
 PY := .venv/bin/python
 endif
 
-.PHONY: setup dev demo test snapshot
+.PHONY: setup dev demo test snapshot types
 
 setup:
 	python -m venv .venv
@@ -28,3 +28,7 @@ test:
 # one snapshot; for continuous recording: .venv/Scripts/python scripts/snapshot.py --loop 30
 snapshot:
 	$(PY) scripts/snapshot.py
+
+# regenerate apps/terminal/src/types.gen.ts from the pydantic models
+types:
+	$(PY) scripts/gen_types.py
