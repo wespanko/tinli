@@ -1,5 +1,8 @@
 # Curated cross-venue pair mappings — the ONLY source of Kalshi<->Polymarket
 # matching in Tinli. Hand-maintained; NLP auto-matching is out of scope.
+# Candidate discovery is assisted by scripts/curate.py, but every pair here
+# was verified (or explicitly flagged) by reading BOTH venues' resolution
+# rules. After editing, re-record demo fixtures: make fixtures.
 #
 # Fields:
 #   event_key:         stable slug we own, used across the API and UI
@@ -15,170 +18,55 @@
 #                      mapping itself); the divergence fee model reads it.
 #   notes:             resolution-criteria differences, esp. tail cases.
 #
-# Curated 2026-07-05 from live top-volume markets on both venues.
+# Refreshed 2026-07-16 (previous curation 2026-07-05; the settled World
+# Cup group-stage and Wimbledon pairs were retired — their fixtures remain
+# on disk for adapter tests).
 
 pairs:
-  - event_key: wc26-advance-usa-belgium
-    question: "United States vs. Belgium: Team to Advance"
-    kalshi_ticker: KXWCADVANCE-26JUL06USABEL-USA
-    pm_condition_id: "0x83d646ac5646bf847f2dc0ce9c18c4d8909bbb7b050b31075afb9b67d3802b33"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
-
-  - event_key: wc26-advance-portugal-spain
-    question: "Portugal vs. Spain: Team to Advance"
-    kalshi_ticker: KXWCADVANCE-26JUL06PORESP-POR
-    pm_condition_id: "0x3c995fa852613961df5b34fc1b2d14eb6850145f5d28d349d1622f4ed8cd84ca"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
-
-  - event_key: wc26-advance-argentina-egypt
-    question: "Argentina vs. Egypt: Team to Advance"
-    kalshi_ticker: KXWCADVANCE-26JUL07ARGEGY-ARG
-    pm_condition_id: "0x7f481c96a3bf0d8292a2515e3dd0e709e5bdd240189b81fc98f8003480b4eb14"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
-
-  - event_key: wc26-advance-france-morocco
-    question: "France vs. Morocco: Team to Advance"
-    kalshi_ticker: KXWCADVANCE-26JUL09FRAMAR-FRA
-    pm_condition_id: "0x9918c9f426379e48d5e6a6fbf591e75e5b4a9cd33807b097810fdbaf3aebd1b4"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
-
-  - event_key: wc26-advance-switzerland-colombia
-    question: "Switzerland vs. Colombia: Team to Advance"
-    kalshi_ticker: KXWCADVANCE-26JUL07SUICOL-SUI
-    pm_condition_id: "0x6d621f9a6690d234786025521c650f3f65738e0f877ff776c8f50275a2b3aee7"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Both: official advancement incl. ET/pens. Rules compared 2026-07-05."
-
-  - event_key: wc26-champion-norway
-    question: "Will Norway win the 2026 FIFA World Cup?"
-    kalshi_ticker: KXWCSTAGEOFELIM-26NOR-FW
-    pm_condition_id: "0x7b52405ad0e0d31bfe970940b67d77f24ecedeab8a2361c11148c02a006e325c"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Kalshi 'wins the Final' == PM 'wins the WC'. Tail: PM resolves Other if WC canceled/unfinished by Oct 13; Kalshi cancellation handling unstated."
-
-  - event_key: wc26-champion-usa
-    question: "Will USA win the 2026 FIFA World Cup?"
-    kalshi_ticker: KXWCSTAGEOFELIM-26USA-FW
-    pm_condition_id: "0xcdb1f0400949238a63d3e88243d2ada08cd9c2a71985ced9f0cfd5e66354cf90"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same as wc26-champion-norway."
-
-  - event_key: wc26-champion-france
-    question: "Will France win the 2026 FIFA World Cup?"
-    kalshi_ticker: KXWCSTAGEOFELIM-26FRA-FW
-    pm_condition_id: "0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same as wc26-champion-norway."
-
-  - event_key: wc26-champion-england
-    question: "Will England win the 2026 FIFA World Cup?"
-    kalshi_ticker: KXWCSTAGEOFELIM-26ENG-FW
-    pm_condition_id: "0x375409bc5eeeff961e82b479caeccc20f33d15738e5bce1186d628aa3d9dfb1f"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same as wc26-champion-norway."
-
-  - event_key: wc26-champion-argentina
-    question: "Will Argentina win the 2026 FIFA World Cup?"
-    kalshi_ticker: KXWCSTAGEOFELIM-26ARG-FW
+  - event_key: wc26-winner-argentina
+    question: "Will Argentina win the 2026 World Cup?"
+    kalshi_ticker: KXMENWORLDCUP-26-AR
     pm_condition_id: "0x0c4cd2055d6ea89354ffddc55d6dbcef9355748112ea952fc925f3db6a5c457f"
     pm_yes_token: 0
     criteria_verified: true
     pm_fee_category: sports
-    notes: "Same as wc26-champion-norway."
+    notes: "Both resolve to WC winner. PM early-resolves No on elimination (same settlement). Cancellation tail differs: PM -> 'Other' if not completed by Oct 13; Kalshi primary rules silent. Rules compared 2026-07-16. (Replaces stage-of-elim proxy KXWCSTAGEOFELIM-26ARG-FW.)"
 
-  - event_key: wim26-mens-djokovic
-    question: "Will Novak Djokovic be the 2026 Men’s Wimbledon winner?"
-    kalshi_ticker: KXATP-26WIM-DJO
-    pm_condition_id: "0x8ba7dc2b5682330a6064966b011f2a6dc6a95b4c6b8589157064f6331ab3e1cd"
+  - event_key: wc26-winner-spain
+    question: "Will Spain win the 2026 World Cup?"
+    kalshi_ticker: KXMENWORLDCUP-26-ES
+    pm_condition_id: "0x7976b8dbacf9077eb1453a62bcefd6ab2df199acd28aad276ff0d920d6992892"
     pm_yes_token: 0
     criteria_verified: true
     pm_fee_category: sports
-    notes: "Identical winner semantics. Tail: PM resolves Other if postponed past Aug 31."
+    notes: "Same structure and tails as wc26-winner-argentina. Rules compared 2026-07-16."
 
-  - event_key: wim26-mens-sinner
-    question: "Will Jannik Sinner be the 2026 Men’s Wimbledon winner?"
-    kalshi_ticker: KXATP-26WIM-SIN
-    pm_condition_id: "0x16b3e96fc29f37ff8a5309e82e1ebd11b6658b171dd788104d9a88c12cceebb6"
+  - event_key: wc26-final-arg-wins-3-2
+    question: "World Cup final exact score: Argentina beats Spain 3-2?"
+    kalshi_ticker: KXWCSCORE-26JUL19ESPARG-ESP2ARG3
+    pm_condition_id: "0x53da62774d757d6a651c69a1aca70f7765ed6b840bd1f4b209692f8d6c0c2d4e"
     pm_yes_token: 0
     criteria_verified: true
     pm_fee_category: sports
-    notes: "Same as wim26-mens-djokovic."
+    notes: "NOTATION FLIP: PM lists 'Spain 2 - 3 Argentina' (home side first) == Kalshi 'Argentina wins 3-2'. Both are 90min+stoppage only, ET/pens excluded. Postponement: PM stays open until played. Rules compared 2026-07-16."
 
-  - event_key: wim26-mens-fritz
-    question: "Will Taylor Fritz be the 2026 Men’s Wimbledon winner?"
-    kalshi_ticker: KXATP-26WIM-FRI
-    pm_condition_id: "0xec3dc5cf04a4c0e9b0c8ab9991387bfdfc78d29dbbf76cdbccd31f90622cf523"
+  - event_key: wc26-third-place-france
+    question: "France vs England (3rd place): France to win"
+    kalshi_ticker: KXWCADVANCE-26JUL18FRAENG-FRA
+    pm_condition_id: "0xaeec5397b4ee2ce20555c0099f0dcf4de4648a2f080c2d10b65ceaff9c26d7a8"
     pm_yes_token: 0
-    criteria_verified: true
+    criteria_verified: false
     pm_fee_category: sports
-    notes: "Same as wim26-mens-djokovic."
+    notes: "PM explicitly includes ET, penalty shoot-out, forfeit and official rulings; Kalshi primary rules only say 'wins the game' with tail handling unstated. Likely equivalent but UNCONFIRMED — check Kalshi full contract terms before trusting any edge. 3rd-place games often go to pens. (One pair per PM conditionId: the England direction is priced as this pair's other lock leg — do NOT add a second pair on the same PM market, ids would collide.)"
 
-  - event_key: wim26-mens-auger-aliassime
-    question: "Will Félix Auger-Aliassime be the 2026 Men’s Wimbledon winner?"
-    kalshi_ticker: KXATP-26WIM-AUG
-    pm_condition_id: "0x4c6fb4e6b453cf648d0a985e3ce5249c60c2eaeb9e133ddf3c3413fce9acadf5"
+  - event_key: wc26-golden-boot-messi
+    question: "Will Messi be the 2026 World Cup top goalscorer?"
+    kalshi_ticker: KXWCGOALLEADER-26-LMES
+    pm_condition_id: "0xd2a8caba5559bc21e14f6b2aa504cb14a1782751658b71409e25b82e432c0a97"
     pm_yes_token: 0
-    criteria_verified: true
+    criteria_verified: false
     pm_fee_category: sports
-    notes: "Same as wim26-mens-djokovic."
-
-  - event_key: wim26-womens-osaka
-    question: "Will Naomi Osaka be the 2026 Women’s Wimbledon Winner?"
-    kalshi_ticker: KXWTA-26WIM-OSA
-    pm_condition_id: "0x6e751a0341bc89c1467fd909ca851d5b0e10baf7ad8f49abd7ffb7a765dbe5cd"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same as wim26-mens-djokovic (women's draw)."
-
-  - event_key: wim26-r16-deminaur-cobolli
-    question: "Wimbledon ATP: Alex de Minaur vs Flavio Cobolli"
-    kalshi_ticker: KXATPMATCH-26JUL06DECOB-DE
-    pm_condition_id: "0xcf8482eb154c9e79b6b7ec3f698164448432494bc532037069bb1f5f8f3d140f"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Tail: match never starts -> PM 50-50, Kalshi requires 'a ball played' (handling unstated). Retirement mid-match: both give win to advancer."
-
-  - event_key: wim26-r16-fritz-bublik
-    question: "Wimbledon ATP: Taylor Fritz vs Alexander Bublik"
-    kalshi_ticker: KXATPMATCH-26JUL06FRIBUB-FRI
-    pm_condition_id: "0x84ceac327b0b2a76ced4315420c9f1ad695512b456c6ee565f134fc82384ffc3"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same tail note as wim26-r16-deminaur-cobolli."
-
-  - event_key: wim26-r16-dimitrov-fery
-    question: "Wimbledon ATP: Grigor Dimitrov vs Arthur Fery"
-    kalshi_ticker: KXATPMATCH-26JUL06DIMFER-DIM
-    pm_condition_id: "0xaa9814ea10240748005552c1a0cb9327defe6ecef2af432607a697cd87e75031"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same tail note as wim26-r16-deminaur-cobolli."
+    notes: "TIE-BREAK MISMATCH RISK: PM ties resolve by FIFA official leader, then fewer penalty goals, then alphabetical; Kalshi tie handling unstated in primary rules. A tie at the top can settle opposite ways — do not treat divergence as edge."
 
   - event_key: fed-jul26-cut-25bps
     question: "Will the Fed decrease interest rates by 25 bps after the July 2026 meeting?"

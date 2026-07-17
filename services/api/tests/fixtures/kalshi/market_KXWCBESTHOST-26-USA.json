@@ -1,7 +1,7 @@
 {
  "market": {
   "can_close_early": true,
-  "close_time": "2026-08-02T22:00:00Z",
+  "close_time": "2026-07-07T02:03:41Z",
   "created_time": "2026-05-13T18:46:23.377802Z",
   "custom_strike": {
    "soccer_team": "d7a243f5-e50d-47ed-87b0-b027c71fca22"
@@ -11,21 +11,20 @@
   "expected_expiration_time": "2026-07-19T22:00:00Z",
   "expiration_time": "2026-08-02T22:00:00Z",
   "expiration_value": "",
-  "fractional_trading_enabled": true,
-  "last_price_dollars": "0.6800",
+  "last_price_dollars": "0.3400",
   "latest_expiration_time": "2026-08-02T22:00:00Z",
   "liquidity_dollars": "0.0000",
   "market_type": "binary",
-  "no_ask_dollars": "0.3300",
-  "no_bid_dollars": "0.3200",
+  "no_ask_dollars": "1.0000",
+  "no_bid_dollars": "0.0000",
   "no_sub_title": "USA",
   "notional_value_dollars": "1.0000",
   "occurrence_datetime": "2026-07-19T22:00:00Z",
-  "open_interest_fp": "154363.34",
+  "open_interest_fp": "160235.62",
   "open_time": "2026-05-13T21:00:00Z",
-  "previous_price_dollars": "0.4300",
-  "previous_yes_ask_dollars": "0.4500",
-  "previous_yes_bid_dollars": "0.4300",
+  "previous_price_dollars": "0.3400",
+  "previous_yes_ask_dollars": "1.0000",
+  "previous_yes_bid_dollars": "0.0000",
   "price_level_structure": "linear_cent",
   "price_ranges": [
    {
@@ -34,23 +33,24 @@
     "step": "0.0100"
    }
   ],
-  "response_price_units": "usd_cent",
-  "result": "",
+  "result": "scalar",
   "rules_primary": "If USA is the furthest advancing host nation at the 2026 Men's FIFA World Cup, then the market resolves to Yes.",
   "rules_secondary": "Host Nations: Canada, Mexico, and the United States\n\nThis market resolves based on the host nation that advances to the furthest stage in the 2026 Men's FIFA World Cup. Applicable stages:\nGroup Stage\nRound of 32\nRound of 16\nQuarterfinals\nSemifinals\nLose the Final\nWin the Final\n\nIf multiple host nations tie for the furthest stage advanced to, payouts will be as follows:\nYes payout: $1/N, rounded down to the nearest cent (N = number of tied participants) \nNo payout: $1 minus the Yes payout\n\nFor the purposes of this Contract, if a host nation withdraws, forfeits, or is disqualified during the 2026 Men's FIFA World Cup, their furthest stage will be considered based on the last stage they successfully completed. For example, if a team withdraws after winning their Round of 32 match, their furthest stage will be considered the Round of 16. Note: If a team loses in the Semifinals, their furthest stage will be considered the Semifinals, regardless of whether they win the third-place match.\n\nThis market and these products have not been endorsed by FIFA. Any references to \"FIFA\", the \"FIFA World Cup,\" or any other associated marks are descriptive only, and do not indicate an endorsement of this product or any affiliation between FIFA and Kalshi.",
   "settlement_timer_seconds": 300,
-  "status": "active",
+  "settlement_ts": "2026-07-07T02:09:16.300181Z",
+  "settlement_value_dollars": "0.3300",
+  "status": "finalized",
   "strike_type": "structured",
   "subtitle": "USA",
   "ticker": "KXWCBESTHOST-26-USA",
   "title": "Will USA be the best performing host nation in the 2026 Men's FIFA World Cup?",
-  "updated_time": "2026-05-30T02:24:48.364249Z",
-  "volume_24h_fp": "22700.03",
-  "volume_fp": "257551.66",
-  "yes_ask_dollars": "0.6800",
-  "yes_ask_size_fp": "16569.77",
-  "yes_bid_dollars": "0.6700",
-  "yes_bid_size_fp": "596.07",
+  "updated_time": "2026-07-07T02:09:17.62021Z",
+  "volume_24h_fp": "0.00",
+  "volume_fp": "291949.61",
+  "yes_ask_dollars": "1.0000",
+  "yes_ask_size_fp": "0.00",
+  "yes_bid_dollars": "0.0000",
+  "yes_bid_size_fp": "0.00",
   "yes_sub_title": "USA"
  }
 }

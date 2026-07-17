@@ -10,7 +10,6 @@
   "expected_expiration_time": "2026-07-29T18:05:00Z",
   "expiration_time": "2026-10-28T18:01:00Z",
   "expiration_value": "",
-  "fractional_trading_enabled": true,
   "last_price_dollars": "0.0100",
   "latest_expiration_time": "2026-10-28T18:01:00Z",
   "liquidity_dollars": "0.0000",
@@ -19,7 +18,7 @@
   "no_bid_dollars": "0.9900",
   "no_sub_title": "Cut 25bps",
   "notional_value_dollars": "1.0000",
-  "open_interest_fp": "1836903.39",
+  "open_interest_fp": "3461520.14",
   "open_time": "2025-09-29T14:00:00Z",
   "previous_price_dollars": "0.0100",
   "previous_yes_ask_dollars": "0.0100",
@@ -32,7 +31,6 @@
     "step": "0.0100"
    }
   ],
-  "response_price_units": "usd_cent",
   "result": "",
   "rules_primary": "If the Federal Reserve does a Cut of 25bps on July 29, 2026, then the market resolves to Yes.",
   "rules_secondary": "This market is mutually exclusive. Therefore, if the Federal Reserve hikes by 50bps, the 50bps market will resolve to Yes and the 25bps market will resolve to No. Only one bucket, at maximum, can resolve to Yes. Note 4/28/25: For the markets beginning after the May meeting, if a scheduled FOMC meeting is canceled and does not occur on its scheduled date, then the strike for \"Fed maintains rate\" will resolve to Yes and all others will resolve to No.",
@@ -43,10 +41,10 @@
   "ticker": "KXFEDDECISION-26JUL-C25",
   "title": "Will the Federal Reserve Cut rates by 25bps at their July 2026 meeting?",
   "updated_time": "2026-04-09T14:07:15.799138Z",
-  "volume_24h_fp": "143409.96",
-  "volume_fp": "2321112.81",
+  "volume_24h_fp": "211958.13",
+  "volume_fp": "3985037.18",
   "yes_ask_dollars": "0.0100",
-  "yes_ask_size_fp": "90064.08",
+  "yes_ask_size_fp": "1304037.47",
   "yes_bid_dollars": "0.0000",
   "yes_bid_size_fp": "0.00",
   "yes_sub_title": "Cut 25bps"

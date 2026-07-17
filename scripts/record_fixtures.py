@@ -43,7 +43,13 @@ def main() -> int:
 
         gamma = polymarket.get_gamma_market(cid)
         token = polymarket.yes_token_id(gamma, p["pm_yes_token"])
-        pm_book = get_json(f"{polymarket.CLOB}/book", params={"token_id": token})
+        try:
+            pm_book = get_json(f"{polymarket.CLOB}/book", params={"token_id": token})
+        except Exception as exc:
+            # resolved/delisted markets lose their CLOB book (404) — record
+            # the truth: an empty book, which downstream renders as no quotes
+            print(f"  WARNING: no CLOB book for {key} ({exc}); recording empty book")
+            pm_book = {"bids": [], "asks": []}
         save(FIXTURES / "polymarket" / f"gamma_{cid}.json", gamma)
         save(FIXTURES / "polymarket" / f"book_{cid}.json", pm_book)
 

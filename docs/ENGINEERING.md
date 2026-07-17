@@ -43,7 +43,10 @@ hypothesis (Python) · @fontsource-variable/inter and
 `make demo` fixtures with SIMULATED DATA badge · `make test` pytest + tsc ·
 `make snapshot` record one history snapshot · `make types` regenerate
 apps/terminal/src/types.gen.ts from the pydantic models (a drift test fails
-if you change a model without regenerating).
+if you change a model without regenerating) · `make curate` print candidate
+pairs for human curation of the map · `make fixtures` re-record demo
+fixtures after the map changes (one pair per PM conditionId — ids collide
+otherwise).
 Windows: make is ezwinports (`winget install ezwinports.make`).
 
 ## Architecture (bottom to top)

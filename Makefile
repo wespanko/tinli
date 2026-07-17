@@ -7,7 +7,7 @@ else
 PY := .venv/bin/python
 endif
 
-.PHONY: setup dev demo test snapshot types
+.PHONY: setup dev demo test snapshot types fixtures curate
 
 setup:
 	python -m venv .venv
@@ -32,3 +32,11 @@ snapshot:
 # regenerate apps/terminal/src/types.gen.ts from the pydantic models
 types:
 	$(PY) scripts/gen_types.py
+
+# re-record demo fixtures for every pair in data/event_map.yaml
+fixtures:
+	$(PY) scripts/record_fixtures.py
+
+# print candidate Kalshi<->Polymarket pairs for HUMAN curation of the map
+curate:
+	$(PY) scripts/curate.py

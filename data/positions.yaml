@@ -18,21 +18,21 @@
 
 positions:
   # A cross-venue lock: YES on Kalshi + NO on Polymarket, same event.
-  - market_id: "kalshi:KXWCADVANCE-26JUL06USABEL-USA"
+  - market_id: "kalshi:KXMENWORLDCUP-26-ES"
     side: yes
     contracts: "100"
-    entry_price: "0.61"
-    notes: "example: YES leg of USA/Belgium lock"
-  - market_id: "polymarket:0x83d646ac5646bf847f2dc0ce9c18c4d8909bbb7b050b31075afb9b67d3802b33"
+    entry_price: "0.52"
+    notes: "example: YES leg of Spain WC-winner lock"
+  - market_id: "polymarket:0x7976b8dbacf9077eb1453a62bcefd6ab2df199acd28aad276ff0d920d6992892"
     side: no
     contracts: "100"
-    entry_price: "0.37"
-    notes: "example: NO leg of USA/Belgium lock"
+    entry_price: "0.45"
+    notes: "example: NO leg of Spain WC-winner lock"
 
   # A directional bet with a user probability estimate (enables Kelly).
   - market_id: "kalshi:KXFEDDECISION-26JUL-H0"
     side: yes
     contracts: "250"
     entry_price: "0.55"
-    est_prob: "0.95"
+    est_prob: "0.97"
     notes: "example: directional Fed hold, user more confident than the market"

@@ -13,8 +13,10 @@ def load_pairs() -> list[PairMapping]:
 
 
 def test_event_map_parses_and_validates():
+    # critical mass, not a fixed census — the map shrinks when markets
+    # resolve and grows on re-curation (scripts/curate.py)
     pairs = load_pairs()
-    assert len(pairs) >= 20
+    assert len(pairs) >= 8
 
 
 def test_event_keys_unique():

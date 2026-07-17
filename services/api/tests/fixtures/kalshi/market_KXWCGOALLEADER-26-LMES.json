@@ -1,0 +1,52 @@
+{
+ "market": {
+  "can_close_early": true,
+  "close_time": "2026-08-07T14:00:00Z",
+  "created_time": "2025-12-16T00:22:59.333363Z",
+  "custom_strike": {
+   "Participant": "Lionel Messi"
+  },
+  "early_close_condition": "This market will close and expire early if the season ends earlier than expected.",
+  "event_ticker": "KXWCGOALLEADER-26",
+  "expected_expiration_time": "2026-07-31T14:00:00Z",
+  "expiration_time": "2026-08-07T14:00:00Z",
+  "expiration_value": "",
+  "last_price_dollars": "0.5900",
+  "latest_expiration_time": "2026-08-07T14:00:00Z",
+  "liquidity_dollars": "0.0000",
+  "market_type": "binary",
+  "no_ask_dollars": "0.4200",
+  "no_bid_dollars": "0.4100",
+  "no_sub_title": "Lionel Messi",
+  "notional_value_dollars": "1.0000",
+  "open_interest_fp": "2003328.05",
+  "open_time": "2025-12-16T15:00:00Z",
+  "previous_price_dollars": "0.4800",
+  "previous_yes_ask_dollars": "0.4800",
+  "previous_yes_bid_dollars": "0.4700",
+  "price_level_structure": "linear_cent",
+  "price_ranges": [
+   {
+    "end": "1.0000",
+    "start": "0.0000",
+    "step": "0.0100"
+   }
+  ],
+  "result": "",
+  "rules_primary": "If Lionel Messi leads FIFA World Cup in Goals for the 2026 World Cup Full Tournament, then the market resolves to Yes.",
+  "rules_secondary": "If two or more players finish the tournament tied for the most goals scored, settlement will follow FIFA\u2019s official Golden Boot tiebreaker rules: first, most assists; if still tied, fewest minutes played. This market and these products have not been endorsed by FIFA. Any references to \"FIFA\", the \"FIFA World Cup,\" or any other associated marks are descriptive only, and do not indicate an endorsement of this product or any affiliation between FIFA and Kalshi.",
+  "settlement_timer_seconds": 1800,
+  "status": "active",
+  "strike_type": "custom",
+  "ticker": "KXWCGOALLEADER-26-LMES",
+  "title": "Will Lionel Messi lead FIFA World Cup in Goals for the 2026 World Cup Full Tournament?",
+  "updated_time": "2026-07-06T23:18:18.270598Z",
+  "volume_24h_fp": "936061.88",
+  "volume_fp": "3707716.52",
+  "yes_ask_dollars": "0.5900",
+  "yes_ask_size_fp": "47092.07",
+  "yes_bid_dollars": "0.5800",
+  "yes_bid_size_fp": "15918.33",
+  "yes_sub_title": "Lionel Messi"
+ }
+}
