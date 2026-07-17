@@ -45,19 +45,27 @@ def main() -> None:
     ticks = 0
     try:
         while True:
-            buffer.extend(tick(source))
-            ticks += 1
-            if ticks % FLUSH_TICKS == 0:
-                path = write_rows(buffer)
-                print(f"flushed {len(buffer)} rows -> {path}", flush=True)
-                buffer = []
+            # a venue outage or disk hiccup must never kill the recorder —
+            # log the miss, keep the loop alive, try again next interval
+            try:
+                buffer.extend(tick(source))
+                ticks += 1
+                if ticks % FLUSH_TICKS == 0:
+                    path = write_rows(buffer)
+                    print(f"flushed {len(buffer)} rows -> {path}", flush=True)
+                    buffer = []
+            except Exception as exc:
+                print(f"tick/flush failed ({exc!r}) — retrying next interval", flush=True)
             time.sleep(args.loop)
     except KeyboardInterrupt:
         pass
     finally:
         if buffer:
-            path = write_rows(buffer)
-            print(f"final flush {len(buffer)} rows -> {path}", flush=True)
+            try:
+                path = write_rows(buffer)
+                print(f"final flush {len(buffer)} rows -> {path}", flush=True)
+            except Exception as exc:
+                print(f"final flush failed ({exc!r}) — {len(buffer)} rows lost", flush=True)
 
 
 if __name__ == "__main__":

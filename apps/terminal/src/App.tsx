@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type {
   DivergenceItem,
@@ -9,7 +9,10 @@ import type {
   Pair,
   RiskReport,
 } from './types'
+import { cents } from './format'
 import DivergencePanel from './components/DivergencePanel'
+import EdgeAlert, { liveEdges } from './components/EdgeAlert'
+import IntroPanel from './components/IntroPanel'
 import MarketPanel from './components/MarketPanel'
 import PairCards from './components/PairCards'
 import Panel from './components/Panel'
@@ -19,6 +22,8 @@ import WatchTable, { sortPairs } from './components/WatchTable'
 type View = 'terminal' | 'cards'
 
 const POLL_MS = 3000
+const INTRO_KEY = 'tinli-intro-seen'
+const ALERTS_KEY = 'tinli-alerts-on'
 
 function getJson<T>(url: string): Promise<T | null> {
   return fetch(url)
@@ -37,6 +42,8 @@ export default function App() {
   const [history, setHistory] = useState<HistoryPoint[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [view, setView] = useState<View>('terminal')
+  const [showIntro, setShowIntro] = useState(() => localStorage.getItem(INTRO_KEY) !== '1')
+  const [alertsOn, setAlertsOn] = useState(() => localStorage.getItem(ALERTS_KEY) === '1')
 
   // one 3s heartbeat for everything except the per-pair books
   useEffect(() => {
@@ -117,8 +124,46 @@ export default function App() {
     }
   }, [activeKey])
 
+  // browser notification when a verified pair's executable edge turns
+  // positive — the signal this product exists to catch. Alert on ENTER into
+  // the positive set only; the banner persists while the edge lives.
+  const edges = liveEdges(divergence)
+  const prevEdgeKeys = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    const keys = new Set(edges.map((e) => e.event_key))
+    if (alertsOn && 'Notification' in window && Notification.permission === 'granted') {
+      for (const e of edges) {
+        if (!prevEdgeKeys.current.has(e.event_key)) {
+          new Notification('Tinli — executable lock edge', {
+            body: `${e.event_key}: +${cents(e.edge_at_size, 2)}¢/contract at size ${e.max_lock_size}`,
+          })
+        }
+      }
+    }
+    prevEdgeKeys.current = keys
+  }, [divergence, alertsOn]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleAlerts = () => {
+    const next = !alertsOn
+    if (next && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+    localStorage.setItem(ALERTS_KEY, next ? '1' : '0')
+    setAlertsOn(next)
+  }
+
+  const settled = pairs.filter(
+    (p) => p.kalshi?.status !== 'open' && p.polymarket?.status !== 'open',
+  ).length
+
+  const closeIntro = () => {
+    localStorage.setItem(INTRO_KEY, '1')
+    setShowIntro(false)
+  }
+
   return (
     <div className="h-screen flex flex-col gap-1 p-1">
+      {showIntro && <IntroPanel onClose={closeIntro} />}
       <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-9 shrink-0">
         <span className="font-mono text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
         <span className="text-muted text-[11px] tracking-[0.1em]">KALSHI × POLYMARKET</span>
@@ -135,6 +180,15 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <button
+          onClick={toggleAlerts}
+          title="browser notification when a verified pair's executable edge turns positive"
+          className={`ml-3 border rounded-sm px-2 py-0.5 text-[10px] tracking-[0.12em] ${
+            alertsOn ? 'border-gold text-gold' : 'border-line text-muted hover:text-hover'
+          }`}
+        >
+          ALERTS {alertsOn ? 'ON' : 'OFF'}
+        </button>
         <span className="ml-auto text-[11px]">
           {health === null ? (
             <span className="text-down">API OFFLINE</span>
@@ -147,11 +201,15 @@ export default function App() {
           )}
         </span>
       </header>
+      <EdgeAlert edges={edges} onSelect={setSelected} />
       {view === 'cards' ? (
         <PairCards pairs={pairs} />
       ) : (
         <main className="flex-1 grid grid-cols-[minmax(320px,26rem)_minmax(360px,1fr)_minmax(400px,34rem)] gap-1 min-h-0">
-          <Panel title={`WATCHLIST · ${pairs.length} PAIRS`}>
+          <Panel
+            title={`WATCHLIST · ${pairs.length} PAIRS`}
+            extra={settled > 0 ? `${settled} settled — re-curate (make curate)` : undefined}
+          >
             <WatchTable pairs={pairs} selected={activeKey} onSelect={setSelected} />
           </Panel>
           <Panel title="MARKET">
@@ -173,6 +231,16 @@ export default function App() {
           </div>
         </main>
       )}
+      <footer className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-7 shrink-0 text-[10px] text-muted">
+        <span>TINLI v0 · cross-venue analytics for prediction markets</span>
+        <span>read-only public market data · quotes may be delayed · not investment advice</span>
+        <button
+          onClick={() => setShowIntro(true)}
+          className="ml-auto tracking-[0.15em] hover:text-hover"
+        >
+          HELP
+        </button>
+      </footer>
     </div>
   )
 }
