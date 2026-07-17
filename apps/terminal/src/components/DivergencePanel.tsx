@@ -58,11 +58,12 @@ export default function DivergencePanel({
                   : 'border-l-transparent hover:bg-line/20'
               }`}
             >
-              {/* slugs are names, not numbers — Inter reads better than mono here */}
+              {/* display names, not slugs — the slug lives in the tooltip */}
               <td
-                className={`font-sans pl-3 pr-1 py-1.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-36 ${
+                className={`font-sans pl-3 pr-1 py-1.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-44 ${
                   active ? 'text-hover' : it.criteria_verified ? 'text-text' : 'text-muted'
                 }`}
+                title={it.event_key}
               >
                 {!it.criteria_verified && (
                   <span
@@ -72,7 +73,7 @@ export default function DivergencePanel({
                     !
                   </span>
                 )}
-                {it.event_key}
+                {it.question}
               </td>
               <td
                 className="px-1 text-[12px] text-muted whitespace-nowrap"

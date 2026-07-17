@@ -57,18 +57,19 @@ export default function WatchTable({
                   : 'border-l-transparent hover:bg-line/20'
               }`}
             >
-              {/* slugs are names, not numbers — Inter reads better than mono here */}
+              {/* display names, not slugs — the slug lives in the tooltip */}
               <td
-                className={`font-sans pl-3 pr-1 py-1.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-44 ${
+                className={`font-sans pl-3 pr-1 py-1.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-52 ${
                   active ? 'text-hover' : p.criteria_verified ? 'text-text' : 'text-muted'
                 }`}
+                title={p.event_key}
               >
                 {!p.criteria_verified && (
                   <span className="text-gold mr-1" title="resolution criteria not verified">
                     !
                   </span>
                 )}
-                {p.event_key}
+                {p.question}
               </td>
               <td className="text-right px-1 tabular-nums text-text">
                 {cents(p.kalshi?.best_bid)}

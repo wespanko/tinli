@@ -28,10 +28,10 @@ export default function EdgeAlert({
         <button
           key={e.event_key}
           onClick={() => onSelect(e.event_key)}
-          className="font-mono text-[12px] text-gold hover:underline"
-          title={`${e.question} — click to load`}
+          className="text-[12px] text-gold hover:underline"
+          title={`${e.event_key} — click to load`}
         >
-          {e.event_key} +{cents(e.edge_at_size, 2)}¢ × {qty(e.max_lock_size)}
+          {e.question} <span className="font-mono">+{cents(e.edge_at_size, 2)}¢ × {qty(e.max_lock_size)}</span>
         </button>
       ))}
       <span className="ml-auto text-muted text-[10px]">

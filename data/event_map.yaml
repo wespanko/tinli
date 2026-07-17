@@ -1,4 +1,4 @@
-# Curated cross-venue pair mappings — the ONLY source of Kalshi<->Polymarket
+﻿# Curated cross-venue pair mappings — the ONLY source of Kalshi<->Polymarket
 # matching in Tinli. Hand-maintained; NLP auto-matching is out of scope.
 # Candidate discovery is assisted by scripts/curate.py, but every pair here
 # was verified (or explicitly flagged) by reading BOTH venues' resolution
@@ -6,7 +6,7 @@
 #
 # Fields:
 #   event_key:         stable slug we own, used across the API and UI
-#   question:          human-readable description (for the watchlist)
+#   question:          short DISPLAY NAME shown across the UI, e.g. "World Cup Winner (Spain)" — slugs are internal only
 #   kalshi_ticker:     Kalshi market ticker (Trade API v2)
 #   pm_condition_id:   Polymarket conditionId (0x...)
 #   pm_yes_token:      index into clobTokenIds that corresponds to Kalshi YES
@@ -24,7 +24,7 @@
 
 pairs:
   - event_key: wc26-winner-argentina
-    question: "Will Argentina win the 2026 World Cup?"
+    question: "World Cup Winner (Argentina)"
     kalshi_ticker: KXMENWORLDCUP-26-AR
     pm_condition_id: "0x0c4cd2055d6ea89354ffddc55d6dbcef9355748112ea952fc925f3db6a5c457f"
     pm_yes_token: 0
@@ -33,7 +33,7 @@ pairs:
     notes: "Both resolve to WC winner. PM early-resolves No on elimination (same settlement). Cancellation tail differs: PM -> 'Other' if not completed by Oct 13; Kalshi primary rules silent. Rules compared 2026-07-16. (Replaces stage-of-elim proxy KXWCSTAGEOFELIM-26ARG-FW.)"
 
   - event_key: wc26-winner-spain
-    question: "Will Spain win the 2026 World Cup?"
+    question: "World Cup Winner (Spain)"
     kalshi_ticker: KXMENWORLDCUP-26-ES
     pm_condition_id: "0x7976b8dbacf9077eb1453a62bcefd6ab2df199acd28aad276ff0d920d6992892"
     pm_yes_token: 0
@@ -42,7 +42,7 @@ pairs:
     notes: "Same structure and tails as wc26-winner-argentina. Rules compared 2026-07-16."
 
   - event_key: wc26-final-arg-wins-3-2
-    question: "World Cup final exact score: Argentina beats Spain 3-2?"
+    question: "WC Final Exact Score (Argentina 3-2)"
     kalshi_ticker: KXWCSCORE-26JUL19ESPARG-ESP2ARG3
     pm_condition_id: "0x53da62774d757d6a651c69a1aca70f7765ed6b840bd1f4b209692f8d6c0c2d4e"
     pm_yes_token: 0
@@ -51,7 +51,7 @@ pairs:
     notes: "NOTATION FLIP: PM lists 'Spain 2 - 3 Argentina' (home side first) == Kalshi 'Argentina wins 3-2'. Both are 90min+stoppage only, ET/pens excluded. Postponement: PM stays open until played. Rules compared 2026-07-16."
 
   - event_key: wc26-third-place-france
-    question: "France vs England (3rd place): France to win"
+    question: "WC Third Place (France)"
     kalshi_ticker: KXWCADVANCE-26JUL18FRAENG-FRA
     pm_condition_id: "0xaeec5397b4ee2ce20555c0099f0dcf4de4648a2f080c2d10b65ceaff9c26d7a8"
     pm_yes_token: 0
@@ -60,7 +60,7 @@ pairs:
     notes: "PM explicitly includes ET, penalty shoot-out, forfeit and official rulings; Kalshi primary rules only say 'wins the game' with tail handling unstated. Likely equivalent but UNCONFIRMED — check Kalshi full contract terms before trusting any edge. 3rd-place games often go to pens. (One pair per PM conditionId: the England direction is priced as this pair's other lock leg — do NOT add a second pair on the same PM market, ids would collide.)"
 
   - event_key: wc26-golden-boot-messi
-    question: "Will Messi be the 2026 World Cup top goalscorer?"
+    question: "WC Golden Boot (Messi)"
     kalshi_ticker: KXWCGOALLEADER-26-LMES
     pm_condition_id: "0xd2a8caba5559bc21e14f6b2aa504cb14a1782751658b71409e25b82e432c0a97"
     pm_yes_token: 0
@@ -69,7 +69,7 @@ pairs:
     notes: "TIE-BREAK MISMATCH RISK: PM ties resolve by FIFA official leader, then fewer penalty goals, then alphabetical; Kalshi tie handling unstated in primary rules. A tie at the top can settle opposite ways — do not treat divergence as edge."
 
   - event_key: fed-jul26-cut-25bps
-    question: "Will the Fed decrease interest rates by 25 bps after the July 2026 meeting?"
+    question: "Fed July Decision (Cut 25bps)"
     kalshi_ticker: KXFEDDECISION-26JUL-C25
     pm_condition_id: "0x4ede078cae84a5877ac32d7fb48811e5c23549a1904b7df06ff7935c6d79d831"
     pm_yes_token: 0
@@ -78,7 +78,7 @@ pairs:
     notes: "Both keyed to upper bound of target range at July 29 meeting. PM rounds off-grid moves up to nearest 25bp bracket; Kalshi is exact-25 — divergence only if Fed moves off-grid (never has)."
 
   - event_key: fed-jul26-no-change
-    question: "Will there be no change in Fed interest rates after the July 2026 meeting?"
+    question: "Fed July Decision (No Change)"
     kalshi_ticker: KXFEDDECISION-26JUL-H0
     pm_condition_id: "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86"
     pm_yes_token: 0
@@ -87,7 +87,7 @@ pairs:
     notes: "Kalshi 'Hike of 0bps' == PM 'no change'. Same rounding tail as fed-jul26-cut-25bps."
 
   - event_key: wc26-best-host-usa
-    question: "Will United States be the furthest advancing host nation at the World Cup?"
+    question: "WC Best Advancing Host (USA)"
     kalshi_ticker: KXWCBESTHOST-26-USA
     pm_condition_id: "0x5a947653669c8f71ac7b8951f53e3e538dc39025f91482bc606231cf017a3f25"
     pm_yes_token: 0

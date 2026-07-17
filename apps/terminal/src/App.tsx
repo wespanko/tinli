@@ -140,7 +140,7 @@ export default function App() {
       for (const e of edges) {
         if (!prevEdgeKeys.current.has(e.event_key)) {
           new Notification('Tinli — executable lock edge', {
-            body: `${e.event_key}: +${cents(e.edge_at_size, 2)}¢/contract at size ${e.max_lock_size}`,
+            body: `${e.question}: +${cents(e.edge_at_size, 2)}¢/contract at size ${e.max_lock_size}`,
           })
         }
       }

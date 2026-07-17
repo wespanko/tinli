@@ -73,10 +73,16 @@ export default function RiskPanel({
 
   const marketOptions = pairs.flatMap((p) =>
     [
-      p.kalshi && { id: p.kalshi.id, label: `${p.event_key} · K` },
-      p.polymarket && { id: p.polymarket.id, label: `${p.event_key} · PM` },
+      p.kalshi && { id: p.kalshi.id, label: `${p.question} · K` },
+      p.polymarket && { id: p.polymarket.id, label: `${p.question} · PM` },
     ].filter(Boolean) as { id: string; label: string }[],
   )
+
+  // display names, not slugs: event_id -> the pair's curated question
+  const eventName = (eventId: string | null) => {
+    if (eventId == null) return null
+    return pairs.find((p) => p.event_key === eventId)?.question ?? eventId
+  }
 
   const startEdit = () => {
     setDraft(r.positions.map((row) => toDraft(row.position)))
@@ -177,14 +183,14 @@ export default function RiskPanel({
                     className={`font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-36 ${
                       row.mark == null ? 'text-muted' : 'text-text'
                     }`}
-                    title={row.question ?? row.position.market_id}
+                    title={`${row.event_id ?? ''} ${row.position.market_id}`.trim()}
                   >
                     {row.mark == null && (
                       <span className="text-gold mr-1" title="not in market feed — unmarked">
                         !
                       </span>
                     )}
-                    {row.event_id ?? row.position.market_id}
+                    {eventName(row.event_id) ?? row.position.market_id}
                   </td>
                   <td className="px-1 uppercase text-[11px] text-muted">{row.position.side}</td>
                   <td className="text-right px-1 tabular-nums text-text">
@@ -357,8 +363,11 @@ export default function RiskPanel({
             <tbody>
               {r.by_event.map((e) => (
                 <tr key={e.event_id} className="border-b border-line/30">
-                  <td className="font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-40 text-text">
-                    {e.event_id}
+                  <td
+                    className="font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-40 text-text"
+                    title={e.event_id}
+                  >
+                    {eventName(e.event_id)}
                   </td>
                   <td className="text-right px-1 tabular-nums text-text">
                     {qty(e.net_yes_contracts)}
