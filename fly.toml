@@ -1,0 +1,27 @@
+# Tinli hosted read-only instance. Deploy: fly launch --copy-config (first
+# time, creates the app + volume) then fly deploy.
+
+app = "tinli"
+primary_region = "ord"
+
+[env]
+  TINLI_READONLY = "1"
+  TINLI_HISTORY_DIR = "/data/history"
+
+# parquet history survives restarts/deploys
+[[mounts]]
+  source = "tinli_history"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # the in-container recorder must keep running between visits
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

@@ -37,6 +37,18 @@ Continuous recording (feeds the basis-over-time chart):
 
 Copy `.env.example` to `.env` for local overrides. v0 needs no API keys.
 
+## Hosted read-only instance
+
+One container serves the API, the built UI, and the history recorder, with
+positions editing disabled (`TINLI_READONLY=1`) and the example book
+demoing the risk engine:
+
+    docker build -t tinli .
+    docker run -p 8080:8080 -v tinli_history:/data tinli
+
+Fly.io: `fly launch --copy-config` once (creates the app + the
+`tinli_history` volume from fly.toml), then `fly deploy`.
+
 ## Layout
 
     services/api        FastAPI service
