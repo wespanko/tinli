@@ -45,6 +45,23 @@ export default function App() {
   const [showIntro, setShowIntro] = useState(() => localStorage.getItem(INTRO_KEY) !== '1')
   const [alertsOn, setAlertsOn] = useState(() => localStorage.getItem(ALERTS_KEY) === '1')
 
+  // risk errors are surfaced, not swallowed: a 4xx names the user's
+  // positions.yaml mistake, and the stale report must be labeled as such.
+  // Also called directly after a book save so the panel updates immediately.
+  const fetchRisk = () => {
+    fetch('/v1/risk')
+      .then(async (r) => {
+        if (r.ok) {
+          setRisk((await r.json()) as RiskReport)
+          setRiskError(null)
+        } else {
+          const body = await r.json().catch(() => null)
+          setRiskError(body?.detail ?? `HTTP ${r.status}`)
+        }
+      })
+      .catch(() => {}) // network-level failure: header already shows API OFFLINE
+  }
+
   // one 3s heartbeat for everything except the per-pair books
   useEffect(() => {
     let alive = true
@@ -59,20 +76,7 @@ export default function App() {
         setSelected((prev) => prev ?? sorted[0]?.event_key ?? null)
       })
       getJson<DivergenceItem[]>('/v1/divergence').then((d) => alive && d && setDivergence(d))
-      // risk errors are surfaced, not swallowed: a 4xx names the user's
-      // positions.yaml mistake, and the stale report must be labeled as such
-      fetch('/v1/risk')
-        .then(async (r) => {
-          if (!alive) return
-          if (r.ok) {
-            setRisk((await r.json()) as RiskReport)
-            setRiskError(null)
-          } else {
-            const body = await r.json().catch(() => null)
-            setRiskError(body?.detail ?? `HTTP ${r.status}`)
-          }
-        })
-        .catch(() => {}) // network-level failure: header already shows API OFFLINE
+      fetchRisk()
     }
     tick()
     const id = setInterval(tick, POLL_MS)
@@ -80,6 +84,7 @@ export default function App() {
       alive = false
       clearInterval(id)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const activeKey = selected ?? pairs[0]?.event_key ?? null
@@ -226,7 +231,13 @@ export default function App() {
               <DivergencePanel items={divergence} selected={activeKey} onSelect={setSelected} />
             </Panel>
             <Panel title="RISK · SELF-REPORTED BOOK">
-              <RiskPanel report={risk} error={riskError} />
+              <RiskPanel
+                report={risk}
+                error={riskError}
+                pairs={pairs}
+                readonly={health?.readonly ?? false}
+                onSaved={fetchRisk}
+              />
             </Panel>
           </div>
         </main>

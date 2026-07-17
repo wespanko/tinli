@@ -7,9 +7,10 @@ client = TestClient(app)
 
 def test_healthz_live(monkeypatch):
     monkeypatch.delenv("TINLI_DEMO", raising=False)
+    monkeypatch.delenv("TINLI_READONLY", raising=False)
     r = client.get("/healthz")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "mode": "live"}
+    assert r.json() == {"status": "ok", "mode": "live", "readonly": False}
 
 
 def test_healthz_demo(monkeypatch):

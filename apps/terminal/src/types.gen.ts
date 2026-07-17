@@ -125,3 +125,7 @@ export type HistoryResponse = {
   hours: number
   points: HistoryPoint[]
 }
+
+export type PositionsUpdate = {
+  positions: Position[]
+}

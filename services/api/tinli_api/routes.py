@@ -8,9 +8,16 @@ from pydantic import BaseModel, ValidationError
 
 from tinli_divergence import DivergenceItem
 from tinli_risk import RiskReport, build_report
-from tinli_schema import Market, Orderbook
+from tinli_schema import Market, Orderbook, Position
 
-from tinli_api.datasource import get_source, load_pairs, load_positions, pair_for_market_id
+from tinli_api.datasource import (
+    get_source,
+    load_pairs,
+    load_positions,
+    pair_for_market_id,
+    readonly,
+    save_positions,
+)
 from tinli_api.history import read_history
 from tinli_api.screener import compute_all
 from tinli_api.venues.client import VenueHTTPError
@@ -138,6 +145,24 @@ def risk() -> RiskReport:
     marked_at = [m.fetched_at for m in markets if m.id in {p.market_id for p in positions}]
     fetched_at = max(marked_at) if marked_at else datetime.now(UTC)
     return build_report(positions, by_id, fetched_at=fetched_at)
+
+
+class PositionsUpdate(BaseModel):
+    positions: list[Position]
+
+
+@router.put("/positions")
+def put_positions(body: PositionsUpdate) -> PositionsUpdate:
+    """Replace the self-reported book. The YAML file stays the single source
+    of truth — this endpoint and hand-editing write the same file, atomically.
+    Validation happens in the Position model before anything touches disk, so
+    a bad payload can never corrupt the book. Read-only instances refuse."""
+    if readonly():
+        raise HTTPException(
+            status_code=403, detail="read-only instance: positions editing is disabled"
+        )
+    save_positions(body.positions)
+    return body
 
 
 @router.get("/pairs")

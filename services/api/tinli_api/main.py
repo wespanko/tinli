@@ -2,6 +2,7 @@ import os
 
 from fastapi import FastAPI
 
+from tinli_api.datasource import readonly
 from tinli_api.routes import router
 
 app = FastAPI(title="tinli-api", version="0.1.0")
@@ -14,4 +15,8 @@ def demo_mode() -> bool:
 
 @app.get("/healthz")
 def healthz() -> dict:
-    return {"status": "ok", "mode": "demo" if demo_mode() else "live"}
+    return {
+        "status": "ok",
+        "mode": "demo" if demo_mode() else "live",
+        "readonly": readonly(),
+    }

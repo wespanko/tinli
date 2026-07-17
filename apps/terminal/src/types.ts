@@ -23,4 +23,4 @@ export type BookLevel = OrderbookLevel
 export type Direction = NonNullable<DivergenceItem['direction']>
 
 // /healthz returns a plain dict, not a pydantic model — hand-kept
-export type Health = { status: string; mode: 'live' | 'demo' }
+export type Health = { status: string; mode: 'live' | 'demo'; readonly?: boolean }

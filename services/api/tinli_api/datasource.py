@@ -62,6 +62,49 @@ def load_positions() -> list[Position]:
     return [Position(**p) for p in entries]
 
 
+def readonly() -> bool:
+    """Hosted read-only instances set TINLI_READONLY=1: positions editing is
+    disabled and the UI labels itself a demo."""
+    return os.environ.get("TINLI_READONLY", "0") == "1"
+
+
+POSITIONS_HEADER = """\
+# Self-reported positions for the risk engine (/v1/risk).
+# Edit by hand or from the terminal UI (EDIT in the RISK panel) — both write
+# this same file, which stays the single source of truth. Reloaded on every
+# request. Prices are dollars on the 0-1 scale; est_prob (optional, YOUR
+# estimate of the YES probability) enables Kelly sizing.
+
+"""
+
+
+def save_positions(positions: list[Position]) -> Path:
+    """Atomic write (temp file + replace): a crash mid-save can never leave a
+    half-written book behind. Decimals serialize as quoted strings so a later
+    hand-edit round-trips exactly."""
+    path = Path(os.environ.get("TINLI_POSITIONS", str(POSITIONS)))
+    entries = []
+    for p in positions:
+        e: dict = {
+            "market_id": p.market_id,
+            "side": p.side,
+            "contracts": str(p.contracts),
+            "entry_price": str(p.entry_price),
+        }
+        if p.est_prob is not None:
+            e["est_prob"] = str(p.est_prob)
+        if p.notes:
+            e["notes"] = p.notes
+        entries.append(e)
+    text = POSITIONS_HEADER + yaml.safe_dump(
+        {"positions": entries}, sort_keys=False, allow_unicode=True
+    )
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8", newline="\n")
+    tmp.replace(path)
+    return path
+
+
 def pair_for_market_id(market_id: str) -> PairMapping | None:
     for p in load_pairs():
         if market_id == f"kalshi:{p.kalshi_ticker}" or market_id == f"polymarket:{p.pm_condition_id}":

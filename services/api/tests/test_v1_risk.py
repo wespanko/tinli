@@ -127,6 +127,59 @@ def test_malformed_shapes_are_422_not_500(client, tmp_path, monkeypatch, content
     assert "positions.yaml is invalid" in r.json()["detail"]
 
 
+def test_put_positions_roundtrips_through_risk(client, tmp_path, monkeypatch):
+    book = tmp_path / "positions.yaml"
+    monkeypatch.setenv("TINLI_POSITIONS", str(book))
+    body = {
+        "positions": [
+            {
+                "market_id": "kalshi:KXFEDDECISION-26JUL-H0",
+                "side": "yes",
+                "contracts": "10",
+                "entry_price": "0.90",
+                "est_prob": "0.99",
+                "notes": "via UI",
+            }
+        ]
+    }
+    r = client.put("/v1/positions", json=body)
+    assert r.status_code == 200
+    assert book.exists(), "book file written"
+    report = client.get("/v1/risk").json()
+    (row,) = report["positions"]
+    assert row["position"]["market_id"] == "kalshi:KXFEDDECISION-26JUL-H0"
+    assert row["position"]["contracts"] == "10"
+    # the written YAML is hand-editable and round-trips through load_positions
+    text = book.read_text(encoding="utf-8")
+    assert text.startswith("#") and "'0.90'" in text or '"0.90"' in text or "0.90" in text
+
+
+def test_put_positions_invalid_is_422_and_file_untouched(client, tmp_path, monkeypatch):
+    book = tmp_path / "positions.yaml"
+    book.write_text("positions:\n", encoding="utf-8")
+    before = book.read_text(encoding="utf-8")
+    monkeypatch.setenv("TINLI_POSITIONS", str(book))
+    bad = {"positions": [{"market_id": "kalshi:X", "side": "yes", "contracts": "10", "entry_price": "1.55"}]}
+    r = client.put("/v1/positions", json=bad)
+    assert r.status_code == 422
+    assert book.read_text(encoding="utf-8") == before, "invalid payload must not touch the file"
+
+
+def test_put_positions_readonly_403(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("TINLI_READONLY", "1")
+    monkeypatch.setenv("TINLI_POSITIONS", str(tmp_path / "positions.yaml"))
+    body = {"positions": []}
+    r = client.put("/v1/positions", json=body)
+    assert r.status_code == 403
+    assert not (tmp_path / "positions.yaml").exists()
+
+
+def test_healthz_reports_readonly(client, monkeypatch):
+    assert client.get("/healthz").json()["readonly"] is False
+    monkeypatch.setenv("TINLI_READONLY", "1")
+    assert client.get("/healthz").json()["readonly"] is True
+
+
 def test_missing_positions_file_is_an_empty_report(client, tmp_path, monkeypatch):
     monkeypatch.setenv("TINLI_POSITIONS", str(tmp_path / "nope.yaml"))
     report = client.get("/v1/risk").json()
