@@ -57,7 +57,9 @@ export default function IntroPanel({ onClose }: { onClose: () => void }) {
         <p>
           <span className="text-up">Green</span>/<span className="text-down">red</span> is
           direction (bids/positive, asks/negative). Gold is reserved for key numbers and
-          warnings. <span className="text-up">● LIVE</span> means real venue data at 3s polling;{' '}
+          warnings. <span className="text-up">● LIVE · STREAM</span> means real venue data pushed
+          on change (Polymarket websocket + Kalshi fast-poll); <span className="text-up">● LIVE
+          · POLL</span> is the 3s REST fallback;{' '}
           <span className="text-gold">SIMULATED DATA</span> means recorded fixtures and is never
           presented as live. Click any watchlist or divergence row to load it in the market
           panel.

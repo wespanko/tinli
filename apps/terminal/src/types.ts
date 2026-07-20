@@ -17,6 +17,8 @@ export type {
   PositionRisk,
   RiskReport,
   SizePoint,
+  StreamUpdate,
+  VenueStreamStatus,
   VenueTop,
 } from './types.gen'
 
@@ -26,4 +28,9 @@ export type BookLevel = OrderbookLevel
 export type Direction = NonNullable<DivergenceItem['direction']>
 
 // /healthz returns a plain dict, not a pydantic model — hand-kept
-export type Health = { status: string; mode: 'live' | 'demo'; readonly?: boolean }
+export type Health = {
+  status: string
+  mode: 'live' | 'demo'
+  readonly?: boolean
+  stream?: boolean
+}

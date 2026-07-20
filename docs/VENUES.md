@@ -162,3 +162,35 @@ Source: https://docs.polymarket.com/api-reference/rate-limits
   best-first bid/ask arrays.
 - All outbound requests use an identifiable User-Agent:
   `tinli/0.1 (+https://tinli.dev)` — set in one shared HTTP client.
+
+---
+
+## Websockets (M8 recon, probed live 2026-07-20)
+
+### Kalshi — `wss://api.elections.kalshi.com/trade-api/ws/v2`
+
+- **Rejects unauthenticated upgrades with HTTP 401** (verified empirically;
+  unlike its REST market data, which is open). Requires the same
+  KALSHI-ACCESS-* signed headers as trading endpoints → out of scope for v0's
+  no-auth constraint. BYOK (post-v0) can upgrade the Kalshi feed to this.
+- v0 consequence: Kalshi is FAST-POLLED over REST instead
+  (`tinli_api.stream`, default 2s, `TINLI_KALSHI_POLL_S`), with exponential
+  interval backoff on failures since Kalshi 429s carry no Retry-After.
+
+### Polymarket CLOB — `wss://ws-subscriptions-clob.polymarket.com/ws/market`
+
+- **Public, no auth.** Subscribe by sending
+  `{"assets_ids": [<token ids>], "type": "market"}` after connect.
+- First frame is a LIST of `book` snapshot events (one per subscribed
+  token): same `{price, size}` level dicts as the REST book, and the same
+  worst-first ordering (best level LAST) — `parse_book` handles both paths.
+- Then `price_change` events: `price_changes[]` of
+  `{asset_id, price, size, side: BUY|SELL, best_bid, best_ask, hash}`.
+  **`size` is the ABSOLUTE new size at that level** (0 deletes the level),
+  not a delta to add. Changes arrive for BOTH outcome tokens of the market
+  even when only one is subscribed-adjacent; filter by asset_id.
+- Also seen: `last_trade_price` and occasional mid-stream `book`
+  re-snapshots (treat as full replacement). `tick_size_change` exists per
+  docs; all unknown event types are ignored.
+- Recorded frames: `services/api/tests/fixtures/polymarket/ws_frames_fed.json`
+  (captured live 2026-07-20; drives test_stream.py).

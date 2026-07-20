@@ -14,7 +14,8 @@ Read-only public market data — no order placement, no accounts.
 
 The terminal is one dense screen: watchlist (click a pair to load its
 books), cross-venue orderbook ladders, the fee-adjusted divergence
-screener, and the risk panel — 3s polling, demo badge when on fixtures.
+screener, and the risk panel — streamed live (Polymarket websocket + Kalshi
+fast-poll) with a 3s-polling fallback, demo badge when on fixtures.
 
 Positions for the risk engine (`/v1/risk`) are self-reported: edit
 `data/positions.yaml` (an example book ships with the repo). No venue auth

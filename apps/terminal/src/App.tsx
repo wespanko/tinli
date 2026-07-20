@@ -10,6 +10,7 @@ import type {
   Orderbook,
   Pair,
   RiskReport,
+  StreamUpdate,
 } from './types'
 import { cents } from './format'
 import DivergencePanel from './components/DivergencePanel'
@@ -24,6 +25,7 @@ import WatchTable, { sortPairs } from './components/WatchTable'
 type View = 'terminal' | 'cards'
 
 const POLL_MS = 3000
+const STREAM_RETRY_MS = 15_000
 const INTRO_KEY = 'tinli-intro-seen'
 const ALERTS_KEY = 'tinli-alerts-on'
 
@@ -48,6 +50,11 @@ export default function App() {
   const [view, setView] = useState<View>('terminal')
   const [showIntro, setShowIntro] = useState(() => localStorage.getItem(INTRO_KEY) !== '1')
   const [alertsOn, setAlertsOn] = useState(() => localStorage.getItem(ALERTS_KEY) === '1')
+  const [streamed, setStreamed] = useState<StreamUpdate | null>(null)
+  // ref mirror so the poll tick can skip work without re-arming its interval
+  const streamOnRef = useRef(false)
+  const streamOn = streamed !== null
+  streamOnRef.current = streamOn
 
   // risk errors are surfaced, not swallowed: a 4xx names the user's
   // positions.yaml mistake, and the stale report must be labeled as such.
@@ -66,20 +73,26 @@ export default function App() {
       .catch(() => {}) // network-level failure: header already shows API OFFLINE
   }
 
-  // one 3s heartbeat for everything except the per-pair books
+  // one 3s heartbeat for everything except the per-pair books. While the
+  // SSE stream is delivering, pairs + divergence come from it instead and
+  // the tick skips those fetches — health and risk stay polled either way.
   useEffect(() => {
     let alive = true
     const tick = () => {
       getJson<Health>('/healthz').then((h) => alive && setHealth(h))
-      getJson<Pair[]>('/v1/pairs').then((d) => {
-        if (!alive || !d) return
-        const sorted = sortPairs(d)
-        setPairs(sorted)
-        // pin the initial selection ONCE — the list re-sorts every poll, and
-        // a pairs[0] fallback would flip the MARKET panel under the reader
-        setSelected((prev) => prev ?? sorted[0]?.event_key ?? null)
-      })
-      getJson<DivergenceItem[]>('/v1/divergence').then((d) => alive && d && setDivergence(d))
+      if (!streamOnRef.current) {
+        getJson<Pair[]>('/v1/pairs').then((d) => {
+          if (!alive || !d || streamOnRef.current) return
+          const sorted = sortPairs(d)
+          setPairs(sorted)
+          // pin the initial selection ONCE — the list re-sorts every poll, and
+          // a pairs[0] fallback would flip the MARKET panel under the reader
+          setSelected((prev) => prev ?? sorted[0]?.event_key ?? null)
+        })
+        getJson<DivergenceItem[]>('/v1/divergence').then(
+          (d) => alive && d && !streamOnRef.current && setDivergence(d),
+        )
+      }
       fetchRisk()
     }
     tick()
@@ -90,6 +103,46 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // live streaming (M8): subscribe to /v1/stream in live mode. Every failure
+  // path — demo 503, hub down, proxy without SSE — lands back on the 3s
+  // polling above; the stream is an upgrade, never a requirement.
+  useEffect(() => {
+    if (health?.mode !== 'live' || !health.stream) return
+    let es: EventSource | null = null
+    let retry: ReturnType<typeof setTimeout> | null = null
+    let alive = true
+    const connect = () => {
+      if (!alive) return
+      es = new EventSource('/v1/stream')
+      es.onmessage = (ev) => {
+        if (!alive) return
+        const update = JSON.parse(ev.data) as StreamUpdate
+        setStreamed(update)
+        const sorted = sortPairs(update.pairs)
+        setPairs(sorted)
+        setSelected((prev) => prev ?? sorted[0]?.event_key ?? null)
+        setDivergence(update.divergence)
+      }
+      es.onerror = () => {
+        // CONNECTING means the browser is retrying by itself; CLOSED (e.g.
+        // an HTTP error response) needs our own slow retry
+        if (es?.readyState === EventSource.CLOSED) {
+          es.close()
+          es = null
+          setStreamed(null)
+          if (alive) retry = setTimeout(connect, STREAM_RETRY_MS)
+        }
+      }
+    }
+    connect()
+    return () => {
+      alive = false
+      es?.close()
+      if (retry) clearTimeout(retry)
+      setStreamed(null)
+    }
+  }, [health?.mode, health?.stream])
 
   const activeKey = selected ?? pairs[0]?.event_key ?? null
   const activePair = pairs.find((p) => p.event_key === activeKey) ?? null
@@ -213,9 +266,34 @@ export default function App() {
             <span className="border border-gold text-gold px-2 py-0.5 rounded-sm text-[10px] tracking-[0.12em]">
               SIMULATED DATA
             </span>
-          ) : (
-            <span className="text-up text-[10px] tracking-[0.12em]">● LIVE</span>
-          )}
+          ) : (() => {
+            const stale = Object.entries(streamed?.venues ?? {}).filter(
+              ([, v]) => v.state !== 'live',
+            )
+            if (streamOn && stale.length > 0) {
+              const [name, v] = stale[0]
+              return (
+                <span
+                  className="text-gold text-[10px] tracking-[0.12em]"
+                  title="this venue's feed has not updated recently; quotes for it may be stale"
+                >
+                  ! {name.toUpperCase()} {v.age_s != null ? `STALE ${Math.round(v.age_s)}s` : 'CONNECTING'}
+                </span>
+              )
+            }
+            return (
+              <span
+                className="text-up text-[10px] tracking-[0.12em]"
+                title={
+                  streamOn
+                    ? 'streaming: Polymarket websocket + Kalshi fast-poll, pushed on change'
+                    : 'polling venue REST APIs every 3s'
+                }
+              >
+                ● LIVE {streamOn ? '· STREAM' : '· POLL'}
+              </span>
+            )
+          })()}
         </span>
       </header>
       <EdgeAlert edges={edges} onSelect={setSelected} />

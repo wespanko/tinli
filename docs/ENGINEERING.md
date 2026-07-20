@@ -13,12 +13,12 @@ assumption surfaced.
 ## Stack — decided, do not relitigate
 
 Python 3.12 + FastAPI backend · React + Vite + TypeScript + Tailwind v4
-frontend · pytest · polling now, websockets later · SQLite + parquet for v0
-persistence · secrets in `.env` (never committed).
+frontend · pytest · streaming where venues allow it, polling fallback (M8)
+· SQLite + parquet for v0 persistence · secrets in `.env` (never committed).
 
 Ask before adding ANY dependency beyond those installed:
-fastapi, uvicorn, httpx, pyyaml, cachetools, pyarrow, tzdata, numpy, pytest,
-hypothesis (Python) · @fontsource-variable/inter and
+fastapi, uvicorn, websockets, httpx, pyyaml, cachetools, pyarrow, tzdata,
+numpy, pytest, hypothesis (Python) · @fontsource-variable/inter and
 @fontsource-variable/jetbrains-mono (JS).
 
 ## Layout
@@ -107,6 +107,19 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   zero, half-life rounds up, and no half-life is quoted without n ≥ 30
   and φ strictly inside (0, 1).
 
+### Live streaming (M8)
+- `tinli_api.stream.StreamHub` (started from the app lifespan, live mode
+  only): Polymarket books stream over the public CLOB websocket (snapshot +
+  absolute-size deltas, rebuilt in `PmBook`); Kalshi is fast-polled REST
+  (default 2s, `TINLI_KALSHI_POLL_S`) because its websocket requires auth
+  (401 unauthenticated — recon in docs/VENUES.md). `/v1/stream` pushes SSE
+  `StreamUpdate`s (same PairQuote/DivergenceItem shapes as REST) on change,
+  throttled to 400ms, 15s keepalives.
+- The stream is an upgrade, never a requirement: demo mode answers 503, the
+  UI falls back to 3s polling on any failure, and `TINLI_STREAM=0` forces
+  polling. Header shows `● LIVE · STREAM` / `· POLL`, and a gold stale flag
+  when a venue's feed goes quiet (>10s).
+
 ### Terminal UI (M5 + redesign)
 - One dense screen, 3s polling: selectable watchlist → selected pair's venue
   quotes with basis history, depth-curve charts and book ladders → lock
@@ -162,7 +175,7 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M7 are all shipped. Present a short plan before each new
+v0 milestones M0–M8 are all shipped. Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't
 force the plan. Definition of done: `make demo` boots on fixtures with
