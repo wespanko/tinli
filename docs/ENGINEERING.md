@@ -96,6 +96,17 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   decimal128 parquet under `data/history/`; `/v1/history/{event_key}` serves
   the window. No synthetic backfill, ever — an empty window says so.
 
+### Lock sizing + basis stats (M7)
+- `tinli_divergence.sizing.walk_lock` walks the FULL books with exact
+  per-level fees (sum-of-ceilings — only ever overstates) to produce the
+  edge-vs-size curve; `/v1/lock/{event_key}` adds capital, horizon and
+  annualized return at the optimal size, assumptions in the payload.
+- `tinli_api.stats.basis_stats` computes mean/stdev/z and an AR(1)
+  mean-reversion half-life over the history window, shipped on
+  `/v1/history`. A statistic is None rather than wrong: z rounds toward
+  zero, half-life rounds up, and no half-life is quoted without n ≥ 30
+  and φ strictly inside (0, 1).
+
 ### Terminal UI (M5 + redesign)
 - One dense screen, 3s polling: selectable watchlist → selected pair's venue
   quotes with basis history, depth-curve charts and book ladders → lock
@@ -151,7 +162,7 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M6 are all shipped. Present a short plan before each new
+v0 milestones M0–M7 are all shipped. Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't
 force the plan. Definition of done: `make demo` boots on fixtures with
