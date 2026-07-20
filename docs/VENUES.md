@@ -194,3 +194,34 @@ Source: https://docs.polymarket.com/api-reference/rate-limits
   docs; all unknown event types are ignored.
 - Recorded frames: `services/api/tests/fixtures/polymarket/ws_frames_fed.json`
   (captured live 2026-07-20; drives test_stream.py).
+
+---
+
+## BYOK — Kalshi authenticated access (M9, doc-derived 2026-07-20)
+
+- **Signing** (docs.kalshi.com/getting_started/api_keys): sign
+  `f"{ts_ms}{METHOD}{path}"` — path WITHOUT query string — with RSA-PSS
+  (SHA256, MGF1-SHA256, salt = digest length), base64. Headers:
+  `KALSHI-ACCESS-KEY` (key id), `KALSHI-ACCESS-TIMESTAMP` (same ms value),
+  `KALSHI-ACCESS-SIGNATURE`. Timestamped signatures go stale: regenerate on
+  every retry (client.get_json accepts a headers CALLABLE for this).
+- **Websocket**: docs list `wss://external-api-ws.kalshi.com/` but the REST
+  host also answers upgrades at `/trade-api/ws/v2` (401 unauth — recon
+  above). We default to the REST host and sign its path; override with
+  `TINLI_KALSHI_WS_URL`. **TODO(BYOK-live): confirm which host + signed
+  path a real key accepts.** Subscribe:
+  `{"id":1,"cmd":"subscribe","params":{"channels":["orderbook_delta"],"market_tickers":[...]}}`.
+  `orderbook_snapshot` msg: `yes_dollars_fp`/`no_dollars_fp` = [price,size]
+  dollar-string pairs (BIDS both sides, same as REST). `orderbook_delta`
+  msg: `price_dollars`, `delta_fp` (**RELATIVE** — add to level, ≤0
+  deletes; opposite of Polymarket's absolute sizes), `side` yes|no. `seq`
+  gaps mean missed deltas -> reconnect for a fresh snapshot.
+- **Positions** (GET /portfolio/positions, cursor-paginated):
+  `market_positions[]` with `position_fp` (signed fixed-point contracts,
+  + YES / − NO), `market_exposure_dollars` (cost of open position),
+  `total_traded_dollars`, `realized_pnl_dollars`, `fees_paid_dollars`,
+  `last_updated_ts`. **No entry price exists** — never derive one.
+  **TODO(BYOK-live): pin against a real account response; record a
+  sanitized fixture.**
+- Keys: `TINLI_KALSHI_KEY_ID` + `TINLI_KALSHI_PRIVATE_KEY_PATH` (PEM) in
+  .env. Read-only hosted instances refuse keys. GET only, ever.

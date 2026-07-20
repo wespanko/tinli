@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from tinli_api.datasource import readonly
 from tinli_api.routes import router
 from tinli_api.stream import StreamHub, get_hub, set_hub
+from tinli_api.venues.kalshi_auth import KEY_ID_ENV, KEY_PATH_ENV, KalshiAuth
 
 
 def demo_mode() -> bool:
@@ -24,7 +25,13 @@ def stream_enabled() -> bool:
 async def lifespan(app: FastAPI):
     hub = None
     if stream_enabled():
-        hub = StreamHub()
+        try:
+            auth = KalshiAuth.from_env()
+        except Exception:
+            # a broken key file must not kill the app: stream without BYOK;
+            # /v1/account reports the 422 with the config detail
+            auth = None
+        hub = StreamHub(kalshi_auth=auth)
         hub.start()
         set_hub(hub)
     yield
@@ -49,6 +56,11 @@ def healthz() -> dict:
         "mode": "demo" if demo_mode() else "live",
         "readonly": readonly(),
         "stream": get_hub() is not None,
+        # presence check only (no key file read): both env vars set and not
+        # a read-only host. /v1/account is the authority on key validity.
+        "byok": bool(os.environ.get(KEY_ID_ENV))
+        and bool(os.environ.get(KEY_PATH_ENV))
+        and not readonly(),
     }
 
 

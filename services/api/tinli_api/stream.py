@@ -26,10 +26,18 @@ from tinli_schema import Market, Orderbook, PairMapping
 
 from tinli_api.datasource import load_pairs
 from tinli_api.venues import kalshi, polymarket
+from tinli_api.venues.kalshi_auth import KalshiAuth
 
 log = logging.getLogger("tinli.stream")
 
 PM_WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
+# Recon 2026-07-20: /trade-api/ws/v2 on the REST host answers the upgrade
+# (401 without keys); docs also list wss://external-api-ws.kalshi.com/.
+# TODO(BYOK-live): confirm which host + signed path a real key accepts,
+# then drop this override.
+KALSHI_WS_URL = os.environ.get(
+    "TINLI_KALSHI_WS_URL", "wss://api.elections.kalshi.com/trade-api/ws/v2"
+)
 KALSHI_POLL_S = float(os.environ.get("TINLI_KALSHI_POLL_S", "2.0"))
 GAMMA_REFRESH_S = 300.0
 BACKOFF_MAX_S = 60.0
@@ -75,16 +83,60 @@ class PmBook:
         return polymarket.parse_book(self.condition_id, raw, self.updated_at or datetime.now(UTC))
 
 
+class KalshiBook:
+    """Mutable Kalshi book from websocket frames (BYOK path, M9).
+
+    Kalshi streams BIDS on both sides (yes/no) like its REST book, in the
+    same dollar-string fixed-point shapes — and unlike Polymarket, deltas
+    are RELATIVE: delta_fp adds to the size at that level (≤0 result
+    deletes it). Spec: docs.kalshi.com/websockets/orderbook-updates.md.
+    """
+
+    def __init__(self, ticker: str) -> None:
+        self.ticker = ticker
+        self.yes: dict[Decimal, Decimal] = {}
+        self.no: dict[Decimal, Decimal] = {}
+        self.updated_at: datetime | None = None
+
+    def apply_snapshot(self, msg: dict, at: datetime) -> None:
+        self.yes = {Decimal(p): Decimal(s) for p, s in msg.get("yes_dollars_fp") or []}
+        self.no = {Decimal(p): Decimal(s) for p, s in msg.get("no_dollars_fp") or []}
+        self.updated_at = at
+
+    def apply_delta(self, msg: dict, at: datetime) -> None:
+        levels = self.yes if msg["side"] == "yes" else self.no
+        price = Decimal(msg["price_dollars"])
+        new_size = levels.get(price, Decimal(0)) + Decimal(msg["delta_fp"])
+        if new_size <= 0:
+            levels.pop(price, None)
+        else:
+            levels[price] = new_size
+        self.updated_at = at
+
+    def to_orderbook(self) -> Orderbook:
+        raw = {
+            "orderbook_fp": {
+                "yes_dollars": [[str(p), str(s)] for p, s in self.yes.items()],
+                "no_dollars": [[str(p), str(s)] for p, s in self.no.items()],
+            }
+        }
+        # parse_orderbook derives YES asks from NO bids and sorts, same as REST
+        return kalshi.parse_orderbook(self.ticker, raw, self.updated_at or datetime.now(UTC))
+
+
 class StreamHub:
     """Owns the venue tasks and the freshest data. One instance per process,
     started from the app lifespan in live mode only."""
 
-    def __init__(self) -> None:
+    def __init__(self, kalshi_auth: KalshiAuth | None = None) -> None:
         self.pairs: tuple[PairMapping, ...] = load_pairs()
+        self.kalshi_auth = kalshi_auth
         self._pm_books: dict[str, PmBook] = {}  # condition_id -> book
         self._token_to_cid: dict[str, str] = {}
         self._kalshi_markets: dict[str, Market] = {}  # ticker -> market
         self._kalshi_books: dict[str, Orderbook] = {}  # ticker -> book
+        self._kalshi_ws_books: dict[str, KalshiBook] = {}  # ticker -> live book
+        self.kalshi_transport = "poll"  # flips to "websocket" while BYOK WS is delivering
         self._gamma: dict[str, dict] = {}  # condition_id -> gamma metadata
         self.pm_last_ok: datetime | None = None
         self.kalshi_last_ok: datetime | None = None
@@ -95,11 +147,16 @@ class StreamHub:
     # -- lifecycle -----------------------------------------------------------
 
     def start(self) -> None:
+        kalshi_loop = self._kalshi_ws_loop if self.kalshi_auth else self._kalshi_poll_loop
         self._tasks = [
             asyncio.create_task(self._pm_ws_loop(), name="pm-ws"),
-            asyncio.create_task(self._kalshi_poll_loop(), name="kalshi-poll"),
+            asyncio.create_task(kalshi_loop(), name="kalshi-feed"),
             asyncio.create_task(self._gamma_refresh_loop(), name="gamma-refresh"),
         ]
+        if self.kalshi_auth:
+            self._tasks.append(
+                asyncio.create_task(self._kalshi_markets_refresh_loop(), name="kalshi-markets")
+            )
 
     async def stop(self) -> None:
         for t in self._tasks:
@@ -181,6 +238,95 @@ class StreamHub:
             self.pm_last_ok = now
             self._bump()
 
+    # -- Kalshi websocket (BYOK, M9) -----------------------------------------
+
+    async def _kalshi_ws_loop(self) -> None:
+        """Authenticated orderbook_delta stream. On ANY failure the loop
+        downgrades to one REST poll cycle (data keeps flowing, transport
+        flips to 'poll') and retries the socket with backoff."""
+        backoff = 1.0
+        while True:
+            try:
+                await self._kalshi_ws_once()
+                backoff = 1.0
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                log.warning("kalshi ws dropped: %s: %s", type(exc).__name__, exc)
+                self.kalshi_transport = "poll"
+                try:
+                    await self._kalshi_poll_once()
+                except Exception as poll_exc:
+                    log.warning("kalshi fallback poll failed: %s", poll_exc)
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, BACKOFF_MAX_S)
+
+    async def _kalshi_ws_once(self) -> None:
+        from urllib.parse import urlparse
+
+        path = urlparse(KALSHI_WS_URL).path or "/"
+        ua = os.environ.get("TINLI_USER_AGENT", "tinli/0.1")
+        headers = {"User-Agent": ua, **self.kalshi_auth.headers("GET", path)}
+        tickers = [p.kalshi_ticker for p in self.pairs]
+        async with websockets.connect(
+            KALSHI_WS_URL, additional_headers=headers, open_timeout=15
+        ) as ws:
+            await ws.send(json.dumps({
+                "id": 1,
+                "cmd": "subscribe",
+                "params": {"channels": ["orderbook_delta"], "market_tickers": tickers},
+            }))
+            log.info("kalshi ws subscribed: %d tickers", len(tickers))
+            self._kalshi_ws_books = {}
+            last_seq: int | None = None
+            async for raw in ws:
+                frame = json.loads(raw)
+                seq = frame.get("seq")
+                if seq is not None:
+                    if last_seq is not None and seq != last_seq + 1:
+                        # a gap means missed deltas: the book is no longer
+                        # trustworthy — reconnect for a fresh snapshot
+                        raise RuntimeError(f"kalshi ws seq gap: {last_seq} -> {seq}")
+                    last_seq = seq
+                self._handle_kalshi_frame(frame)
+
+    def _handle_kalshi_frame(self, frame: dict) -> None:
+        kind = frame.get("type")
+        if kind == "error":
+            raise RuntimeError(f"kalshi ws error frame: {frame}")
+        if kind not in ("orderbook_snapshot", "orderbook_delta"):
+            return  # subscribed acks / heartbeats / unknown types
+        msg = frame["msg"]
+        now = datetime.now(UTC)
+        book = self._kalshi_ws_books.setdefault(
+            msg["market_ticker"], KalshiBook(msg["market_ticker"])
+        )
+        if kind == "orderbook_snapshot":
+            book.apply_snapshot(msg, now)
+        else:
+            book.apply_delta(msg, now)
+        self.kalshi_transport = "websocket"
+        self.kalshi_last_ok = now
+        self._bump()
+
+    async def _kalshi_markets_refresh_loop(self) -> None:
+        """WS mode only: books stream, but market metadata (status, close_ts,
+        volume) still comes from REST — refreshed slowly like gamma."""
+        backoff = 1.0
+        while True:
+            try:
+                tickers = [p.kalshi_ticker for p in self.pairs]
+                markets = await asyncio.to_thread(kalshi.get_markets, tickers)
+                self._kalshi_markets = {m.id.split(":", 1)[1]: m for m in markets}
+                backoff = 1.0
+                await asyncio.sleep(60.0)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                log.warning("kalshi markets refresh failed: %s", exc)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, BACKOFF_MAX_S)
+
     # -- Kalshi fast-poll ----------------------------------------------------
 
     async def _kalshi_poll_loop(self) -> None:
@@ -239,7 +385,7 @@ class StreamHub:
             return {"transport": transport, "state": state, "age_s": round(age, 1)}
 
         return {
-            "kalshi": one(self.kalshi_last_ok, "poll"),
+            "kalshi": one(self.kalshi_last_ok, self.kalshi_transport),
             "polymarket": one(self.pm_last_ok, "websocket"),
         }
 
@@ -257,7 +403,16 @@ class StreamSource:
         for p in self.hub.pairs:
             km = self.hub._kalshi_markets.get(p.kalshi_ticker)
             if km is not None:
-                result.append(km.model_copy(update={"event_key": p.event_key}))
+                update: dict = {"event_key": p.event_key}
+                ws_book = self.hub._kalshi_ws_books.get(p.kalshi_ticker)
+                if ws_book is not None and ws_book.updated_at is not None:
+                    # WS books are fresher than the 60s metadata refresh:
+                    # overlay executable top-of-book from the live book
+                    book = ws_book.to_orderbook()
+                    update["best_bid"] = book.bids[0].price if book.bids else None
+                    update["best_ask"] = book.asks[0].price if book.asks else None
+                    update["fetched_at"] = ws_book.updated_at
+                result.append(km.model_copy(update=update))
             gamma = self.hub._gamma.get(p.pm_condition_id)
             state = self.hub._pm_books.get(p.pm_condition_id)
             if gamma is not None:
@@ -269,6 +424,9 @@ class StreamSource:
 
     def orderbook(self, pair: PairMapping, venue: str) -> Orderbook:
         if venue == "kalshi":
+            ws_state = self.hub._kalshi_ws_books.get(pair.kalshi_ticker)
+            if ws_state is not None and ws_state.updated_at is not None:
+                return ws_state.to_orderbook()
             book = self.hub._kalshi_books.get(pair.kalshi_ticker)
         else:
             state = self.hub._pm_books.get(pair.pm_condition_id)

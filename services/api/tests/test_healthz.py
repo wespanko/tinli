@@ -11,7 +11,7 @@ def test_healthz_live(monkeypatch):
     r = client.get("/healthz")
     assert r.status_code == 200
     # stream False here: TestClient without lifespan never starts the hub
-    assert r.json() == {"status": "ok", "mode": "live", "readonly": False, "stream": False}
+    assert r.json() == {"status": "ok", "mode": "live", "readonly": False, "stream": False, "byok": False}
 
 
 def test_healthz_demo(monkeypatch):

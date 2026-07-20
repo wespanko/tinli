@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type {
+  AccountReport,
   BasisStats,
   DivergenceItem,
   Health,
@@ -13,6 +14,7 @@ import type {
   StreamUpdate,
 } from './types'
 import { cents } from './format'
+import AccountPanel from './components/AccountPanel'
 import DivergencePanel from './components/DivergencePanel'
 import EdgeAlert, { liveEdges } from './components/EdgeAlert'
 import IntroPanel from './components/IntroPanel'
@@ -40,6 +42,7 @@ export default function App() {
   const [pairs, setPairs] = useState<Pair[]>([])
   const [divergence, setDivergence] = useState<DivergenceItem[]>([])
   const [risk, setRisk] = useState<RiskReport | null>(null)
+  const [account, setAccount] = useState<AccountReport | null>(null)
   const [riskError, setRiskError] = useState<string | null>(null)
   const [kalshiBook, setKalshiBook] = useState<Orderbook | null>(null)
   const [pmBook, setPmBook] = useState<Orderbook | null>(null)
@@ -171,6 +174,19 @@ export default function App() {
     }
   }, [pairs, activeKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // account book (BYOK) moves at fill cadence, not tick cadence: 30s
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      getJson<AccountReport>('/v1/account').then((a) => alive && a && setAccount(a))
+    load()
+    const id = setInterval(load, 30_000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [health?.byok]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // history moves at snapshot cadence, not tick cadence: refetch on selection
   // change and every 30s, not every 3s heartbeat
   useEffect(() => {
@@ -259,6 +275,14 @@ export default function App() {
         >
           ALERTS {alertsOn ? 'ON' : 'OFF'}
         </button>
+        {health?.byok && (
+          <span
+            className="ml-2 border border-primary text-hover rounded-sm px-2 py-0.5 text-[10px] tracking-[0.12em]"
+            title="your Kalshi API key is configured: authenticated websocket + real account positions, read-only"
+          >
+            BYOK
+          </span>
+        )}
         <span className="ml-auto text-[11px]">
           {health === null ? (
             <span className="text-down">API OFFLINE</span>
@@ -331,6 +355,11 @@ export default function App() {
                 onSaved={fetchRisk}
               />
             </Panel>
+            {(account?.byok || health?.byok) && (
+              <Panel title="KALSHI ACCOUNT · BYOK · READ-ONLY">
+                <AccountPanel report={account} pairs={pairs} />
+              </Panel>
+            )}
           </div>
         </main>
       )}

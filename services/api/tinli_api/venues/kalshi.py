@@ -93,3 +93,48 @@ def get_markets(tickers: list[str]) -> list[Market]:
 def get_orderbook(ticker: str, depth: int = 20) -> Orderbook:
     raw = get_json(f"{BASE}/markets/{ticker}/orderbook", params={"depth": depth})
     return parse_orderbook(ticker, raw, datetime.now(UTC))
+
+
+# -- BYOK (M9): authenticated, READ-ONLY portfolio access ---------------------
+# Response shape from docs.kalshi.com/api-reference/portfolio/get-positions.md
+# (read 2026-07-20): market_positions[] with position_fp (signed fixed-point
+# contracts, + = YES / - = NO), *_dollars fixed-point strings, cursor
+# pagination. TODO(BYOK-live): shape is doc-derived — pin against a real
+# account response the first time a key is available, then record a
+# sanitized fixture.
+
+
+def get_positions(auth) -> list["AccountPosition"]:
+    """All non-flat positions in the user's Kalshi account. Requires BYOK
+    auth; never called without it. GET only — Tinli never places orders."""
+    from tinli_schema import AccountPosition
+
+    path = "/trade-api/v2/portfolio/positions"
+    out: list[AccountPosition] = []
+    cursor: str | None = None
+    while True:
+        params = {"limit": "200"}
+        if cursor:
+            params["cursor"] = cursor
+        raw = get_json(f"{BASE}/portfolio/positions", params=params,
+                       headers=lambda: auth.headers("GET", path))
+        for p in raw.get("market_positions") or []:
+            signed = Decimal(p.get("position_fp") or "0")
+            if signed == 0:
+                continue
+            out.append(AccountPosition(
+                ticker=p["ticker"],
+                side="yes" if signed > 0 else "no",
+                contracts=abs(signed),
+                cost_basis=Decimal(p.get("market_exposure_dollars") or "0"),
+                total_traded=Decimal(p.get("total_traded_dollars") or "0"),
+                realized_pnl=Decimal(p.get("realized_pnl_dollars") or "0"),
+                fees_paid=Decimal(p.get("fees_paid_dollars") or "0"),
+                last_updated=(
+                    datetime.fromisoformat(p["last_updated_ts"])
+                    if p.get("last_updated_ts") else None
+                ),
+            ))
+        cursor = raw.get("cursor")
+        if not cursor:
+            return out

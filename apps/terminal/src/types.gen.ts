@@ -176,3 +176,33 @@ export type StreamUpdate = {
   pairs: PairQuote[]
   divergence: DivergenceItem[]
 }
+
+export type AccountPosition = {
+  ticker: string
+  side: "yes" | "no"
+  contracts: string
+  cost_basis: string
+  total_traded: string
+  realized_pnl: string
+  fees_paid: string
+  last_updated: string | null
+}
+
+export type AccountPositionRisk = {
+  position: AccountPosition
+  event_key: string | null
+  mark: string | null
+  market_value: string | null
+  unrealized_pnl: string | null
+}
+
+export type AccountReport = {
+  byok: boolean
+  positions: AccountPositionRisk[]
+  total_market_value: string
+  total_cost_basis: string
+  total_unrealized_pnl: string
+  unmarked_positions: number
+  assumptions: string[]
+  fetched_at: string
+}

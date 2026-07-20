@@ -16,7 +16,7 @@ from tinli_divergence import (
     walk_lock,
 )
 from tinli_risk import RiskReport, build_report
-from tinli_schema import Market, Orderbook, Position
+from tinli_schema import AccountPosition, Market, Orderbook, Position
 
 from tinli_api.datasource import (
     get_source,
@@ -30,7 +30,9 @@ from tinli_api.history import read_history
 from tinli_api.screener import compute_all
 from tinli_api.stats import BasisStats, basis_stats
 from tinli_api.stream import StreamSource, get_hub
+from tinli_api.venues import kalshi
 from tinli_api.venues.client import VenueHTTPError
+from tinli_api.venues.kalshi_auth import KEY_ID_ENV, KEY_PATH_ENV, KalshiAuth
 
 router = APIRouter(prefix="/v1")
 
@@ -296,6 +298,105 @@ def list_pairs() -> list[PairQuote]:
     except VenueHTTPError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return build_pairs(markets)
+
+
+class AccountPositionRisk(BaseModel):
+    position: AccountPosition
+    event_key: str | None = Field(description="Tinli pair slug when the ticker is mapped; None otherwise")
+    mark: Decimal | None = Field(description="conservative liquidation mark; None when the market is not in the feed")
+    market_value: Decimal | None
+    unrealized_pnl: Decimal | None = Field(description="market_value - cost_basis; realized/fees are separate venue-reported fields")
+
+
+class AccountReport(BaseModel):
+    """The user's REAL Kalshi book (BYOK, read-only) marked against the
+    feed. Entirely separate from the self-reported positions.yaml book —
+    the two are never merged, and this one never feeds Kelly (Kalshi
+    reports cost aggregates, not entry prices)."""
+
+    byok: bool
+    positions: list[AccountPositionRisk]
+    total_market_value: Decimal
+    total_cost_basis: Decimal
+    total_unrealized_pnl: Decimal
+    unmarked_positions: int
+    assumptions: list[str]
+    fetched_at: datetime
+
+
+ACCOUNT_ASSUMPTIONS = [
+    "Marks are conservative liquidation values: YES at best bid, NO at "
+    "1 - best ask; a position with no live quote is EXCLUDED from totals "
+    "(never dropped from the list).",
+    "unrealized_pnl = market_value - cost_basis (venue's market_exposure); "
+    "realized P&L and fees are reported separately by the venue, not "
+    "recomputed here.",
+    "Read-only: Tinli only ever GETs portfolio data with your key.",
+]
+
+
+def account_auth() -> KalshiAuth | None:
+    """Per-request load, like positions.yaml: key changes apply on the next
+    request. A malformed key file is the USER's file — 422, never a 500."""
+    try:
+        return KalshiAuth.from_env()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"BYOK key config is invalid ({KEY_ID_ENV}/{KEY_PATH_ENV}): {exc}",
+        ) from exc
+
+
+@router.get("/account")
+def account() -> AccountReport:
+    """Real Kalshi account positions via BYOK. byok=false with an empty book
+    when no key is configured — the UI shows how to enable it."""
+    now = datetime.now(UTC)
+    auth = account_auth()
+    if auth is None:
+        return AccountReport(
+            byok=False, positions=[], total_market_value=Decimal(0),
+            total_cost_basis=Decimal(0), total_unrealized_pnl=Decimal(0),
+            unmarked_positions=0, assumptions=ACCOUNT_ASSUMPTIONS, fetched_at=now,
+        )
+    try:
+        raw_positions = kalshi.get_positions(auth)
+        markets = get_source().markets()
+    except VenueHTTPError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    by_ticker = {m.id.split(":", 1)[1]: m for m in markets if m.venue == "kalshi"}
+    pair_by_ticker = {p.kalshi_ticker: p.event_key for p in load_pairs()}
+    rows: list[AccountPositionRisk] = []
+    mv = cb = pnl = Decimal(0)
+    unmarked = 0
+    for pos in raw_positions:
+        m = by_ticker.get(pos.ticker)
+        if pos.side == "yes":
+            mark = m.best_bid if m else None
+        else:
+            mark = (Decimal(1) - m.best_ask) if m and m.best_ask is not None else None
+        if mark is None:
+            unmarked += 1
+            rows.append(AccountPositionRisk(
+                position=pos, event_key=pair_by_ticker.get(pos.ticker),
+                mark=None, market_value=None, unrealized_pnl=None,
+            ))
+            continue
+        value = (mark * pos.contracts).quantize(Decimal("0.01"), rounding=ROUND_FLOOR)
+        row_pnl = value - pos.cost_basis
+        mv += value
+        cb += pos.cost_basis
+        pnl += row_pnl
+        rows.append(AccountPositionRisk(
+            position=pos, event_key=pair_by_ticker.get(pos.ticker),
+            mark=mark, market_value=value, unrealized_pnl=row_pnl,
+        ))
+    return AccountReport(
+        byok=True, positions=rows, total_market_value=mv, total_cost_basis=cb,
+        total_unrealized_pnl=pnl, unmarked_positions=unmarked,
+        assumptions=ACCOUNT_ASSUMPTIONS, fetched_at=now,
+    )
 
 
 class VenueStreamStatus(BaseModel):

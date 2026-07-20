@@ -35,12 +35,16 @@ def _get_client() -> httpx.Client:
     return _client
 
 
-def get_json(url: str, params: dict | None = None):
+def get_json(url: str, params: dict | None = None, headers=None):
+    """headers may be a dict or a zero-arg callable returning one — signed
+    auth headers carry a timestamp and must be REGENERATED on every retry,
+    not reused from the failed attempt."""
     delay = BASE_DELAY_S
     last_error: Exception | None = None
     for attempt in range(MAX_TRIES):
         try:
-            resp = _get_client().get(url, params=params)
+            extra = headers() if callable(headers) else headers
+            resp = _get_client().get(url, params=params, headers=extra)
             if resp.status_code == 429 or resp.status_code >= 500:
                 last_error = VenueHTTPError(f"HTTP {resp.status_code} from {url}")
             else:

@@ -5,6 +5,9 @@
 import type { DivergenceItem, Market, OrderbookLevel, PairQuote } from './types.gen'
 
 export type {
+  AccountPosition,
+  AccountPositionRisk,
+  AccountReport,
   BasisStats,
   DivergenceItem,
   EventExposure,
@@ -33,4 +36,5 @@ export type Health = {
   mode: 'live' | 'demo'
   readonly?: boolean
   stream?: boolean
+  byok?: boolean
 }

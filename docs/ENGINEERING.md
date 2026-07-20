@@ -17,9 +17,9 @@ frontend · pytest · streaming where venues allow it, polling fallback (M8)
 · SQLite + parquet for v0 persistence · secrets in `.env` (never committed).
 
 Ask before adding ANY dependency beyond those installed:
-fastapi, uvicorn, websockets, httpx, pyyaml, cachetools, pyarrow, tzdata,
-numpy, pytest, hypothesis (Python) · @fontsource-variable/inter and
-@fontsource-variable/jetbrains-mono (JS).
+fastapi, uvicorn, websockets, cryptography, httpx, pyyaml, cachetools,
+pyarrow, tzdata, numpy, pytest, hypothesis (Python) ·
+@fontsource-variable/inter and @fontsource-variable/jetbrains-mono (JS).
 
 ## Layout
 
@@ -120,6 +120,21 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   polling. Header shows `● LIVE · STREAM` / `· POLL`, and a gold stale flag
   when a venue's feed goes quiet (>10s).
 
+### BYOK (M9)
+- The user's OWN Kalshi API key from `.env` (`TINLI_KALSHI_KEY_ID` +
+  `TINLI_KALSHI_PRIVATE_KEY_PATH`), RSA-PSS request signing in
+  `tinli_api.venues.kalshi_auth` (spec + doc-derived caveats in
+  docs/VENUES.md — some paths still carry TODO(BYOK-live) markers until a
+  real key confirms them). Read-only hosted instances refuse keys.
+- With keys: the Kalshi feed upgrades from 2s REST polling to the
+  authenticated websocket (`orderbook_delta`, RELATIVE deltas, seq-gap
+  reconnect; falls back to a poll cycle on any socket failure), and
+  `/v1/account` serves the user's REAL Kalshi book marked conservatively
+  (YES at bid, NO at 1-ask). Kalshi reports cost aggregates, not entry
+  prices — the account book never feeds Kelly and is never merged with the
+  self-reported positions.yaml book.
+- GET only, ever. Tinli never places, amends, or cancels orders.
+
 ### Terminal UI (M5 + redesign)
 - One dense screen, 3s polling: selectable watchlist → selected pair's venue
   quotes with basis history, depth-curve charts and book ladders → lock
@@ -175,7 +190,8 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M8 are all shipped. Present a short plan before each new
+v0 milestones M0–M9 are all shipped (M9's live-key verification is pending
+a real Kalshi API key — grep TODO(BYOK-live)). Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't
 force the plan. Definition of done: `make demo` boots on fixtures with

@@ -125,3 +125,23 @@ class PairMapping(BaseModel):
         "flags the result.",
     )
     notes: str = ""
+
+
+class AccountPosition(BaseModel):
+    """One real Kalshi account position (BYOK, read-only; M9).
+
+    Kalshi reports COST AGGREGATES, not an entry price — so this model
+    carries exactly what the venue states and nothing derived that would
+    require guessing (no entry price, no Kelly input). Sign convention from
+    the venue: positive contracts = YES, negative = NO; `side`/`contracts`
+    are the unpacked absolute form.
+    """
+
+    ticker: str
+    side: Literal["yes", "no"]
+    contracts: Decimal = Field(description="absolute contract count (venue position_fp, unsigned)")
+    cost_basis: Decimal = Field(description="venue market_exposure_dollars: cost of the open position")
+    total_traded: Decimal
+    realized_pnl: Decimal
+    fees_paid: Decimal
+    last_updated: datetime | None = None
