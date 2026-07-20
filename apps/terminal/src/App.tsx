@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type {
+  BasisStats,
   DivergenceItem,
   Health,
   HistoryPoint,
   HistoryResponse,
+  LockReport,
   Orderbook,
   Pair,
   RiskReport,
@@ -39,7 +41,9 @@ export default function App() {
   const [riskError, setRiskError] = useState<string | null>(null)
   const [kalshiBook, setKalshiBook] = useState<Orderbook | null>(null)
   const [pmBook, setPmBook] = useState<Orderbook | null>(null)
+  const [lock, setLock] = useState<LockReport | null>(null)
   const [history, setHistory] = useState<HistoryPoint[]>([])
+  const [historyStats, setHistoryStats] = useState<BasisStats | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [view, setView] = useState<View>('terminal')
   const [showIntro, setShowIntro] = useState(() => localStorage.getItem(INTRO_KEY) !== '1')
@@ -106,6 +110,9 @@ export default function App() {
         `/v1/markets/${encodeURIComponent(activePair.polymarket.id)}/orderbook`,
       ).then((b) => alive && b && setPmBook(b))
     }
+    getJson<LockReport>(`/v1/lock/${encodeURIComponent(activePair.event_key)}`).then(
+      (l) => alive && l && setLock(l),
+    )
     return () => {
       alive = false
     }
@@ -117,9 +124,14 @@ export default function App() {
     if (!activeKey) return
     let alive = true
     setHistory([])
+    setHistoryStats(null)
     const load = () =>
       getJson<HistoryResponse>(`/v1/history/${encodeURIComponent(activeKey)}?hours=24`).then(
-        (h) => alive && h && h.event_key === activeKey && setHistory(h.points),
+        (h) => {
+          if (!alive || !h || h.event_key !== activeKey) return
+          setHistory(h.points)
+          setHistoryStats(h.stats)
+        },
       )
     load()
     const id = setInterval(load, 30_000)
@@ -222,8 +234,10 @@ export default function App() {
               pair={activePair}
               item={activeItem}
               history={history}
+              historyStats={historyStats}
               kalshiBook={kalshiBook}
               pmBook={pmBook}
+              lock={lock}
             />
           </Panel>
           <div className="flex flex-col gap-1 min-h-0">

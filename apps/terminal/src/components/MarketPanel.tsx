@@ -1,7 +1,9 @@
-import type { BookLevel, DivergenceItem, HistoryPoint, MarketQuote, Orderbook, Pair } from '../types'
+import type { BasisStats, BookLevel, DivergenceItem, HistoryPoint, MarketQuote, Orderbook, Pair } from '../types'
+import type { LockReport } from '../types.gen'
 import { cents, clock, qty } from '../format'
 import BasisChart from './BasisChart'
 import DepthChart from './DepthChart'
+import LockPanel from './LockPanel'
 import Signed from './Signed'
 
 const DEPTH = 6
@@ -143,14 +145,18 @@ export default function MarketPanel({
   pair,
   item,
   history,
+  historyStats,
   kalshiBook,
   pmBook,
+  lock,
 }: {
   pair: Pair | null
   item: DivergenceItem | null
   history: HistoryPoint[]
+  historyStats: BasisStats | null
   kalshiBook: Orderbook | null
   pmBook: Orderbook | null
+  lock: LockReport | null
 }) {
   if (!pair) return <div className="p-3 text-muted text-[12px]">select a pair</div>
   // guard against stale books from a previous selection still in state
@@ -185,7 +191,7 @@ export default function MarketPanel({
         <VenueQuote label="POLYMARKET" book={freshP} />
       </div>
 
-      <BasisChart points={history} />
+      <BasisChart points={history} stats={historyStats} />
 
       <div className="flex gap-1.5 items-stretch">
         <DepthChart label="KALSHI DEPTH" book={freshK} />
@@ -197,7 +203,13 @@ export default function MarketPanel({
         <Ladder label="POLYMARKET BOOK" quote={pair.polymarket} book={freshP} />
       </div>
 
-      {item && <LockEconomics item={item} />}
+      {/* full depth-walked curve when the selected pair's lock has loaded;
+          the top-of-book summary is the fallback while it's in flight */}
+      {lock && lock.event_key === pair.event_key && lock.points.length > 0 ? (
+        <LockPanel lock={lock} />
+      ) : (
+        item && <LockEconomics item={item} />
+      )}
 
       {pair.notes && <div className="text-muted text-[11px]">{pair.notes}</div>}
     </div>

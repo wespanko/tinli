@@ -1,12 +1,18 @@
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
 from typing import Literal
 
 import yaml
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
-from tinli_divergence import DivergenceItem
+from tinli_divergence import (
+    DivergenceItem,
+    KalshiFees,
+    PolymarketFees,
+    SizePoint,
+    walk_lock,
+)
 from tinli_risk import RiskReport, build_report
 from tinli_schema import Market, Orderbook, Position
 
@@ -20,6 +26,7 @@ from tinli_api.datasource import (
 )
 from tinli_api.history import read_history
 from tinli_api.screener import compute_all
+from tinli_api.stats import BasisStats, basis_stats
 from tinli_api.venues.client import VenueHTTPError
 
 router = APIRouter(prefix="/v1")
@@ -91,6 +98,7 @@ class HistoryResponse(BaseModel):
     event_key: str
     hours: int
     points: list[HistoryPoint]
+    stats: BasisStats
 
 
 def _mid(bid: Decimal | None, ask: Decimal | None) -> Decimal | None:
@@ -116,7 +124,105 @@ def history(event_key: str, hours: int = Query(default=24, ge=1, le=168)) -> His
         )
         for r in read_history(event_key, hours)
     ]
-    return HistoryResponse(event_key=event_key, hours=hours, points=points)
+    stats = basis_stats([(p.ts, p.raw_basis_cents) for p in points])
+    return HistoryResponse(event_key=event_key, hours=hours, points=points, stats=stats)
+
+
+FOUR_DP = Decimal("0.0001")
+DAYS_PER_YEAR = Decimal("365")
+MIN_HORIZON_DAYS = Decimal("0.25")  # 6h floor: don't annualize into absurdity
+SECONDS_PER_DAY = Decimal("86400")
+
+LOCK_ASSUMPTIONS = [
+    "Taker-only: both legs cross the spread; fees charged per price level with "
+    "each venue's exact rounding (can only overstate fees, never understate).",
+    "Direction is fixed at top-of-book; a direction flip at depth is not modeled.",
+    "Both legs are priced from the same book snapshot; leg risk (one side "
+    "moving while the other fills) is not modeled.",
+    "Annualized return is simple (profit/capital x 365/horizon), horizon = later "
+    "venue close time, floored at 6 hours; venues may resolve before close.",
+]
+
+
+class LockReport(BaseModel):
+    event_key: str
+    question: str
+    criteria_verified: bool
+    fee_assumed_worst_case: bool
+    direction: str | None
+    points: list[SizePoint]
+    optimal: SizePoint | None
+    depth_exhausted: bool
+    days_to_resolution: Decimal | None
+    annualized_return: Decimal | None = Field(
+        default=None,
+        description="simple annualized return on capital at the optimal size; "
+        "None when there is no profitable size or no close time",
+    )
+    assumptions: list[str]
+    fetched_at: datetime
+
+
+@router.get("/lock/{event_key}")
+def lock(event_key: str) -> LockReport:
+    """Depth-walked lock curve for one pair: edge vs size off the FULL books,
+    with exact per-level fees, plus capital, horizon and annualized return at
+    the profit-maximizing size. Math in tinli_divergence.sizing."""
+    pair = next((p for p in load_pairs() if p.event_key == event_key), None)
+    if pair is None:
+        raise HTTPException(status_code=404, detail=f"unknown event_key: {event_key}")
+    source = get_source()
+    try:
+        k_book = source.orderbook(pair, "kalshi")
+        pm_book = source.orderbook(pair, "polymarket")
+        markets = source.markets()
+    except VenueHTTPError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    pm_fees = PolymarketFees(pair.pm_fee_category)
+    curve = walk_lock(k_book, pm_book, KalshiFees(), pm_fees)
+    fetched_at = max(k_book.fetched_at, pm_book.fetched_at)
+
+    assumptions = list(LOCK_ASSUMPTIONS)
+    if pm_fees.assumed_worst_case:
+        assumptions.append(
+            "No curated Polymarket fee category for this pair: the WORST-CASE "
+            "rate on the published schedule is assumed."
+        )
+    if not pair.criteria_verified:
+        assumptions.append(
+            "UNVERIFIED PAIR: resolution criteria have not been human-compared. "
+            "The $1 settlement identity may not hold — this curve is a trap "
+            "until verified."
+        )
+
+    # horizon: the lock pays out when the event resolves; the later venue
+    # close is the conservative (longer) bound we can actually observe
+    closes = [m.close_ts for m in markets if m.event_key == event_key]
+    days: Decimal | None = None
+    annualized: Decimal | None = None
+    if closes:
+        seconds = Decimal(int((max(closes) - fetched_at).total_seconds()))
+        days = max(seconds / SECONDS_PER_DAY, MIN_HORIZON_DAYS).quantize(FOUR_DP)
+        if curve.optimal is not None and curve.optimal.capital > 0:
+            annualized = (
+                curve.optimal.total_profit / curve.optimal.capital * DAYS_PER_YEAR / days
+            ).quantize(FOUR_DP, rounding=ROUND_FLOOR)  # a return is an edge: floor
+
+    return LockReport(
+        event_key=pair.event_key,
+        question=pair.question,
+        criteria_verified=pair.criteria_verified,
+        fee_assumed_worst_case=pm_fees.assumed_worst_case,
+        direction=curve.direction,
+        points=curve.points,
+        optimal=curve.optimal,
+        depth_exhausted=curve.depth_exhausted,
+        days_to_resolution=days,
+        annualized_return=annualized,
+        assumptions=assumptions,
+        fetched_at=fetched_at,
+    )
 
 
 @router.get("/risk")

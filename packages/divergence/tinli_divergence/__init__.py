@@ -9,6 +9,7 @@ from tinli_divergence.fees import (
     NullFees,
     PolymarketFees,
 )
+from tinli_divergence.sizing import LockCurve, SizePoint, walk_lock
 
 __version__ = "0.1.0"
 __all__ = [
@@ -22,4 +23,7 @@ __all__ = [
     "PolymarketFees",
     "NullFees",
     "PM_CATEGORY_RATES",
+    "LockCurve",
+    "SizePoint",
+    "walk_lock",
 ]

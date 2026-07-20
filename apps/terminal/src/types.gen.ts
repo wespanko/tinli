@@ -120,12 +120,46 @@ export type HistoryPoint = {
   edge_at_size: string | null
 }
 
+export type BasisStats = {
+  n: number
+  mean_cents: string | null
+  stdev_cents: string | null
+  z_last: string | null
+  ar1_phi: string | null
+  half_life_hours: string | null
+}
+
 export type HistoryResponse = {
   event_key: string
   hours: number
   points: HistoryPoint[]
+  stats: BasisStats
 }
 
 export type PositionsUpdate = {
   positions: Position[]
+}
+
+export type SizePoint = {
+  size: string
+  avg_yes: string
+  avg_no: string
+  per_contract_edge: string
+  total_profit: string
+  capital: string
+}
+
+export type LockReport = {
+  event_key: string
+  question: string
+  criteria_verified: boolean
+  fee_assumed_worst_case: boolean
+  direction: string | null
+  points: SizePoint[]
+  optimal: SizePoint | null
+  depth_exhausted: boolean
+  days_to_resolution: string | null
+  annualized_return: string | null
+  assumptions: string[]
+  fetched_at: string
 }

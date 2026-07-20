@@ -131,3 +131,55 @@ def test_divergence_endpoint(client):
         "buy_yes_kalshi_no_polymarket",
         "buy_yes_polymarket_no_kalshi",
     )
+
+
+def test_history_includes_basis_stats(client):
+    r = client.get("/v1/history/fed-jul26-no-change")
+    assert r.status_code == 200
+    h = r.json()
+    # stats always ship with the window; n counts only computable-basis rows,
+    # so this holds for an empty window (n=0, everything None) too
+    n_obs = sum(1 for p in h["points"] if p["raw_basis_cents"] is not None)
+    assert h["stats"]["n"] == n_obs
+    if h["stats"]["mean_cents"] is not None:
+        assert isinstance(h["stats"]["mean_cents"], str)
+
+
+def test_lock_unknown_event_key_404(client):
+    assert client.get("/v1/lock/nope-not-a-pair").status_code == 404
+
+
+def test_lock_report_shape_and_conservatism(client):
+    r = client.get("/v1/lock/fed-jul26-no-change")
+    assert r.status_code == 200
+    lock = r.json()
+    assert lock["event_key"] == "fed-jul26-no-change"
+    # assumptions ship IN the payload, always — at least the 4 base ones
+    assert len(lock["assumptions"]) >= 4
+    assert lock["direction"] in (
+        None,
+        "buy_yes_kalshi_no_polymarket",
+        "buy_yes_polymarket_no_kalshi",
+    )
+    for pt in lock["points"]:
+        # decimals travel as strings, and profit + capital must reconcile
+        # conservatively: profit floored, capital ceilinged, so
+        # capital + profit <= size (never >)
+        assert isinstance(pt["capital"], str)
+        assert float(pt["capital"]) + float(pt["total_profit"]) <= float(pt["size"]) + 1e-9
+    sizes = [float(pt["size"]) for pt in lock["points"]]
+    assert sizes == sorted(sizes)
+    if lock["optimal"] is not None:
+        assert float(lock["optimal"]["total_profit"]) > 0
+        profits = [float(pt["total_profit"]) for pt in lock["points"]]
+        assert float(lock["optimal"]["total_profit"]) == max(profits)
+    # horizon floored at 6h -> annualized return only quoted with a horizon
+    if lock["annualized_return"] is not None:
+        assert lock["days_to_resolution"] is not None
+        assert float(lock["days_to_resolution"]) >= 0.25
+
+
+def test_lock_unverified_pair_carries_trap_warning(client):
+    lock = client.get("/v1/lock/wc26-best-host-usa").json()
+    assert lock["criteria_verified"] is False
+    assert any("UNVERIFIED" in a for a in lock["assumptions"])

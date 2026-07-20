@@ -5,15 +5,18 @@
 import type { DivergenceItem, Market, OrderbookLevel, PairQuote } from './types.gen'
 
 export type {
+  BasisStats,
   DivergenceItem,
   EventExposure,
   HistoryPoint,
   HistoryResponse,
+  LockReport,
   Market,
   Orderbook,
   Position,
   PositionRisk,
   RiskReport,
+  SizePoint,
   VenueTop,
 } from './types.gen'
 

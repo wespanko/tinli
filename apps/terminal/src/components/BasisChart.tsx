@@ -1,16 +1,30 @@
 import { useState } from 'react'
-import type { HistoryPoint } from '../types'
+import type { BasisStats, HistoryPoint } from '../types'
 import { clock } from '../format'
 
 /** Basis-over-time line for the selected pair, from recorded snapshots
     (/v1/history). 2px line, hairline zero baseline, hover crosshair with
     the readout in the header. No history recorded -> say so; never fake a
-    backfill. */
+    backfill. Below the chart: window stats (mean/σ/z, AR(1) half-life) —
+    values arrive pre-rounded against the signal by the API; a missing
+    statistic renders as an em dash with the reason in the tooltip. */
 
 const W = 800
 const H = 110
 
-export default function BasisChart({ points }: { points: HistoryPoint[] }) {
+// stats values are already in cents — plain fixed formatting, no re-scaling
+const c = (v: string, dp = 2) => {
+  const n = parseFloat(v)
+  return `${n > 0 ? '+' : ''}${n.toFixed(dp)}`
+}
+
+export default function BasisChart({
+  points,
+  stats,
+}: {
+  points: HistoryPoint[]
+  stats: BasisStats | null
+}) {
   const [hover, setHover] = useState<number | null>(null)
 
   const pts = points
@@ -118,6 +132,40 @@ export default function BasisChart({ points }: { points: HistoryPoint[] }) {
           <span>{clock(new Date(t1).toISOString())}</span>
         </div>
       </div>
+      {stats && stats.n >= 2 && stats.mean_cents != null && stats.stdev_cents != null && (
+        <div className="flex items-center gap-4 border-t border-line px-2.5 h-6 font-mono text-[10px]">
+          <span>
+            <span className="text-muted">μ </span>
+            <span className="text-text">{c(stats.mean_cents)}¢</span>
+          </span>
+          <span>
+            <span className="text-muted">σ </span>
+            <span className="text-text">{parseFloat(stats.stdev_cents).toFixed(2)}¢</span>
+          </span>
+          <span title="displacement of the latest basis from the window mean, in σ (rounded toward zero)">
+            <span className="text-muted">z </span>
+            {stats.z_last != null ? (
+              <span className="text-text">{c(stats.z_last)}</span>
+            ) : (
+              <span className="text-muted">—</span>
+            )}
+          </span>
+          <span
+            title={
+              stats.half_life_hours != null
+                ? `AR(1) φ=${parseFloat(stats.ar1_phi!).toFixed(2)}; intervals converted to hours via the MEDIAN snapshot spacing — an approximation. Rounded up: never claims faster reversion than measured.`
+                : 'no measurable mean reversion in window (needs ≥30 snapshots and an AR(1) φ strictly inside 0–1)'
+            }
+          >
+            <span className="text-muted">reversion t½ </span>
+            {stats.half_life_hours != null ? (
+              <span className="text-text">≈{parseFloat(stats.half_life_hours).toFixed(1)}h</span>
+            ) : (
+              <span className="text-muted">—</span>
+            )}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
