@@ -1,9 +1,11 @@
+import asyncio
 from datetime import UTC, datetime
 from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
 from typing import Literal
 
 import yaml
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
 from tinli_divergence import (
@@ -27,6 +29,7 @@ from tinli_api.datasource import (
 from tinli_api.history import read_history
 from tinli_api.screener import compute_all
 from tinli_api.stats import BasisStats, basis_stats
+from tinli_api.stream import StreamSource, get_hub
 from tinli_api.venues.client import VenueHTTPError
 
 router = APIRouter(prefix="/v1")
@@ -271,12 +274,7 @@ def put_positions(body: PositionsUpdate) -> PositionsUpdate:
     return body
 
 
-@router.get("/pairs")
-def list_pairs() -> list[PairQuote]:
-    try:
-        markets = get_source().markets()
-    except VenueHTTPError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+def build_pairs(markets: list[Market]) -> list[PairQuote]:
     by_key: dict[tuple[str, str], Market] = {(m.event_key or "", m.venue): m for m in markets}
     return [
         PairQuote(
@@ -289,3 +287,76 @@ def list_pairs() -> list[PairQuote]:
         )
         for p in load_pairs()
     ]
+
+
+@router.get("/pairs")
+def list_pairs() -> list[PairQuote]:
+    try:
+        markets = get_source().markets()
+    except VenueHTTPError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return build_pairs(markets)
+
+
+class VenueStreamStatus(BaseModel):
+    transport: Literal["websocket", "poll"]
+    state: Literal["connecting", "live", "degraded"]
+    age_s: float | None = Field(description="seconds since this venue's last update; None before the first")
+
+
+class StreamUpdate(BaseModel):
+    """One /v1/stream SSE payload: the same shapes the REST endpoints serve,
+    pushed on change instead of polled."""
+
+    ts: datetime
+    venues: dict[str, VenueStreamStatus]
+    pairs: list[PairQuote]
+    divergence: list[DivergenceItem]
+
+
+def sse_event(update: StreamUpdate) -> str:
+    return f"data: {update.model_dump_json()}\n\n"
+
+
+STREAM_THROTTLE_S = 0.4  # min gap between pushes; PM can tick many times/s
+STREAM_HEARTBEAT_S = 15.0
+
+
+@router.get("/stream")
+async def stream() -> StreamingResponse:
+    """Server-sent events: push pairs + divergence when venue data changes.
+
+    Live mode only — demo stays socket-free (fixtures do not tick), and the
+    UI falls back to 3s REST polling whenever this endpoint is unavailable,
+    so nothing breaks when the hub is down."""
+    hub = get_hub()
+    if hub is None:
+        raise HTTPException(
+            status_code=503, detail="stream not running (demo mode or TINLI_STREAM=0)"
+        )
+    source = StreamSource(hub)
+
+    async def gen():
+        seen = -1
+        while True:
+            if hub.version != seen:
+                seen = hub.version
+                pairs = build_pairs(await asyncio.to_thread(source.markets))
+                items = await asyncio.to_thread(compute_all, source)
+                update = StreamUpdate(
+                    ts=datetime.now(UTC),
+                    venues=hub.venue_status(),
+                    pairs=pairs,
+                    divergence=items,
+                )
+                yield sse_event(update)
+            else:
+                yield ": keepalive\n\n"
+            await asyncio.sleep(STREAM_THROTTLE_S)
+            await hub.wait_for_change(STREAM_HEARTBEAT_S)
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

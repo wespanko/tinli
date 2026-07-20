@@ -10,7 +10,8 @@ def test_healthz_live(monkeypatch):
     monkeypatch.delenv("TINLI_READONLY", raising=False)
     r = client.get("/healthz")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "mode": "live", "readonly": False}
+    # stream False here: TestClient without lifespan never starts the hub
+    assert r.json() == {"status": "ok", "mode": "live", "readonly": False, "stream": False}
 
 
 def test_healthz_demo(monkeypatch):

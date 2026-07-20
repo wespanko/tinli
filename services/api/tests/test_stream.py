@@ -7,7 +7,15 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
-from tinli_api.stream import PmBook, StreamHub
+import pytest
+from fastapi.testclient import TestClient
+
+from tinli_api import datasource
+from tinli_api.main import app
+from tinli_api.routes import StreamUpdate, build_pairs, sse_event
+from tinli_api.screener import compute_all
+from tinli_api.stream import PmBook, StreamHub, StreamSource
+from tinli_api.venues import kalshi
 
 FIXTURES = Path(__file__).parent / "fixtures"
 FRAMES = json.loads((FIXTURES / "polymarket" / "ws_frames_fed.json").read_text(encoding="utf-8"))
@@ -88,6 +96,43 @@ def test_mid_stream_resnapshot_resets_levels():
     b.apply_snapshot({"bids": [{"price": "0.20", "size": "2"}], "asks": []}, NOW)
     book = b.to_orderbook()
     assert [(l.price, l.size) for l in book.bids] == [(Decimal("0.20"), Decimal("2"))]
+
+
+def test_stream_endpoint_503_when_hub_absent(monkeypatch):
+    # demo mode / TestClient without lifespan: no hub -> a clear 503, never
+    # a hang or a 500; the UI treats 503 as "fall back to polling"
+    monkeypatch.setenv("TINLI_DEMO", "1")
+    datasource.reset_source()
+    r = TestClient(app).get("/v1/stream")
+    assert r.status_code == 503
+    assert "stream not running" in r.json()["detail"]
+    datasource.reset_source()
+
+
+def test_stream_update_builds_from_hub_caches():
+    """A hub primed from recorded fixtures produces a complete SSE payload:
+    every mapped pair present, streamed PM book + fixture Kalshi book meeting
+    in the screener, payload framed as an SSE data event."""
+    hub = hub_with_token_map()
+    hub._handle_pm_frame(FRAMES[0])
+    fed = next(p for p in hub.pairs if p.event_key == "fed-jul26-no-change")
+    raw = json.loads(
+        (FIXTURES / "kalshi" / f"orderbook_{fed.kalshi_ticker}.json").read_text(encoding="utf-8")
+    )
+    hub._kalshi_books[fed.kalshi_ticker] = kalshi.parse_orderbook(fed.kalshi_ticker, raw, NOW)
+
+    source = StreamSource(hub)
+    items = compute_all(source)
+    assert len(items) == len(hub.pairs), "screener must emit one item per mapped pair"
+    fed_item = next(i for i in items if i.event_key == "fed-jul26-no-change")
+    assert fed_item.raw_basis_cents is not None, "both legs streamed -> basis computable"
+
+    update = StreamUpdate(
+        ts=NOW, venues=hub.venue_status(), pairs=build_pairs(source.markets()), divergence=items
+    )
+    line = sse_event(update)
+    assert line.startswith("data: {") and line.endswith("\n\n")
+    assert "fed-jul26-no-change" in line
 
 
 def test_venue_status_states():

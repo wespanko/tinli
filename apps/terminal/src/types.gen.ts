@@ -163,3 +163,16 @@ export type LockReport = {
   assumptions: string[]
   fetched_at: string
 }
+
+export type VenueStreamStatus = {
+  transport: "websocket" | "poll"
+  state: "connecting" | "live" | "degraded"
+  age_s: number | null
+}
+
+export type StreamUpdate = {
+  ts: string
+  venues: Record<string, VenueStreamStatus>
+  pairs: PairQuote[]
+  divergence: DivergenceItem[]
+}
