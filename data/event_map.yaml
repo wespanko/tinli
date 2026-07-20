@@ -47,27 +47,27 @@ pairs:
     kalshi_ticker: KXBALLONDOR-26-LYAM
     pm_condition_id: "0xa34edb6c898232378a9cc08744842df2cd89d278ba45b012bed3ac10c7241c4d"
     pm_yes_token: 0
-    criteria_verified: false
+    criteria_verified: true
     pm_fee_category: sports
-    notes: "Both keyed to the official 2026 Ballon d'Or winner (France Football). DATE-TAIL MISMATCH: PM market ends Oct 31 and resolves 'Other' if no winner declared by Dec 31; Kalshi closes Dec 31 with tail unstated in primary rules. Ceremony is normally late Sep/Oct so tails rarely bind — UNVERIFIED until full Kalshi contract terms compared. Candidate from curate 2026-07-20."
+    notes: "Both settle on the official 2026 Ballon d'Or winner; PM names France Football as primary source, Kalshi rule is 'wins the Ballon d'Or in 2026'. Only tail: a winner declared AFTER Dec 31 2026 resolves PM 'Other' (No) while Kalshi's long settlement window (expiration 2027) suggests a late Yes — ceremony has been Sep/Oct every year, tail treated as negligible. Full rules compared 2026-07-20 (Wes)."
 
   - event_key: bdor26-kane
     question: "Ballon d'Or 2026 (Harry Kane)"
     kalshi_ticker: KXBALLONDOR-26-HKAN
     pm_condition_id: "0x12dc2b61723b2a54fc1947a307389b5f32038e7a29a0e936ad1fe410b969d06a"
     pm_yes_token: 0
-    criteria_verified: false
+    criteria_verified: true
     pm_fee_category: sports
-    notes: "Same structure and tails as bdor26-yamal. Candidate from curate 2026-07-20."
+    notes: "Same structure and tails as bdor26-yamal. Full rules compared 2026-07-20 (Wes)."
 
   - event_key: bdor26-rodri
     question: "Ballon d'Or 2026 (Rodri)"
     kalshi_ticker: KXBALLONDOR-26-RODR
     pm_condition_id: "0x30f729ef18553d8956bfd7ae7a1e96dbad07e2476160239b23ec10e6cdc5f01b"
     pm_yes_token: 0
-    criteria_verified: false
+    criteria_verified: true
     pm_fee_category: sports
-    notes: "Same structure and tails as bdor26-yamal. Candidate from curate 2026-07-20."
+    notes: "Same structure and tails as bdor26-yamal. Full rules compared 2026-07-20 (Wes)."
 
   - event_key: lebron-next-gsw
     question: "LeBron Next Team (Warriors)"
@@ -76,7 +76,7 @@ pairs:
     pm_yes_token: 0
     criteria_verified: false
     pm_fee_category: sports
-    notes: "DATE + DEFAULT-TAIL MISMATCH: Kalshi resolves on next team joined before Oct 23; PM runs to Oct 31 and defaults to 'Los Angeles Lakers' if no new team by then. A signing in the Oct 23-31 window settles the venues differently, and 'plays for in 2026-27' vs 'next team' may diverge on a sign-and-trade. UNVERIFIED — compare full rules before trusting any edge. Candidate from curate 2026-07-20."
+    notes: "KEPT FLAGGED after full-rules comparison 2026-07-20 (Wes): 8-DAY SETTLEMENT GAP — a signing announced Oct 23-31 resolves Kalshi No ('next team before Oct 23' failed) but PM Yes (joins 'by Oct 31'), opposite settlements on the same fact, and LeBron is currently unsigned. No-move tails DO agree on the team binary (stays Laker / retires / unlisted team -> both No). PM may also resolve on 'consensus of credible media reporting', looser than Kalshi. Do not treat divergence as edge."
 
   - event_key: lebron-next-nyk
     question: "LeBron Next Team (Knicks)"
@@ -85,7 +85,7 @@ pairs:
     pm_yes_token: 0
     criteria_verified: false
     pm_fee_category: sports
-    notes: "Same structure and tails as lebron-next-gsw. Candidate from curate 2026-07-20."
+    notes: "Same structure and gap as lebron-next-gsw — kept flagged after full-rules comparison 2026-07-20 (Wes)."
 
   - event_key: lebron-next-sas
     question: "LeBron Next Team (Spurs)"
@@ -94,4 +94,4 @@ pairs:
     pm_yes_token: 0
     criteria_verified: false
     pm_fee_category: sports
-    notes: "Same structure and tails as lebron-next-gsw. Candidate from curate 2026-07-20."
+    notes: "Same structure and gap as lebron-next-gsw — kept flagged after full-rules comparison 2026-07-20 (Wes)."

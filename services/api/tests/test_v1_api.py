@@ -96,7 +96,7 @@ def test_pairs(client):
         assert p["polymarket"] is not None, f"{p['event_key']} missing polymarket quote"
     trap = next(p for p in pairs if p["event_key"] == "lebron-next-gsw")
     assert trap["criteria_verified"] is False
-    assert "mismatch" in trap["notes"].lower()
+    assert "do not treat divergence as edge" in trap["notes"].lower()
 
 
 def test_demo_fetched_at_is_recording_time_not_now(client):
