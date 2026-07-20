@@ -39,7 +39,7 @@ def test_risk_report_marks_the_example_book(client):
     for row in report["positions"]:
         assert row["mark"] is not None
         assert isinstance(row["mark"], str), "Decimals must travel as strings"
-    # the USA/Belgium legs share one event; the Fed leg is its own
+    # the two Yamal legs share one event; the Fed leg is its own
     assert len(report["by_event"]) == 2
 
 

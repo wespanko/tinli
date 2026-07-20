@@ -18,56 +18,12 @@
 #                      mapping itself); the divergence fee model reads it.
 #   notes:             resolution-criteria differences, esp. tail cases.
 #
-# Refreshed 2026-07-16 (previous curation 2026-07-05; the settled World
-# Cup group-stage and Wimbledon pairs were retired — their fixtures remain
-# on disk for adapter tests).
+# Refreshed 2026-07-20 (previous refresh 2026-07-16; the World Cup pairs
+# settled with the Jul 19 final and were retired, as were the earlier
+# group-stage and Wimbledon pairs — their fixtures remain on disk for
+# adapter tests).
 
 pairs:
-  - event_key: wc26-winner-argentina
-    question: "World Cup Winner (Argentina)"
-    kalshi_ticker: KXMENWORLDCUP-26-AR
-    pm_condition_id: "0x0c4cd2055d6ea89354ffddc55d6dbcef9355748112ea952fc925f3db6a5c457f"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Both resolve to WC winner. PM early-resolves No on elimination (same settlement). Cancellation tail differs: PM -> 'Other' if not completed by Oct 13; Kalshi primary rules silent. Rules compared 2026-07-16. (Replaces stage-of-elim proxy KXWCSTAGEOFELIM-26ARG-FW.)"
-
-  - event_key: wc26-winner-spain
-    question: "World Cup Winner (Spain)"
-    kalshi_ticker: KXMENWORLDCUP-26-ES
-    pm_condition_id: "0x7976b8dbacf9077eb1453a62bcefd6ab2df199acd28aad276ff0d920d6992892"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same structure and tails as wc26-winner-argentina. Rules compared 2026-07-16."
-
-  - event_key: wc26-final-arg-wins-3-2
-    question: "WC Final Exact Score (Argentina 3-2)"
-    kalshi_ticker: KXWCSCORE-26JUL19ESPARG-ESP2ARG3
-    pm_condition_id: "0x53da62774d757d6a651c69a1aca70f7765ed6b840bd1f4b209692f8d6c0c2d4e"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "NOTATION FLIP: PM lists 'Spain 2 - 3 Argentina' (home side first) == Kalshi 'Argentina wins 3-2'. Both are 90min+stoppage only, ET/pens excluded. Postponement: PM stays open until played. Rules compared 2026-07-16."
-
-  - event_key: wc26-third-place-france
-    question: "WC Third Place (France)"
-    kalshi_ticker: KXWCADVANCE-26JUL18FRAENG-FRA
-    pm_condition_id: "0xaeec5397b4ee2ce20555c0099f0dcf4de4648a2f080c2d10b65ceaff9c26d7a8"
-    pm_yes_token: 0
-    criteria_verified: false
-    pm_fee_category: sports
-    notes: "PM explicitly includes ET, penalty shoot-out, forfeit and official rulings; Kalshi primary rules only say 'wins the game' with tail handling unstated. Likely equivalent but UNCONFIRMED — check Kalshi full contract terms before trusting any edge. 3rd-place games often go to pens. (One pair per PM conditionId: the England direction is priced as this pair's other lock leg — do NOT add a second pair on the same PM market, ids would collide.)"
-
-  - event_key: wc26-golden-boot-messi
-    question: "WC Golden Boot (Messi)"
-    kalshi_ticker: KXWCGOALLEADER-26-LMES
-    pm_condition_id: "0xd2a8caba5559bc21e14f6b2aa504cb14a1782751658b71409e25b82e432c0a97"
-    pm_yes_token: 0
-    criteria_verified: false
-    pm_fee_category: sports
-    notes: "TIE-BREAK MISMATCH RISK: PM ties resolve by FIFA official leader, then fewer penalty goals, then alphabetical; Kalshi tie handling unstated in primary rules. A tie at the top can settle opposite ways — do not treat divergence as edge."
-
   - event_key: fed-jul26-cut-25bps
     question: "Fed July Decision (Cut 25bps)"
     kalshi_ticker: KXFEDDECISION-26JUL-C25
@@ -86,11 +42,56 @@ pairs:
     pm_fee_category: finance
     notes: "Kalshi 'Hike of 0bps' == PM 'no change'. Same rounding tail as fed-jul26-cut-25bps."
 
-  - event_key: wc26-best-host-usa
-    question: "WC Best Advancing Host (USA)"
-    kalshi_ticker: KXWCBESTHOST-26-USA
-    pm_condition_id: "0x5a947653669c8f71ac7b8951f53e3e538dc39025f91482bc606231cf017a3f25"
+  - event_key: bdor26-yamal
+    question: "Ballon d'Or 2026 (Lamine Yamal)"
+    kalshi_ticker: KXBALLONDOR-26-LYAM
+    pm_condition_id: "0xa34edb6c898232378a9cc08744842df2cd89d278ba45b012bed3ac10c7241c4d"
     pm_yes_token: 0
     criteria_verified: false
     pm_fee_category: sports
-    notes: "TRAP EXAMPLE: PM has explicit tie-breakers (wins -> goals scored -> conceded); Kalshi rules state none. If two hosts exit at the same stage the venues can settle opposite ways. Venues ~13c apart on 2026-07-05 — do not treat as edge until Kalshi's tie handling is confirmed."
+    notes: "Both keyed to the official 2026 Ballon d'Or winner (France Football). DATE-TAIL MISMATCH: PM market ends Oct 31 and resolves 'Other' if no winner declared by Dec 31; Kalshi closes Dec 31 with tail unstated in primary rules. Ceremony is normally late Sep/Oct so tails rarely bind — UNVERIFIED until full Kalshi contract terms compared. Candidate from curate 2026-07-20."
+
+  - event_key: bdor26-kane
+    question: "Ballon d'Or 2026 (Harry Kane)"
+    kalshi_ticker: KXBALLONDOR-26-HKAN
+    pm_condition_id: "0x12dc2b61723b2a54fc1947a307389b5f32038e7a29a0e936ad1fe410b969d06a"
+    pm_yes_token: 0
+    criteria_verified: false
+    pm_fee_category: sports
+    notes: "Same structure and tails as bdor26-yamal. Candidate from curate 2026-07-20."
+
+  - event_key: bdor26-rodri
+    question: "Ballon d'Or 2026 (Rodri)"
+    kalshi_ticker: KXBALLONDOR-26-RODR
+    pm_condition_id: "0x30f729ef18553d8956bfd7ae7a1e96dbad07e2476160239b23ec10e6cdc5f01b"
+    pm_yes_token: 0
+    criteria_verified: false
+    pm_fee_category: sports
+    notes: "Same structure and tails as bdor26-yamal. Candidate from curate 2026-07-20."
+
+  - event_key: lebron-next-gsw
+    question: "LeBron Next Team (Warriors)"
+    kalshi_ticker: KXNEXTTEAMNBA-26LJAM-GSW
+    pm_condition_id: "0xaf12bd1a9ec448b428e5879f180b9b05d17cdf6a6af3c20d8a4b7327ca6bfd37"
+    pm_yes_token: 0
+    criteria_verified: false
+    pm_fee_category: sports
+    notes: "DATE + DEFAULT-TAIL MISMATCH: Kalshi resolves on next team joined before Oct 23; PM runs to Oct 31 and defaults to 'Los Angeles Lakers' if no new team by then. A signing in the Oct 23-31 window settles the venues differently, and 'plays for in 2026-27' vs 'next team' may diverge on a sign-and-trade. UNVERIFIED — compare full rules before trusting any edge. Candidate from curate 2026-07-20."
+
+  - event_key: lebron-next-nyk
+    question: "LeBron Next Team (Knicks)"
+    kalshi_ticker: KXNEXTTEAMNBA-26LJAM-NYK
+    pm_condition_id: "0xecb23b1bf49d5fa3ce68f3e816cb61d47886278e0ead2b0babc91ce00ca6bbe3"
+    pm_yes_token: 0
+    criteria_verified: false
+    pm_fee_category: sports
+    notes: "Same structure and tails as lebron-next-gsw. Candidate from curate 2026-07-20."
+
+  - event_key: lebron-next-sas
+    question: "LeBron Next Team (Spurs)"
+    kalshi_ticker: KXNEXTTEAMNBA-26LJAM-SAS
+    pm_condition_id: "0x06866503ec6a8f9d16ad80d668433eae895e9b98b7f50a1b80c1bc1afaa13183"
+    pm_yes_token: 0
+    criteria_verified: false
+    pm_fee_category: sports
+    notes: "Same structure and tails as lebron-next-gsw. Candidate from curate 2026-07-20."

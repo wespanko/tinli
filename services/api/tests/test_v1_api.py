@@ -94,9 +94,9 @@ def test_pairs(client):
     for p in pairs:
         assert p["kalshi"] is not None, f"{p['event_key']} missing kalshi quote"
         assert p["polymarket"] is not None, f"{p['event_key']} missing polymarket quote"
-    trap = next(p for p in pairs if p["event_key"] == "wc26-best-host-usa")
+    trap = next(p for p in pairs if p["event_key"] == "lebron-next-gsw")
     assert trap["criteria_verified"] is False
-    assert "tie" in trap["notes"].lower()
+    assert "mismatch" in trap["notes"].lower()
 
 
 def test_demo_fetched_at_is_recording_time_not_now(client):
@@ -180,6 +180,6 @@ def test_lock_report_shape_and_conservatism(client):
 
 
 def test_lock_unverified_pair_carries_trap_warning(client):
-    lock = client.get("/v1/lock/wc26-best-host-usa").json()
+    lock = client.get("/v1/lock/lebron-next-gsw").json()
     assert lock["criteria_verified"] is False
     assert any("UNVERIFIED" in a for a in lock["assumptions"])

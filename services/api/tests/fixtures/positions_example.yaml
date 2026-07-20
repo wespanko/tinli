@@ -3,16 +3,16 @@
 # This copy matches the recorded market fixtures and stays stable.
 
 positions:
-  - market_id: "kalshi:KXMENWORLDCUP-26-ES"
+  - market_id: "kalshi:KXBALLONDOR-26-LYAM"
     side: yes
     contracts: "100"
-    entry_price: "0.52"
-    notes: "YES leg of Spain WC-winner lock"
-  - market_id: "polymarket:0x7976b8dbacf9077eb1453a62bcefd6ab2df199acd28aad276ff0d920d6992892"
+    entry_price: "0.33"
+    notes: "YES leg of Yamal Ballon d'Or lock"
+  - market_id: "polymarket:0xa34edb6c898232378a9cc08744842df2cd89d278ba45b012bed3ac10c7241c4d"
     side: no
     contracts: "100"
-    entry_price: "0.45"
-    notes: "NO leg of Spain WC-winner lock"
+    entry_price: "0.64"
+    notes: "NO leg of Yamal Ballon d'Or lock"
   - market_id: "kalshi:KXFEDDECISION-26JUL-H0"
     side: yes
     contracts: "250"

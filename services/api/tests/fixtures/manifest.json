@@ -1,31 +1,6 @@
 {
- "recorded_at": "2026-07-17T01:11:44.422227+00:00",
+ "recorded_at": "2026-07-20T19:10:32.543394+00:00",
  "pairs": [
-  {
-   "event_key": "wc26-winner-argentina",
-   "kalshi_ticker": "KXMENWORLDCUP-26-AR",
-   "pm_condition_id": "0x0c4cd2055d6ea89354ffddc55d6dbcef9355748112ea952fc925f3db6a5c457f"
-  },
-  {
-   "event_key": "wc26-winner-spain",
-   "kalshi_ticker": "KXMENWORLDCUP-26-ES",
-   "pm_condition_id": "0x7976b8dbacf9077eb1453a62bcefd6ab2df199acd28aad276ff0d920d6992892"
-  },
-  {
-   "event_key": "wc26-final-arg-wins-3-2",
-   "kalshi_ticker": "KXWCSCORE-26JUL19ESPARG-ESP2ARG3",
-   "pm_condition_id": "0x53da62774d757d6a651c69a1aca70f7765ed6b840bd1f4b209692f8d6c0c2d4e"
-  },
-  {
-   "event_key": "wc26-third-place-france",
-   "kalshi_ticker": "KXWCADVANCE-26JUL18FRAENG-FRA",
-   "pm_condition_id": "0xaeec5397b4ee2ce20555c0099f0dcf4de4648a2f080c2d10b65ceaff9c26d7a8"
-  },
-  {
-   "event_key": "wc26-golden-boot-messi",
-   "kalshi_ticker": "KXWCGOALLEADER-26-LMES",
-   "pm_condition_id": "0xd2a8caba5559bc21e14f6b2aa504cb14a1782751658b71409e25b82e432c0a97"
-  },
   {
    "event_key": "fed-jul26-cut-25bps",
    "kalshi_ticker": "KXFEDDECISION-26JUL-C25",
@@ -37,9 +12,34 @@
    "pm_condition_id": "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86"
   },
   {
-   "event_key": "wc26-best-host-usa",
-   "kalshi_ticker": "KXWCBESTHOST-26-USA",
-   "pm_condition_id": "0x5a947653669c8f71ac7b8951f53e3e538dc39025f91482bc606231cf017a3f25"
+   "event_key": "bdor26-yamal",
+   "kalshi_ticker": "KXBALLONDOR-26-LYAM",
+   "pm_condition_id": "0xa34edb6c898232378a9cc08744842df2cd89d278ba45b012bed3ac10c7241c4d"
+  },
+  {
+   "event_key": "bdor26-kane",
+   "kalshi_ticker": "KXBALLONDOR-26-HKAN",
+   "pm_condition_id": "0x12dc2b61723b2a54fc1947a307389b5f32038e7a29a0e936ad1fe410b969d06a"
+  },
+  {
+   "event_key": "bdor26-rodri",
+   "kalshi_ticker": "KXBALLONDOR-26-RODR",
+   "pm_condition_id": "0x30f729ef18553d8956bfd7ae7a1e96dbad07e2476160239b23ec10e6cdc5f01b"
+  },
+  {
+   "event_key": "lebron-next-gsw",
+   "kalshi_ticker": "KXNEXTTEAMNBA-26LJAM-GSW",
+   "pm_condition_id": "0xaf12bd1a9ec448b428e5879f180b9b05d17cdf6a6af3c20d8a4b7327ca6bfd37"
+  },
+  {
+   "event_key": "lebron-next-nyk",
+   "kalshi_ticker": "KXNEXTTEAMNBA-26LJAM-NYK",
+   "pm_condition_id": "0xecb23b1bf49d5fa3ce68f3e816cb61d47886278e0ead2b0babc91ce00ca6bbe3"
+  },
+  {
+   "event_key": "lebron-next-sas",
+   "kalshi_ticker": "KXNEXTTEAMNBA-26LJAM-SAS",
+   "pm_condition_id": "0x06866503ec6a8f9d16ad80d668433eae895e9b98b7f50a1b80c1bc1afaa13183"
   }
  ]
 }
