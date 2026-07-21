@@ -135,6 +135,18 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   self-reported positions.yaml book.
 - GET only, ever. Tinli never places, amends, or cancels orders.
 
+### Research layer (M10)
+- `packages/backtest` (`tinli_backtest`): edge-episode extraction
+  (recording gaps never bridged) + a conservative lock backtest — one lock
+  per episode at displayed size, profit locked at entry, capital =
+  size x (1 - edge), latency sensitivity by entering k ticks late.
+- `scripts/research_note.py` regenerates
+  `docs/research/edge-persistence.md` from the parquet history; the
+  verified-at-recording flags come from event_map.yaml git history and
+  flagged pairs' apparent edges are reported as traps, never traded.
+- The recorder runs continuously (Windows scheduled task `TinliSnapshot`,
+  `snapshot.py --loop 60`) — re-run the note as data accumulates.
+
 ### Terminal UI (M5 + redesign)
 - One dense screen, 3s polling: selectable watchlist → selected pair's venue
   quotes with basis history, depth-curve charts and book ladders → lock
@@ -190,7 +202,7 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M9 are all shipped (M9's live-key verification is pending
+v0 milestones M0–M10 are all shipped (M9's live-key verification is pending
 a real Kalshi API key — grep TODO(BYOK-live)). Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't

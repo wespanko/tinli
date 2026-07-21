@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tinli-backtest"
+version = "0.1.0"
+description = "Tinli research layer: edge-episode extraction and a conservative lock backtest over recorded parquet history"
+requires-python = ">=3.12"
+dependencies = ["pyarrow>=17"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["tinli_backtest"]

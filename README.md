@@ -6,11 +6,29 @@ portfolio risk engine (exposure, VaR, Kelly sizing).
 
 Site + waitlist: [tinli.dev](https://tinli.dev)
 
+## Research: is the cross-venue arb real?
+
+Recorded venue data answers it — see
+[docs/research/edge-persistence.md](docs/research/edge-persistence.md)
+(auto-generated from decimal128 parquet history by
+`scripts/research_note.py`, data accumulating continuously):
+
+- **0.40%** of 212k recorded pair-ticks showed a positive lock edge after
+  exact taker fees at displayed size (max 2.24¢/contract).
+- When edges appear they **persist** — median 33s, longest 147 minutes of
+  continuously executable after-fee edge: nobody is bridging these venues
+  at size.
+- **Capacity, not latency, is the binding constraint**: entering ~80s late
+  still captures 88% of instant-entry P&L, but taking every edge for a
+  week locks only ~$265 on ~$97k deployed. The backtest
+  (`packages/backtest`) is deliberately conservative — one lock per
+  episode, floor-quantized edges, verified pairs only.
+
 ## Status
 
-v0 feature-complete: M0 scaffold, M1 venue adapters, M2 API, M3 divergence
-engine, M4 risk engine, M5 terminal UI, M6 history snapshots — all done.
-Read-only public market data — no order placement, no accounts.
+v0 feature-complete through M9: venue adapters, divergence + risk engines,
+terminal UI, history snapshots, live streaming (M8), BYOK Kalshi auth (M9).
+Read-only public market data — no order placement, ever.
 
 The terminal is one dense screen: watchlist (click a pair to load its
 books), cross-venue orderbook ladders, the fee-adjusted divergence

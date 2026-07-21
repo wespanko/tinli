@@ -6,3 +6,4 @@
 -e ./services/api
 pytest>=8
 hypothesis>=6
+-e ./packages/backtest
