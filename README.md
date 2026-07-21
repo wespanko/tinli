@@ -24,6 +24,13 @@ Recorded venue data answers it — see
   (`packages/backtest`) is deliberately conservative — one lock per
   episode, floor-quantized edges, verified pairs only.
 
+A second study, [docs/research/lead-lag.md](docs/research/lead-lag.md),
+asks which venue discovers price first (move-conditional follow analysis,
+exact binomial tests): no statistically significant leader at snapshot
+cadence yet — the strongest hint is Kalshi following Polymarket on the Fed
+pair (68% follow rate, p = 0.07) — with the censoring quantified and the
+sample growing daily.
+
 ## Status
 
 v0 feature-complete through M9: venue adapters, divergence + risk engines,

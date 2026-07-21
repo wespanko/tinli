@@ -144,6 +144,12 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   `docs/research/edge-persistence.md` from the parquet history; the
   verified-at-recording flags come from event_map.yaml git history and
   flagged pairs' apparent edges are reported as traps, never traded.
+- `tinli_backtest.leadlag` (M11): cross-venue price discovery via
+  move-conditional follow analysis (sparse mids make raw CCF useless) with
+  exact binomial tests; same-tick moves bucket as `simultaneous` — never
+  attribute sub-cadence leadership. `scripts/leadlag_note.py` regenerates
+  `docs/research/lead-lag.md`. Fed-decision event study folds in after
+  2026-07-29.
 - The recorder runs continuously (Windows scheduled task `TinliSnapshot`,
   `snapshot.py --loop 60`) — re-run the note as data accumulates.
 
@@ -202,7 +208,7 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M10 are all shipped (M9's live-key verification is pending
+v0 milestones M0–M11 are all shipped (M9's live-key verification is pending
 a real Kalshi API key — grep TODO(BYOK-live)). Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't
