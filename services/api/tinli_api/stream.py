@@ -446,3 +446,16 @@ def get_hub() -> StreamHub | None:
 def set_hub(hub: StreamHub | None) -> None:
     global _hub
     _hub = hub
+
+
+async def restart_hub() -> None:
+    """Replace the running hub with a fresh one on the (re-loaded) pair
+    map — used after curation edits so streams resubscribe. No-op when
+    streaming is off (demo mode)."""
+    old = get_hub()
+    if old is None:
+        return
+    await old.stop()
+    new = StreamHub(kalshi_auth=old.kalshi_auth)
+    new.start()
+    set_hub(new)

@@ -206,3 +206,33 @@ export type AccountReport = {
   assumptions: string[]
   fetched_at: string
 }
+
+export type Candidate = {
+  score: number
+  kalshi_ticker: string
+  kalshi_title: string
+  kalshi_rules: string
+  kalshi_close: string | null
+  kalshi_vol_24h: number
+  kalshi_url: string
+  pm_condition_id: string
+  pm_question: string
+  pm_description: string
+  pm_end: string | null
+  pm_vol_24h: number
+  pm_url: string
+  pm_outcomes: string[]
+  pm_yes_token_guess: number | null
+  suggested_event_key: string
+}
+
+export type CandidatesResponse = {
+  candidates: Candidate[]
+  cache_age_s: number
+  fetched_at: string
+}
+
+export type PairMutationResponse = {
+  pair: PairQuote | null
+  pairs: PairQuote[]
+}

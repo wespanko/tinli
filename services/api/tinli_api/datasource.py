@@ -27,9 +27,15 @@ FIXTURES = REPO_ROOT / "services" / "api" / "tests" / "fixtures"
 CACHE_TTL_S = 2.0
 
 
+def event_map_path() -> Path:
+    """Overridable for tests (TINLI_EVENT_MAP) — in-app curation writes to
+    this file, and tests must never mutate the real map."""
+    return Path(os.environ.get("TINLI_EVENT_MAP", str(EVENT_MAP)))
+
+
 @lru_cache(maxsize=1)
 def load_pairs() -> tuple[PairMapping, ...]:
-    raw = yaml.safe_load(EVENT_MAP.read_text(encoding="utf-8"))
+    raw = yaml.safe_load(event_map_path().read_text(encoding="utf-8"))
     return tuple(PairMapping(**p) for p in raw["pairs"])
 
 

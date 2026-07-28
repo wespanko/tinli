@@ -48,13 +48,14 @@ in v0 — Tinli never sees your accounts.
 
 ## Quickstart
 
-Prereqs: Python 3.12, Node 20+, GNU make
-(Windows: `winget install ezwinports.make`).
+Prereqs: Python 3.12+ and Node 20+. Then:
 
-    make setup    # venv, package installs, npm install
-    make dev      # API on :8000, UI on :5173, live public data
-    make demo     # same, but recorded fixtures + SIMULATED DATA badge
-    make test     # pytest + TypeScript checks
+    python run.py           # live public data -> http://localhost:5173
+    python run.py demo      # recorded fixtures + SIMULATED DATA badge
+
+First run bootstraps everything (venv, installs); later runs boot straight
+in. GNU make users can keep using `make setup / dev / demo / test`
+(Windows: `winget install ezwinports.make`).
     make snapshot # record one history snapshot to data/history/ (parquet)
 
 Continuous recording (feeds the basis-over-time chart):

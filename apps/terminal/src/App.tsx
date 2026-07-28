@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
   AccountReport,
@@ -15,16 +15,18 @@ import type {
 } from './types'
 import { cents } from './format'
 import AccountPanel from './components/AccountPanel'
+import CurateView from './components/CurateView'
 import DivergencePanel from './components/DivergencePanel'
 import EdgeAlert, { liveEdges } from './components/EdgeAlert'
 import IntroPanel from './components/IntroPanel'
 import MarketPanel from './components/MarketPanel'
 import PairCards from './components/PairCards'
 import Panel from './components/Panel'
+import Skeleton from './components/Skeleton'
 import RiskPanel from './components/RiskPanel'
 import WatchTable, { sortPairs } from './components/WatchTable'
 
-type View = 'terminal' | 'cards'
+type View = 'terminal' | 'cards' | 'curate'
 
 const POLL_MS = 3000
 const STREAM_RETRY_MS = 15_000
@@ -53,6 +55,8 @@ export default function App() {
   const [view, setView] = useState<View>('terminal')
   const [showIntro, setShowIntro] = useState(() => localStorage.getItem(INTRO_KEY) !== '1')
   const [alertsOn, setAlertsOn] = useState(() => localStorage.getItem(ALERTS_KEY) === '1')
+  const [filter, setFilter] = useState('')
+  const filterRef = useRef<HTMLInputElement>(null)
   const [streamed, setStreamed] = useState<StreamUpdate | null>(null)
   // ref mirror so the poll tick can skip work without re-arming its interval
   const streamOnRef = useRef(false)
@@ -147,9 +151,66 @@ export default function App() {
     }
   }, [health?.mode, health?.stream])
 
+  // '/' filter narrows the watchlist + screener; MARKET keeps the active
+  // pair even when the filter hides it (deliberate: don't yank the reader)
+  const shownPairs = useMemo(
+    () =>
+      filter
+        ? pairs.filter((p) => p.question.toLowerCase().includes(filter.toLowerCase()))
+        : pairs,
+    [pairs, filter],
+  )
+  const shownDivergence = useMemo(
+    () =>
+      filter
+        ? divergence.filter((d) => shownPairs.some((p) => p.event_key === d.event_key))
+        : divergence,
+    [divergence, shownPairs, filter],
+  )
+
   const activeKey = selected ?? pairs[0]?.event_key ?? null
   const activePair = pairs.find((p) => p.event_key === activeKey) ?? null
   const activeItem = divergence.find((d) => d.event_key === activeKey) ?? null
+
+  // terminal-style keys: j/k or arrows drive the watchlist, / filters,
+  // 1/2/3 switch views, ? help, Esc closes/clears. Never while typing.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement
+      const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)
+      if (e.key === 'Escape') {
+        if (typing) {
+          t.blur()
+          if (t === filterRef.current) setFilter('')
+        } else if (showIntro) setShowIntro(false)
+        return
+      }
+      if (typing) return
+      if (e.key === '/') {
+        e.preventDefault()
+        filterRef.current?.focus()
+        return
+      }
+      if (e.key === '?') {
+        setShowIntro((v) => !v)
+        return
+      }
+      if (e.key === '1') setView('terminal')
+      else if (e.key === '2') setView('cards')
+      else if (e.key === '3') setView('curate')
+      else if (['j', 'k', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+        e.preventDefault()
+        const list = shownPairs
+        if (!list.length) return
+        const dir = e.key === 'j' || e.key === 'ArrowDown' ? 1 : -1
+        const idx = list.findIndex((p) => p.event_key === activeKey)
+        const next = list[Math.min(Math.max(idx + dir, 0), list.length - 1)] ?? list[0]
+        setSelected(next.event_key)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [shownPairs, activeKey, showIntro])
 
   // books ride the same cadence: `pairs` is replaced every heartbeat, which
   // re-runs this effect — no second timer needed
@@ -254,7 +315,7 @@ export default function App() {
         <span className="font-mono text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
         <span className="text-muted text-[11px] tracking-[0.1em]">KALSHI × POLYMARKET</span>
         <nav className="ml-4 flex text-[10px] border border-line rounded-sm overflow-hidden">
-          {(['terminal', 'cards'] as View[]).map((v) => (
+          {(['terminal', 'cards', 'curate'] as View[]).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -283,6 +344,14 @@ export default function App() {
             BYOK
           </span>
         )}
+        <input
+          ref={filterRef}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="/ filter"
+          title="filter watchlist + screener by pair name (press / to focus, Esc to clear)"
+          className="ml-3 w-28 bg-bg border border-line rounded-sm px-2 py-0.5 font-mono text-[11px] text-text placeholder:text-muted focus:border-primary outline-none"
+        />
         <span className="ml-auto text-[11px]">
           {health === null ? (
             <span className="text-down">API OFFLINE</span>
@@ -321,15 +390,25 @@ export default function App() {
         </span>
       </header>
       <EdgeAlert edges={edges} onSelect={setSelected} />
-      {view === 'cards' ? (
+      {view === 'curate' ? (
+        <CurateView
+          pairs={pairs}
+          readonly={health?.readonly ?? false}
+          onPairsChanged={(next) => setPairs(sortPairs(next))}
+        />
+      ) : view === 'cards' ? (
         <PairCards pairs={pairs} />
       ) : (
         <main className="flex-1 grid grid-cols-[minmax(320px,26rem)_minmax(360px,1fr)_minmax(400px,34rem)] gap-1 min-h-0">
           <Panel
-            title={`WATCHLIST · ${pairs.length} PAIRS`}
-            extra={settled > 0 ? `${settled} settled — re-curate (make curate)` : undefined}
+            title={`WATCHLIST · ${filter ? `${shownPairs.length}/` : ''}${pairs.length} PAIRS`}
+            extra={settled > 0 ? `${settled} settled — retire in CURATE` : undefined}
           >
-            <WatchTable pairs={pairs} selected={activeKey} onSelect={setSelected} />
+            {pairs.length === 0 ? (
+              <Skeleton rows={8} />
+            ) : (
+              <WatchTable pairs={shownPairs} selected={activeKey} onSelect={setSelected} />
+            )}
           </Panel>
           <Panel title="MARKET">
             <MarketPanel
@@ -344,7 +423,11 @@ export default function App() {
           </Panel>
           <div className="flex flex-col gap-1 min-h-0">
             <Panel title="DIVERGENCE · FEE-ADJUSTED LOCK EDGES">
-              <DivergencePanel items={divergence} selected={activeKey} onSelect={setSelected} />
+              {divergence.length === 0 ? (
+                <Skeleton rows={8} />
+              ) : (
+                <DivergencePanel items={shownDivergence} selected={activeKey} onSelect={setSelected} />
+              )}
             </Panel>
             <Panel title="RISK · SELF-REPORTED BOOK">
               <RiskPanel

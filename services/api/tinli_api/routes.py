@@ -29,7 +29,8 @@ from tinli_api.datasource import (
 from tinli_api.history import read_history
 from tinli_api.screener import compute_all
 from tinli_api.stats import BasisStats, basis_stats
-from tinli_api.stream import StreamSource, get_hub
+from tinli_api import curation
+from tinli_api.stream import StreamSource, get_hub, restart_hub
 from tinli_api.venues import kalshi
 from tinli_api.venues.client import VenueHTTPError
 from tinli_api.venues.kalshi_auth import KEY_ID_ENV, KEY_PATH_ENV, KalshiAuth
@@ -397,6 +398,106 @@ def account() -> AccountReport:
         total_unrealized_pnl=pnl, unmarked_positions=unmarked,
         assumptions=ACCOUNT_ASSUMPTIONS, fetched_at=now,
     )
+
+
+# -- in-app curation (M12) ----------------------------------------------------
+# Ergonomics only; the doctrine is enforced server-side: adds land flagged,
+# verification is a separate action that requires comparison notes, and every
+# write goes to data/event_map.yaml (still hand-editable).
+
+
+class CandidatesResponse(BaseModel):
+    candidates: list[curation.Candidate]
+    cache_age_s: float
+    fetched_at: datetime
+
+
+class AddPairRequest(BaseModel):
+    event_key: str
+    question: str
+    kalshi_ticker: str
+    pm_condition_id: str
+    pm_yes_token: int
+    pm_fee_category: str | None = None
+    notes: str = ""
+
+
+class VerifyRequest(BaseModel):
+    verified: bool
+    notes: str = Field(default="", description="required (>=20 chars) when verifying: what was compared")
+
+
+class PairMutationResponse(BaseModel):
+    pair: PairQuote | None
+    pairs: list[PairQuote]
+
+
+def _guard_readonly() -> None:
+    if readonly():
+        raise HTTPException(status_code=403, detail="read-only instance: curation is disabled")
+
+
+def _pairs_response(pair_key: str | None) -> PairMutationResponse:
+    try:
+        markets = get_source().markets()
+    except Exception:
+        # the map mutation already succeeded — quotes are a convenience and
+        # can lag a poll (live) or be absent entirely (fresh pair with no
+        # recorded fixture in demo). Never fail the mutation over them.
+        markets = []
+    quotes = build_pairs(markets)
+    return PairMutationResponse(
+        pair=next((q for q in quotes if q.event_key == pair_key), None), pairs=quotes,
+    )
+
+
+@router.get("/curate/candidates")
+def curate_candidates(refresh: bool = False) -> CandidatesResponse:
+    """Candidate cross-venue matches with both venues' resolution text.
+    Slow on a cold cache (~30-60s: full Kalshi /events pagination) —
+    the UI shows a persistent loading state."""
+    try:
+        found, age = curation.cached_discover(refresh=refresh)
+    except VenueHTTPError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return CandidatesResponse(candidates=found, cache_age_s=age, fetched_at=datetime.now(UTC))
+
+
+@router.post("/curate/pairs")
+async def curate_add_pair(body: AddPairRequest) -> PairMutationResponse:
+    """Add a candidate to the map — ALWAYS flagged (criteria_verified is
+    forced false server-side); verify separately after comparing rules."""
+    _guard_readonly()
+    try:
+        pair = curation.add_pair(body.model_dump())
+    except curation.MapError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    await restart_hub()
+    return _pairs_response(pair.event_key)
+
+
+@router.post("/curate/pairs/{event_key}/verify")
+async def curate_verify(event_key: str, body: VerifyRequest) -> PairMutationResponse:
+    _guard_readonly()
+    try:
+        pair = curation.set_verified(event_key, body.verified, body.notes)
+    except curation.MapError as exc:
+        code = 404 if "unknown event_key" in str(exc) else 422
+        raise HTTPException(status_code=code, detail=str(exc)) from exc
+    await restart_hub()
+    return _pairs_response(pair.event_key)
+
+
+@router.delete("/curate/pairs/{event_key}")
+async def curate_retire(event_key: str) -> PairMutationResponse:
+    _guard_readonly()
+    try:
+        curation.retire_pair(event_key)
+    except curation.MapError as exc:
+        code = 404 if "unknown event_key" in str(exc) else 409
+        raise HTTPException(status_code=code, detail=str(exc)) from exc
+    await restart_hub()
+    return _pairs_response(None)
 
 
 class VenueStreamStatus(BaseModel):

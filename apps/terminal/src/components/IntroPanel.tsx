@@ -65,6 +65,21 @@ export default function IntroPanel({ onClose }: { onClose: () => void }) {
           panel.
         </p>
 
+        <div className={h}>KEYS</div>
+        <p className="font-mono text-[12px]">
+          j / k or ↑ ↓ — move through the watchlist · / — filter pairs · 1 2 3 — TERMINAL /
+          CARDS / CURATE · ? — this help · Esc — close or clear
+        </p>
+
+        <div className={h}>CURATE</div>
+        <p>
+          Pairs settle; the map needs tending. The CURATE view scans both venues for candidate
+          matches, shows each one's resolution rules side by side, and lets you add, verify, or
+          retire pairs without leaving the app. Every add lands <em>flagged</em> — marking a
+          pair verified is a separate step that requires your comparison notes, because a lock
+          on mismatched contracts is a trap, not an arb.
+        </p>
+
         <p className="text-muted text-[11px] mt-3">
           Read-only public market data. Quotes can be delayed or stale; nothing here is
           investment advice. Verify resolution criteria yourself before trading any edge.

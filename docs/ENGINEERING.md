@@ -153,6 +153,22 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
 - The recorder runs continuously (Windows scheduled task `TinliSnapshot`,
   `snapshot.py --loop 60`) — re-run the note as data accumulates.
 
+### Usability layer (M12)
+- In-app curation (`tinli_api/curation.py` + CURATE view): candidate
+  discovery with both venues' resolution text, add / verify / retire from
+  the UI. The doctrine is enforced SERVER-side: adds always land flagged,
+  verifying is a separate action requiring >=20-char comparison notes
+  (appended dated, never overwritten), one pair per PM conditionId, the
+  map file stays the hand-editable source of truth (header comment
+  preserved on rewrite; TINLI_EVENT_MAP overrides for tests), and the
+  stream hub restarts after any map change so subscriptions follow.
+  Read-only instances refuse all curation writes.
+- Keyboard-first: j/k / arrows drive the watchlist, `/` filters pairs
+  (watchlist + screener; MARKET keeps its selection), 1/2/3 switch views,
+  `?` help, Esc closes/clears. Handlers never fire while typing.
+- First-load skeletons instead of panel pop-in; `python run.py [demo]` is
+  the one-command start (bootstraps venv/npm on first run; make remains).
+
 ### Terminal UI (M5 + redesign)
 - One dense screen, 3s polling: selectable watchlist → selected pair's venue
   quotes with basis history, depth-curve charts and book ladders → lock
@@ -208,7 +224,7 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M11 are all shipped (M9's live-key verification is pending
+v0 milestones M0–M12 are all shipped (M9's live-key verification is pending
 a real Kalshi API key — grep TODO(BYOK-live)). Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't
