@@ -1,5 +1,5 @@
 {
- "recorded_at": "2026-07-20T19:10:32.543394+00:00",
+ "recorded_at": "2026-07-28T19:35:15.153475+00:00",
  "pairs": [
   {
    "event_key": "fed-jul26-cut-25bps",
@@ -40,6 +40,36 @@
    "event_key": "lebron-next-sas",
    "kalshi_ticker": "KXNEXTTEAMNBA-26LJAM-SAS",
    "pm_condition_id": "0x06866503ec6a8f9d16ad80d668433eae895e9b98b7f50a1b80c1bc1afaa13183"
+  },
+  {
+   "event_key": "fed-sep26-no-change",
+   "kalshi_ticker": "KXFEDDECISION-26SEP-H0",
+   "pm_condition_id": "0xa3b36b2d6104d34af4e6c6215fc818e43352e78a748fbfb0b85e3a35f71dec9a"
+  },
+  {
+   "event_key": "fed-sep26-hike-25",
+   "kalshi_ticker": "KXFEDDECISION-26SEP-H25",
+   "pm_condition_id": "0x876506d8b2bd7a0d3fa4fe18c024eee6e1dd81ee24c26795dadd6cfe4a7b5d0d"
+  },
+  {
+   "event_key": "nba27-pistons",
+   "kalshi_ticker": "KXNBA-27-DET",
+   "pm_condition_id": "0xbfc40c01252d9c9677859e9649eec406cae93e7866eda1b48b3b4b29da16027e"
+  },
+  {
+   "event_key": "nba27-sixers",
+   "kalshi_ticker": "KXNBA-27-PHI",
+   "pm_condition_id": "0xf44cf137562b90cf6205e0b81a03aa63001c491e4d8f04c0098bfb9233f9d04f"
+  },
+  {
+   "event_key": "nba27-thunder",
+   "kalshi_ticker": "KXNBA-27-OKC",
+   "pm_condition_id": "0x422b44717de3606ba08c2e00503d29e8330583b00b0bed63f89772b9c384e41f"
+  },
+  {
+   "event_key": "nba27-spurs",
+   "kalshi_ticker": "KXNBA-27-SAS",
+   "pm_condition_id": "0x9b9c693020bd625462107ea7963bacfefe73e678dd0e001c2d11388395a3cc2e"
   }
  ]
 }

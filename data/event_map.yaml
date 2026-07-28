@@ -24,74 +24,115 @@
 # adapter tests).
 
 pairs:
-  - event_key: fed-jul26-cut-25bps
-    question: "Fed July Decision (Cut 25bps)"
-    kalshi_ticker: KXFEDDECISION-26JUL-C25
-    pm_condition_id: "0x4ede078cae84a5877ac32d7fb48811e5c23549a1904b7df06ff7935c6d79d831"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: finance
-    notes: "Both keyed to upper bound of target range at July 29 meeting. PM rounds off-grid moves up to nearest 25bp bracket; Kalshi is exact-25 — divergence only if Fed moves off-grid (never has)."
-
-  - event_key: fed-jul26-no-change
-    question: "Fed July Decision (No Change)"
-    kalshi_ticker: KXFEDDECISION-26JUL-H0
-    pm_condition_id: "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: finance
-    notes: "Kalshi 'Hike of 0bps' == PM 'no change'. Same rounding tail as fed-jul26-cut-25bps."
-
-  - event_key: bdor26-yamal
-    question: "Ballon d'Or 2026 (Lamine Yamal)"
-    kalshi_ticker: KXBALLONDOR-26-LYAM
-    pm_condition_id: "0xa34edb6c898232378a9cc08744842df2cd89d278ba45b012bed3ac10c7241c4d"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Both settle on the official 2026 Ballon d'Or winner; PM names France Football as primary source, Kalshi rule is 'wins the Ballon d'Or in 2026'. Only tail: a winner declared AFTER Dec 31 2026 resolves PM 'Other' (No) while Kalshi's long settlement window (expiration 2027) suggests a late Yes — ceremony has been Sep/Oct every year, tail treated as negligible. Full rules compared 2026-07-20 (Wes)."
-
-  - event_key: bdor26-kane
-    question: "Ballon d'Or 2026 (Harry Kane)"
-    kalshi_ticker: KXBALLONDOR-26-HKAN
-    pm_condition_id: "0x12dc2b61723b2a54fc1947a307389b5f32038e7a29a0e936ad1fe410b969d06a"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same structure and tails as bdor26-yamal. Full rules compared 2026-07-20 (Wes)."
-
-  - event_key: bdor26-rodri
-    question: "Ballon d'Or 2026 (Rodri)"
-    kalshi_ticker: KXBALLONDOR-26-RODR
-    pm_condition_id: "0x30f729ef18553d8956bfd7ae7a1e96dbad07e2476160239b23ec10e6cdc5f01b"
-    pm_yes_token: 0
-    criteria_verified: true
-    pm_fee_category: sports
-    notes: "Same structure and tails as bdor26-yamal. Full rules compared 2026-07-20 (Wes)."
-
-  - event_key: lebron-next-gsw
-    question: "LeBron Next Team (Warriors)"
-    kalshi_ticker: KXNEXTTEAMNBA-26LJAM-GSW
-    pm_condition_id: "0xaf12bd1a9ec448b428e5879f180b9b05d17cdf6a6af3c20d8a4b7327ca6bfd37"
-    pm_yes_token: 0
-    criteria_verified: false
-    pm_fee_category: sports
-    notes: "KEPT FLAGGED after full-rules comparison 2026-07-20 (Wes): 8-DAY SETTLEMENT GAP — a signing announced Oct 23-31 resolves Kalshi No ('next team before Oct 23' failed) but PM Yes (joins 'by Oct 31'), opposite settlements on the same fact, and LeBron is currently unsigned. No-move tails DO agree on the team binary (stays Laker / retires / unlisted team -> both No). PM may also resolve on 'consensus of credible media reporting', looser than Kalshi. Do not treat divergence as edge."
-
-  - event_key: lebron-next-nyk
-    question: "LeBron Next Team (Knicks)"
-    kalshi_ticker: KXNEXTTEAMNBA-26LJAM-NYK
-    pm_condition_id: "0xecb23b1bf49d5fa3ce68f3e816cb61d47886278e0ead2b0babc91ce00ca6bbe3"
-    pm_yes_token: 0
-    criteria_verified: false
-    pm_fee_category: sports
-    notes: "Same structure and gap as lebron-next-gsw — kept flagged after full-rules comparison 2026-07-20 (Wes)."
-
-  - event_key: lebron-next-sas
-    question: "LeBron Next Team (Spurs)"
-    kalshi_ticker: KXNEXTTEAMNBA-26LJAM-SAS
-    pm_condition_id: "0x06866503ec6a8f9d16ad80d668433eae895e9b98b7f50a1b80c1bc1afaa13183"
-    pm_yes_token: 0
-    criteria_verified: false
-    pm_fee_category: sports
-    notes: "Same structure and gap as lebron-next-gsw — kept flagged after full-rules comparison 2026-07-20 (Wes)."
+- event_key: fed-jul26-cut-25bps
+  question: Fed July Decision (Cut 25bps)
+  kalshi_ticker: KXFEDDECISION-26JUL-C25
+  pm_condition_id: '0x4ede078cae84a5877ac32d7fb48811e5c23549a1904b7df06ff7935c6d79d831'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: finance
+  notes: Both keyed to upper bound of target range at July 29 meeting. PM rounds off-grid moves up to nearest 25bp bracket; Kalshi is exact-25 — divergence only if Fed moves off-grid (never has).
+- event_key: fed-jul26-no-change
+  question: Fed July Decision (No Change)
+  kalshi_ticker: KXFEDDECISION-26JUL-H0
+  pm_condition_id: '0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: finance
+  notes: Kalshi 'Hike of 0bps' == PM 'no change'. Same rounding tail as fed-jul26-cut-25bps.
+- event_key: bdor26-yamal
+  question: Ballon d'Or 2026 (Lamine Yamal)
+  kalshi_ticker: KXBALLONDOR-26-LYAM
+  pm_condition_id: '0xa34edb6c898232378a9cc08744842df2cd89d278ba45b012bed3ac10c7241c4d'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: sports
+  notes: 'Both settle on the official 2026 Ballon d''Or winner; PM names France Football as primary source, Kalshi rule is ''wins the Ballon d''Or in 2026''. Only tail: a winner declared AFTER Dec 31 2026 resolves PM ''Other'' (No) while Kalshi''s long settlement window (expiration 2027) suggests a late Yes — ceremony has been Sep/Oct every year, tail treated as negligible. Full rules compared 2026-07-20 (Wes).'
+- event_key: bdor26-kane
+  question: Ballon d'Or 2026 (Harry Kane)
+  kalshi_ticker: KXBALLONDOR-26-HKAN
+  pm_condition_id: '0x12dc2b61723b2a54fc1947a307389b5f32038e7a29a0e936ad1fe410b969d06a'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: sports
+  notes: Same structure and tails as bdor26-yamal. Full rules compared 2026-07-20 (Wes).
+- event_key: bdor26-rodri
+  question: Ballon d'Or 2026 (Rodri)
+  kalshi_ticker: KXBALLONDOR-26-RODR
+  pm_condition_id: '0x30f729ef18553d8956bfd7ae7a1e96dbad07e2476160239b23ec10e6cdc5f01b'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: sports
+  notes: Same structure and tails as bdor26-yamal. Full rules compared 2026-07-20 (Wes).
+- event_key: lebron-next-gsw
+  question: LeBron Next Team (Warriors)
+  kalshi_ticker: KXNEXTTEAMNBA-26LJAM-GSW
+  pm_condition_id: '0xaf12bd1a9ec448b428e5879f180b9b05d17cdf6a6af3c20d8a4b7327ca6bfd37'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'KEPT FLAGGED after full-rules comparison 2026-07-20 (Wes): 8-DAY SETTLEMENT GAP — a signing announced Oct 23-31 resolves Kalshi No (''next team before Oct 23'' failed) but PM Yes (joins ''by Oct 31''), opposite settlements on the same fact, and LeBron is currently unsigned. No-move tails DO agree on the team binary (stays Laker / retires / unlisted team -> both No). PM may also resolve on ''consensus of credible media reporting'', looser than Kalshi. Do not treat divergence as edge.'
+- event_key: lebron-next-nyk
+  question: LeBron Next Team (Knicks)
+  kalshi_ticker: KXNEXTTEAMNBA-26LJAM-NYK
+  pm_condition_id: '0xecb23b1bf49d5fa3ce68f3e816cb61d47886278e0ead2b0babc91ce00ca6bbe3'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: Same structure and gap as lebron-next-gsw — kept flagged after full-rules comparison 2026-07-20 (Wes).
+- event_key: lebron-next-sas
+  question: LeBron Next Team (Spurs)
+  kalshi_ticker: KXNEXTTEAMNBA-26LJAM-SAS
+  pm_condition_id: '0x06866503ec6a8f9d16ad80d668433eae895e9b98b7f50a1b80c1bc1afaa13183'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: Same structure and gap as lebron-next-gsw — kept flagged after full-rules comparison 2026-07-20 (Wes).
+- event_key: fed-sep26-no-change
+  question: Fed September Decision (No Change)
+  kalshi_ticker: KXFEDDECISION-26SEP-H0
+  pm_condition_id: '0xa3b36b2d6104d34af4e6c6215fc818e43352e78a748fbfb0b85e3a35f71dec9a'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: finance
+  notes: 'added from in-app curation 2026-07-28; compare both venues'' resolution rules before trusting any edge | 2026-07-28: upper bound of target range at Sep 16 meeting on both venues; PM rounds off-grid moves up to nearest 25bp bracket, Kalshi exact — divergence only on an off-grid move (never happened). Same structure as verified July pairs. Rules compared 2026-07-28 (Wes).'
+- event_key: fed-sep26-hike-25
+  question: Fed September Decision (Hike 25bps)
+  kalshi_ticker: KXFEDDECISION-26SEP-H25
+  pm_condition_id: '0x876506d8b2bd7a0d3fa4fe18c024eee6e1dd81ee24c26795dadd6cfe4a7b5d0d'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: finance
+  notes: 'added from in-app curation 2026-07-28; compare both venues'' resolution rules before trusting any edge | 2026-07-28: same structure as fed-sep26-no-change.  pairs. Rules compared 2026-07-28 (Wes).'
+- event_key: nba27-pistons
+  question: NBA 2027 Champion (Pistons)
+  kalshi_ticker: KXNBA-27-DET
+  pm_condition_id: '0xbfc40c01252d9c9677859e9649eec406cae93e7866eda1b48b3b4b29da16027e'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: sports
+  notes: 'added from in-app curation 2026-07-28; compare both venues'' resolution rules before trusting any edge | 2026-07-28: both resolve on the 2026-27 NBA champion. Tails: PM resolves No if no champion by Jul 1 2027 (a 12+ month delay — no precedent, 2011-12 lockout Finals still finished June) and breaks multi-champion ties alphabetically; Kalshi window runs to 2029. Rules compared 2026-07-28 (Wes).'
+- event_key: nba27-sixers
+  question: NBA 2027 Champion (76ers)
+  kalshi_ticker: KXNBA-27-PHI
+  pm_condition_id: '0xf44cf137562b90cf6205e0b81a03aa63001c491e4d8f04c0098bfb9233f9d04f'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: sports
+  notes: 'added from in-app curation 2026-07-28; compare both venues'' resolution rules before trusting any edge | 2026-07-28: same structure as nba27-pistons. Rules compared 2026-07-28 (Wes).'
+- event_key: nba27-thunder
+  question: NBA 2027 Champion (Thunder)
+  kalshi_ticker: KXNBA-27-OKC
+  pm_condition_id: '0x422b44717de3606ba08c2e00503d29e8330583b00b0bed63f89772b9c384e41f'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: sports
+  notes: 'added from in-app curation 2026-07-28; compare both venues'' resolution rules before trusting any edge | 2026-07-28: same structure as nba27-pistons. Rules compared 2026-07-28 (Wes).'
+- event_key: nba27-spurs
+  question: NBA 2027 Champion (Spurs)
+  kalshi_ticker: KXNBA-27-SAS
+  pm_condition_id: '0x9b9c693020bd625462107ea7963bacfefe73e678dd0e001c2d11388395a3cc2e'
+  pm_yes_token: 0
+  criteria_verified: true
+  pm_fee_category: sports
+  notes: 'added from in-app curation 2026-07-28; compare both venues'' resolution rules before trusting any edge | 2026-07-28: same structure as nba27-pistons. Rules compared 2026-07-28 (Wes).'
