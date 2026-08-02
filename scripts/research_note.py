@@ -46,6 +46,11 @@ VERIFIED = {
     # 2026-07-20 map (recorded 2026-07-21..)
     "bdor26-yamal": True, "bdor26-kane": True, "bdor26-rodri": True,
     "lebron-next-gsw": False, "lebron-next-nyk": False, "lebron-next-sas": False,
+    # 2026-07-28 map, commit c0198fb (recorded 2026-07-28..): added via
+    # in-app curation, rules compared same day
+    "fed-sep26-no-change": True, "fed-sep26-hike-25": True,
+    "nba27-pistons": True, "nba27-sixers": True,
+    "nba27-thunder": True, "nba27-spurs": True,
 }
 
 # Approximate resolution timestamps (UTC) for pairs that produced trades —
@@ -59,6 +64,15 @@ RESOLUTIONS = {
     "bdor26-yamal": datetime(2026, 10, 15, 0, 0, tzinfo=UTC),
     "bdor26-kane": datetime(2026, 10, 15, 0, 0, tzinfo=UTC),
     "bdor26-rodri": datetime(2026, 10, 15, 0, 0, tzinfo=UTC),
+    # FOMC statement 2026-09-16 14:00 ET
+    "fed-sep26-no-change": datetime(2026, 9, 16, 18, 0, tzinfo=UTC),
+    "fed-sep26-hike-25": datetime(2026, 9, 16, 18, 0, tzinfo=UTC),
+    # NBA finals typically end mid-June (Kalshi's window runs to 2029;
+    # the champion is known far earlier — approx, like the others)
+    "nba27-pistons": datetime(2027, 6, 20, 0, 0, tzinfo=UTC),
+    "nba27-sixers": datetime(2027, 6, 20, 0, 0, tzinfo=UTC),
+    "nba27-thunder": datetime(2027, 6, 20, 0, 0, tzinfo=UTC),
+    "nba27-spurs": datetime(2027, 6, 20, 0, 0, tzinfo=UTC),
 }
 
 LATENCIES = [0, 1, 2, 3, 5, 10]
@@ -260,7 +274,9 @@ def main() -> None:
     w("")
     w("*Recorder: Windows scheduled task running `scripts/snapshot.py "
       "--loop 60` since 2026-07-21 (earlier windows at similar cadence). "
-      "Re-run this script as data accumulates.*")
+      "Re-run this script as data accumulates. The 2026-07-29 FOMC event "
+      "study — what each venue's book does at a scheduled release — is in "
+      "`lead-lag.md`.*")
 
     # -- findings TL;DR (needs the computed numbers, hence written last) -----
     k5 = backtest(all_eps, RESOLUTIONS, latency_ticks=5)

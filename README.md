@@ -13,29 +13,34 @@ Recorded venue data answers it — see
 (auto-generated from decimal128 parquet history by
 `scripts/research_note.py`, data accumulating continuously):
 
-- **0.40%** of 212k recorded pair-ticks showed a positive lock edge after
-  exact taker fees at displayed size (max 2.24¢/contract).
-- When edges appear they **persist** — median 33s, longest 147 minutes of
-  continuously executable after-fee edge: nobody is bridging these venues
-  at size.
-- **Capacity, not latency, is the binding constraint**: entering ~80s late
-  still captures 88% of instant-entry P&L, but taking every edge for a
-  week locks only ~$265 on ~$97k deployed. The backtest
+- **5.2%** of 387k recorded pair-ticks showed a positive lock edge after
+  exact taker fees at displayed size (max 8.56¢/contract).
+- When edges appear they **persist** — median ~5 minutes; one pair carried
+  a continuously executable after-fee edge for **4.7 days**: nobody is
+  bridging these venues at size.
+- **Capacity, not latency, is the binding constraint**: entering ~5 min
+  late still captures 93% of instant-entry P&L, but taking every edge over
+  20 days locks only ~$1,066 on ~$329k deployed. The backtest
   (`packages/backtest`) is deliberately conservative — one lock per
   episode, floor-quantized edges, verified pairs only.
 
 A second study, [docs/research/lead-lag.md](docs/research/lead-lag.md),
 asks which venue discovers price first (move-conditional follow analysis,
-exact binomial tests): no statistically significant leader at snapshot
-cadence yet — the strongest hint is Kalshi following Polymarket on the Fed
-pair (68% follow rate, p = 0.07) — with the censoring quantified and the
-sample growing daily.
+exact binomial tests): each venue's moves are answered by the other well
+above chance (59% pooled follow rate, p < 0.001 both directions) but
+symmetrically — no leader at 60s cadence. It now includes an **event
+study of the 2026-07-29 FOMC decision**: Kalshi's Fed market closes at
+the announcement, so event-time price discovery was structurally 100%
+Polymarket (repriced ~80¢ → 99.4¢ inside one 61s snapshot bracket), and
+the largest at-size lock ever recorded — **$1,438 after fees on one
+tick** — was on display 36 minutes before the release.
 
 ## Status
 
-v0 feature-complete through M9: venue adapters, divergence + risk engines,
-terminal UI, history snapshots, live streaming (M8), BYOK Kalshi auth (M9).
-Read-only public market data — no order placement, ever.
+v0 feature-complete through M12: venue adapters, divergence + risk
+engines, terminal UI, history snapshots, live streaming (M8), BYOK Kalshi
+auth (M9), research layer (M10–M11), in-app pair curation + keyboard nav
+(M12). Read-only public market data — no order placement, ever.
 
 The terminal is one dense screen: watchlist (click a pair to load its
 books), cross-venue orderbook ladders, the fee-adjusted divergence
