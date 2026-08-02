@@ -148,8 +148,13 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   move-conditional follow analysis (sparse mids make raw CCF useless) with
   exact binomial tests; same-tick moves bucket as `simultaneous` — never
   attribute sub-cadence leadership. `scripts/leadlag_note.py` regenerates
-  `docs/research/lead-lag.md`. Fed-decision event study folds in after
-  2026-07-29.
+  `docs/research/lead-lag.md`.
+- `tinli_backtest.events` (M13): scheduled-release event study —
+  venue windows, reprice brackets (never point-in-time claims), per-day
+  edge summaries. First subject: the 2026-07-29 FOMC decision (section in
+  lead-lag.md); Kalshi closes Fed markets at the announcement, so event-time
+  discovery was structurally all Polymarket. The retired July Fed pairs'
+  history stays in data/history/ — note scripts read parquet, not the map.
 - The recorder runs continuously (Windows scheduled task `TinliSnapshot`,
   `snapshot.py --loop 60`) — re-run the note as data accumulates.
 
@@ -224,7 +229,7 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M12 are all shipped (M9's live-key verification is pending
+v0 milestones M0–M13 are all shipped (M9's live-key verification is pending
 a real Kalshi API key — grep TODO(BYOK-live)). Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't
