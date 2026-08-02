@@ -1,16 +1,6 @@
 {
- "recorded_at": "2026-07-28T19:35:15.153475+00:00",
+ "recorded_at": "2026-08-02T22:27:10.948932+00:00",
  "pairs": [
-  {
-   "event_key": "fed-jul26-cut-25bps",
-   "kalshi_ticker": "KXFEDDECISION-26JUL-C25",
-   "pm_condition_id": "0x4ede078cae84a5877ac32d7fb48811e5c23549a1904b7df06ff7935c6d79d831"
-  },
-  {
-   "event_key": "fed-jul26-no-change",
-   "kalshi_ticker": "KXFEDDECISION-26JUL-H0",
-   "pm_condition_id": "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86"
-  },
   {
    "event_key": "bdor26-yamal",
    "kalshi_ticker": "KXBALLONDOR-26-LYAM",

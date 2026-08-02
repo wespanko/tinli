@@ -57,7 +57,7 @@ def test_kelly_only_where_est_prob_given(client):
     rows = client.get("/v1/risk").json()["positions"]
     with_kelly = [r for r in rows if r["kelly_full"] is not None]
     assert len(with_kelly) == 1
-    assert with_kelly[0]["position"]["market_id"] == "kalshi:KXFEDDECISION-26JUL-H0"
+    assert with_kelly[0]["position"]["market_id"] == "kalshi:KXFEDDECISION-26SEP-H0"
 
 
 def test_unknown_position_is_unmarked_not_dropped(client, tmp_path, monkeypatch):
@@ -83,7 +83,7 @@ def test_typoed_positions_file_is_422_not_500(client, tmp_path, monkeypatch):
     book = tmp_path / "positions.yaml"
     book.write_text(
         "positions:\n"
-        '  - market_id: "kalshi:KXFEDDECISION-26JUL-H0"\n'
+        '  - market_id: "kalshi:KXFEDDECISION-26SEP-H0"\n'
         "    side: yes\n"
         '    contracts: "10"\n'
         '    entry_price: "1.55"\n',  # out of range: hand-edit typo
@@ -133,7 +133,7 @@ def test_put_positions_roundtrips_through_risk(client, tmp_path, monkeypatch):
     body = {
         "positions": [
             {
-                "market_id": "kalshi:KXFEDDECISION-26JUL-H0",
+                "market_id": "kalshi:KXFEDDECISION-26SEP-H0",
                 "side": "yes",
                 "contracts": "10",
                 "entry_price": "0.90",
@@ -147,7 +147,7 @@ def test_put_positions_roundtrips_through_risk(client, tmp_path, monkeypatch):
     assert book.exists(), "book file written"
     report = client.get("/v1/risk").json()
     (row,) = report["positions"]
-    assert row["position"]["market_id"] == "kalshi:KXFEDDECISION-26JUL-H0"
+    assert row["position"]["market_id"] == "kalshi:KXFEDDECISION-26SEP-H0"
     assert row["position"]["contracts"] == "10"
     # the written YAML is hand-editable and round-trips through load_positions
     text = book.read_text(encoding="utf-8")

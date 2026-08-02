@@ -21,7 +21,7 @@
   "no_sub_title": "Detroit",
   "notional_value_dollars": "1.0000",
   "occurrence_datetime": "2027-07-31T14:00:00Z",
-  "open_interest_fp": "154211.71",
+  "open_interest_fp": "156218.61",
   "open_time": "2026-06-14T08:00:00Z",
   "previous_price_dollars": "0.0400",
   "previous_yes_ask_dollars": "0.0400",
@@ -43,12 +43,12 @@
   "ticker": "KXNBA-27-DET",
   "title": "Will Detroit win the 2027 Pro Basketball Finals?",
   "updated_time": "2026-07-24T16:41:17.536752Z",
-  "volume_24h_fp": "668.61",
-  "volume_fp": "163181.66",
+  "volume_24h_fp": "1124.41",
+  "volume_fp": "166202.26",
   "yes_ask_dollars": "0.0400",
-  "yes_ask_size_fp": "529075.69",
+  "yes_ask_size_fp": "533430.57",
   "yes_bid_dollars": "0.0300",
-  "yes_bid_size_fp": "3179.43",
+  "yes_bid_size_fp": "1971.02",
   "yes_sub_title": "Detroit"
  }
 }

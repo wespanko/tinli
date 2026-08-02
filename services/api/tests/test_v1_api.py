@@ -56,7 +56,7 @@ def test_markets_venue_filter(client):
 
 
 def test_markets_event_key_filter(client):
-    markets = client.get("/v1/markets", params={"event_key": "fed-jul26-no-change"}).json()
+    markets = client.get("/v1/markets", params={"event_key": "fed-sep26-no-change"}).json()
     assert len(markets) == 2
     assert {m["venue"] for m in markets} == {"kalshi", "polymarket"}
 
@@ -66,7 +66,7 @@ def test_markets_bad_venue_rejected(client):
 
 
 def test_orderbook_kalshi(client):
-    r = client.get("/v1/markets/kalshi:KXFEDDECISION-26JUL-H0/orderbook")
+    r = client.get("/v1/markets/kalshi:KXFEDDECISION-26SEP-H0/orderbook")
     assert r.status_code == 200
     book = r.json()
     assert book["venue"] == "kalshi"
@@ -76,7 +76,7 @@ def test_orderbook_kalshi(client):
 
 
 def test_orderbook_polymarket(client):
-    cid = "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86"
+    cid = "0xa3b36b2d6104d34af4e6c6215fc818e43352e78a748fbfb0b85e3a35f71dec9a"
     r = client.get(f"/v1/markets/polymarket:{cid}/orderbook")
     assert r.status_code == 200
     assert r.json()["venue"] == "polymarket"
@@ -134,7 +134,7 @@ def test_divergence_endpoint(client):
 
 
 def test_history_includes_basis_stats(client):
-    r = client.get("/v1/history/fed-jul26-no-change")
+    r = client.get("/v1/history/fed-sep26-no-change")
     assert r.status_code == 200
     h = r.json()
     # stats always ship with the window; n counts only computable-basis rows,
@@ -150,10 +150,10 @@ def test_lock_unknown_event_key_404(client):
 
 
 def test_lock_report_shape_and_conservatism(client):
-    r = client.get("/v1/lock/fed-jul26-no-change")
+    r = client.get("/v1/lock/fed-sep26-no-change")
     assert r.status_code == 200
     lock = r.json()
-    assert lock["event_key"] == "fed-jul26-no-change"
+    assert lock["event_key"] == "fed-sep26-no-change"
     # assumptions ship IN the payload, always — at least the 4 base ones
     assert len(lock["assumptions"]) >= 4
     assert lock["direction"] in (

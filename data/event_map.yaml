@@ -24,22 +24,6 @@
 # adapter tests).
 
 pairs:
-- event_key: fed-jul26-cut-25bps
-  question: Fed July Decision (Cut 25bps)
-  kalshi_ticker: KXFEDDECISION-26JUL-C25
-  pm_condition_id: '0x4ede078cae84a5877ac32d7fb48811e5c23549a1904b7df06ff7935c6d79d831'
-  pm_yes_token: 0
-  criteria_verified: true
-  pm_fee_category: finance
-  notes: Both keyed to upper bound of target range at July 29 meeting. PM rounds off-grid moves up to nearest 25bp bracket; Kalshi is exact-25 — divergence only if Fed moves off-grid (never has).
-- event_key: fed-jul26-no-change
-  question: Fed July Decision (No Change)
-  kalshi_ticker: KXFEDDECISION-26JUL-H0
-  pm_condition_id: '0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86'
-  pm_yes_token: 0
-  criteria_verified: true
-  pm_fee_category: finance
-  notes: Kalshi 'Hike of 0bps' == PM 'no change'. Same rounding tail as fed-jul26-cut-25bps.
 - event_key: bdor26-yamal
   question: Ballon d'Or 2026 (Lamine Yamal)
   kalshi_ticker: KXBALLONDOR-26-LYAM

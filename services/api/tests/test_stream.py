@@ -19,6 +19,8 @@ from tinli_api.venues import kalshi
 
 FIXTURES = Path(__file__).parent / "fixtures"
 FRAMES = json.loads((FIXTURES / "polymarket" / "ws_frames_fed.json").read_text(encoding="utf-8"))
+# the July 2026 Fed pair, since retired from the map — the frames stay as a
+# recorded historical fixture; PmBook replay does not need the pair mapped
 CID = "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86"
 YES_TOKEN = "111604417349377875799825956621596386269673370070912696668140891647145772186047"
 
@@ -113,9 +115,12 @@ def test_stream_update_builds_from_hub_caches():
     """A hub primed from recorded fixtures produces a complete SSE payload:
     every mapped pair present, streamed PM book + fixture Kalshi book meeting
     in the screener, payload framed as an SSE data event."""
-    hub = hub_with_token_map()
+    # the recorded frames belong to the retired July Fed pair; the token is
+    # remapped onto the September pair — frame semantics are contract-agnostic
+    hub = StreamHub()
+    fed = next(p for p in hub.pairs if p.event_key == "fed-sep26-no-change")
+    hub._token_to_cid = {YES_TOKEN: fed.pm_condition_id}
     hub._handle_pm_frame(FRAMES[0])
-    fed = next(p for p in hub.pairs if p.event_key == "fed-jul26-no-change")
     raw = json.loads(
         (FIXTURES / "kalshi" / f"orderbook_{fed.kalshi_ticker}.json").read_text(encoding="utf-8")
     )
@@ -124,7 +129,7 @@ def test_stream_update_builds_from_hub_caches():
     source = StreamSource(hub)
     items = compute_all(source)
     assert len(items) == len(hub.pairs), "screener must emit one item per mapped pair"
-    fed_item = next(i for i in items if i.event_key == "fed-jul26-no-change")
+    fed_item = next(i for i in items if i.event_key == "fed-sep26-no-change")
     assert fed_item.raw_basis_cents is not None, "both legs streamed -> basis computable"
 
     update = StreamUpdate(
@@ -132,7 +137,7 @@ def test_stream_update_builds_from_hub_caches():
     )
     line = sse_event(update)
     assert line.startswith("data: {") and line.endswith("\n\n")
-    assert "fed-jul26-no-change" in line
+    assert "fed-sep26-no-change" in line
 
 
 def test_venue_status_states():
