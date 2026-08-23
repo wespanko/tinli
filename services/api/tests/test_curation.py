@@ -170,3 +170,42 @@ def test_candidates_endpoint_serves_cache(client, monkeypatch):
     assert r2.json()["candidates"][0]["kalshi_ticker"] == "KX"
     client.get("/v1/curate/candidates?refresh=true")
     assert calls["n"] == 2
+
+
+# -- cross-venue vocabulary aliases (discovery scoring) -----------------------
+
+
+def test_score_bridges_kalshi_pm_vocabulary():
+    # BTC monthly: btc->bitcoin, "90,000.00"/"90,000" both -> 90000,
+    # aug->august. Hand count: kalshi tokens {bitcoin,trimmed,mean,above,
+    # 90000,11,59,pm,et,august,31} (11), pm tokens {bitcoin,reach,90000,
+    # august} (4), overlap 3, union 12 -> 3/12 = 0.25 (was ~0 pre-alias).
+    k = "Will BTC trimmed mean be above $90,000.00 by 11:59 PM ET on Aug 31, 2026?"
+    p = "Will Bitcoin reach $90,000 in August?"
+    assert curation._score(k, p) == pytest.approx(0.25)
+
+
+def test_score_team_nickname_and_league_phrase():
+    # cowboys->dallas, "Pro Football Championship"->"super bowl":
+    # {dallas,win,2027,super,bowl} vs {dallas,win,super,bowl,lxi} ->
+    # overlap 4, union 6 -> 2/3
+    k = "Will Dallas win the 2027 Pro Football Championship?"
+    p = "Will the Dallas Cowboys win Super Bowl LXI?"
+    assert curation._score(k, p) == pytest.approx(4 / 6)
+
+
+def test_score_tennis_singles_suffix_dropped():
+    k = "Will Daniil Medvedev win the US Open Men's Singles?"
+    p = "Will Daniil Medvedev win the 2026 US Open?"
+    assert curation._score(k, p) == pytest.approx(1.0)
+
+
+def test_pair_score_window_bonus_precedes_threshold():
+    # text score alone is 0.25 (hand count in the vocabulary test above);
+    # matching resolution windows must add +0.15 BEFORE any gate -> 0.40
+    from datetime import UTC, datetime
+    k_close = datetime(2026, 9, 1, 4, 0, tzinfo=UTC)
+    pm = {"question": "Will Bitcoin reach $90,000 in August?", "endDate": "2026-09-01T00:00:00Z"}
+    k = "Will BTC trimmed mean be above $90000.00 by 11:59 PM ET on Aug 31, 2026?"
+    assert curation._pair_score(k, k_close, pm) == pytest.approx(0.40)
+    assert curation._pair_score(k, None, pm) == pytest.approx(0.25)  # no close -> no bonus

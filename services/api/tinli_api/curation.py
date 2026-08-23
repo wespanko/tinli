@@ -39,9 +39,61 @@ STOP = {
     "vs", "v", "or", "and", "before", "after", "2026", "market", "who",
 }
 
+# The venues name the same thing differently: Kalshi avoids trademarks
+# ("Pro Football Championship") and abbreviates ("BTC"); Polymarket uses
+# branded/full names ("Super Bowl", "Bitcoin"). Phrases normalize before
+# tokenizing, single tokens canonicalize after. This widens DISCOVERY only —
+# every add still lands flagged for human rule comparison.
+PHRASE_ALIASES = {
+    "pro football championship": "super bowl",
+    "pro football afc championship": "afc championship",
+    "pro football nfc championship": "nfc championship",
+    "pro basketball finals": "nba finals",
+    "pro basketball championship": "nba finals",
+    "women's pro basketball championship": "wnba championship",
+    "pro baseball championship": "world series",
+    "pro hockey championship": "stanley cup",
+    "men's singles": "",  # Kalshi suffix on tennis majors; PM omits it
+    "women's singles": "",
+}
+TOKEN_ALIASES = {
+    "btc": "bitcoin", "eth": "ethereum", "sol": "solana", "doge": "dogecoin",
+    # team nickname -> the city token Kalshi titles use. Collisions across
+    # leagues (e.g. two Rangers) resolve to the likelier prediction-market
+    # subject — a wrong guess only surfaces a candidate a human will reject.
+    "cowboys": "dallas", "patriots": "new england", "bills": "buffalo",
+    "chiefs": "kansas", "eagles": "philadelphia", "niners": "francisco",
+    "49ers": "francisco", "ravens": "baltimore", "texans": "houston",
+    "lions": "detroit", "packers": "green", "rams": "angeles",
+    "bengals": "cincinnati", "jets": "york", "giants": "york",
+    "celtics": "boston", "lakers": "angeles", "knicks": "york",
+    "nets": "brooklyn", "sixers": "philadelphia", "76ers": "philadelphia",
+    "thunder": "oklahoma", "spurs": "antonio", "pistons": "detroit",
+    "nuggets": "denver", "bucks": "milwaukee", "heat": "miami",
+    "yankees": "york", "mets": "york", "dodgers": "angeles",
+    "astros": "houston", "rangers": "texas", "braves": "atlanta",
+    "phillies": "philadelphia", "twins": "minnesota", "mariners": "seattle",
+    "brewers": "milwaukee", "cubs": "chicago", "orioles": "baltimore",
+    "guardians": "cleveland", "padres": "diego", "liberty": "york",
+    "aces": "vegas", "lynx": "minnesota",
+    "aug": "august", "sep": "september", "sept": "september",
+    "oct": "october", "nov": "november", "dec": "december",
+    "jan": "january", "feb": "february", "mar": "march", "apr": "april",
+    "jun": "june", "jul": "july",
+}
+
 
 def _tokens(s: str) -> set[str]:
-    return {w for w in re.findall(r"[a-z0-9]+", s.lower()) if w not in STOP}
+    s = s.lower()
+    s = re.sub(r"(?<=\d),(?=\d)", "", s)  # 90,000 == 90000
+    s = re.sub(r"(?<=\d)\.0+\b", "", s)  # 90000.00 == 90000
+    for phrase, repl in PHRASE_ALIASES.items():
+        s = s.replace(phrase, repl)
+    return {
+        TOKEN_ALIASES.get(w, w)
+        for w in re.findall(r"[a-z0-9]+", s)
+        if w not in STOP
+    }
 
 
 def _score(a: str, b: str) -> float:
@@ -56,6 +108,18 @@ def _close_dt(iso: str) -> datetime | None:
         return datetime.fromisoformat(iso.replace("Z", "+00:00"))
     except (ValueError, AttributeError):
         return None
+
+
+def _pair_score(k_title: str, k_close: datetime | None, pm: dict) -> float:
+    """Text similarity plus the same-event bonus. The bonus must be added
+    BEFORE any threshold gate: venues word the same market differently
+    enough (BTC strikes, spreads) that agreeing resolution windows are
+    often the strongest signal."""
+    s = _score(k_title, pm.get("question", ""))
+    p_close = _close_dt(pm.get("endDate", ""))
+    if k_close and p_close and abs((k_close - p_close).days) <= 3:
+        s += 0.15  # resolution windows agree: same-event bonus
+    return s
 
 
 class Candidate(BaseModel):
@@ -124,13 +188,20 @@ def discover(kalshi_top: int = KALSHI_TOP, min_score: float = MIN_SCORE) -> list
     k_raw.sort(key=k_vol, reverse=True)
     k_top = [m for m in k_raw if m["ticker"] not in known_tickers][:kalshi_top]
 
-    pm_raw = get_json(
-        f"{polymarket.GAMMA}/markets",
-        params={
-            "active": "true", "closed": "false", "order": "volume24hr",
-            "ascending": "false", "limit": "250",
-        },
-    )
+    # gamma caps page size at 100 regardless of `limit` — paginate, or the
+    # match pool is just the top-100 (dominated by daily sports/esports)
+    pm_raw: list[dict] = []
+    for offset in range(0, 500, 100):
+        page = get_json(
+            f"{polymarket.GAMMA}/markets",
+            params={
+                "active": "true", "closed": "false", "order": "volume24hr",
+                "ascending": "false", "limit": "100", "offset": str(offset),
+            },
+        )
+        if not page:
+            break
+        pm_raw.extend(page)
     pm_open = [m for m in pm_raw if m.get("conditionId") not in known_cids]
 
     out: list[Candidate] = []
@@ -139,12 +210,9 @@ def discover(kalshi_top: int = KALSHI_TOP, min_score: float = MIN_SCORE) -> list
         k_close = _close_dt(km.get("close_time", ""))
         best: list[tuple[float, dict]] = []
         for pm in pm_open:
-            s = _score(title, pm.get("question", ""))
+            s = _pair_score(title, k_close, pm)
             if s < min_score:
                 continue
-            p_close = _close_dt(pm.get("endDate", ""))
-            if k_close and p_close and abs((k_close - p_close).days) <= 3:
-                s += 0.15  # resolution windows agree: same-event bonus
             best.append((s, pm))
         if not best:
             continue
