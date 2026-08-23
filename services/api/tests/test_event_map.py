@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import yaml
@@ -28,7 +29,9 @@ def test_event_keys_unique():
 def test_condition_ids_look_valid():
     for p in load_pairs():
         assert p.pm_condition_id.startswith("0x") and len(p.pm_condition_id) == 66
-        assert p.kalshi_ticker.startswith("KX")
+        # KX- prefixes are Kalshi's newer series; legacy series tickers
+        # (e.g. SENATEME-26-R) are bare uppercase — both are real
+        assert re.fullmatch(r"[A-Z0-9][A-Z0-9-]*", p.kalshi_ticker), p.kalshi_ticker
 
 
 def test_unverified_pairs_carry_notes():

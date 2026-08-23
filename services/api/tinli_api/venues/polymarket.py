@@ -55,7 +55,13 @@ def parse_market(gamma_market: dict, yes_index: int, fetched_at: datetime,
         # through str keeps the printed digits instead of float noise
         volume_24h=Decimal(str(gamma_market.get("volume24hr") or 0)),
         liquidity=Decimal(str(gamma_market.get("liquidityNum") or 0)),
-        close_ts=datetime.fromisoformat(gamma_market["endDate"].replace("Z", "+00:00")),
+        # endDate is OPTIONAL in gamma: open markets without a scheduled end
+        # (e.g. "Week 1 starter" props, seen 2026-08-22) simply omit it
+        close_ts=(
+            datetime.fromisoformat(end.replace("Z", "+00:00"))
+            if (end := gamma_market.get("endDate"))
+            else None
+        ),
         resolution_url=f"https://polymarket.com/market/{gamma_market.get('slug', '')}",
         icon_url=gamma_market.get("image") or gamma_market.get("icon"),
         fetched_at=fetched_at,

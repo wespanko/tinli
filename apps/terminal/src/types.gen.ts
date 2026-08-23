@@ -14,7 +14,7 @@ export type Market = {
   best_ask: string | null
   volume_24h: string
   liquidity: string | null
-  close_ts: string
+  close_ts: string | null
   resolution_url: string
   icon_url: string | null
   fetched_at: string

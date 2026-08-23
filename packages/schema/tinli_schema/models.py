@@ -39,7 +39,11 @@ class Market(BaseModel):
         description="venue-reported liquidity (USD). None for Kalshi — its field is "
         "deprecated/always 0; use orderbook depth instead.",
     )
-    close_ts: datetime
+    close_ts: datetime | None = Field(
+        default=None,
+        description="Venue close time. None when the venue does not publish "
+        "one (some Polymarket gamma markets carry no endDate).",
+    )
     resolution_url: str
     icon_url: str | None = Field(
         default=None, description="venue-hosted event image; Polymarket only in v0"

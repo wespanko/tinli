@@ -44,6 +44,9 @@ shapes against recorded fixtures in M1; docs and reality drift.
 - `response_price_units: "usd_cent"` appears in responses; legacy integer-cent
   fields may coexist with the `_dollars` fields. M1 fixtures pin exactly which
   fields we parse.
+- Ticker series: newer markets carry a `KX` prefix (`KXFEDDECISION-…`), but
+  legacy series are bare uppercase (`SENATEME-26-R`, observed 2026-08-22) —
+  never assume the `KX` prefix.
 
 ### Orderbook shape (as observed)
 
@@ -104,6 +107,12 @@ Response gotchas (verified):
   (`"[\"Yes\", \"No\"]"`) — double-decode them.
 - Field names are camelCase: `conditionId`, `endDate`, `volume24hr`,
   `liquidityNum`, `orderPriceMinTickSize` (e.g. 0.001), `orderMinSize`.
+- `endDate` is OPTIONAL: open markets without a scheduled end omit it
+  entirely (observed 2026-08-22 on a "Week 1 starting QB" prop). The
+  adapter maps missing `endDate` -> `close_ts: None`; nothing downstream
+  may assume a close time exists.
+- `/markets` page size caps at **100 regardless of `limit`** (observed
+  2026-08-22: `limit=250` returned 100 rows) — paginate with `offset`.
 - Identity model: a Gamma market = one binary question with a `conditionId`
   and **two `clobTokenIds` (YES token, NO token)** in `outcomes` order. All
   CLOB queries are per token id.

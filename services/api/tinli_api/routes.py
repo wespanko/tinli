@@ -203,8 +203,13 @@ def lock(event_key: str) -> LockReport:
         )
 
     # horizon: the lock pays out when the event resolves; the later venue
-    # close is the conservative (longer) bound we can actually observe
-    closes = [m.close_ts for m in markets if m.event_key == event_key]
+    # close is the conservative (longer) bound we can actually observe.
+    # Venues without a published close contribute nothing to the bound.
+    closes = [
+        m.close_ts
+        for m in markets
+        if m.event_key == event_key and m.close_ts is not None
+    ]
     days: Decimal | None = None
     annualized: Decimal | None = None
     if closes:
