@@ -30,11 +30,25 @@ SENSITIVITY = [Decimal("0.001"), Decimal("0.005")]
 HORIZON = 10  # ticks
 MIN_MOVES = 10  # per-pair table row cutoff (pooled stats use everything)
 
-# Scheduled releases studied in the event-study section. Statement time per
-# federalreserve.gov calendar: 2026-07-29 14:00 ET = 18:00 UTC.
-FOMC_TS = datetime(2026, 7, 29, 18, 0, tzinfo=UTC)
-FOMC_PAIR = "fed-jul26-no-change"  # densest pair in the sample; resolved YES
-FOMC_COMPANION = "fed-jul26-cut-25bps"
+# Scheduled releases studied in the event-study section — append one entry
+# per event after it resolves; the section regenerates per event from the
+# parquet. Statement times per federalreserve.gov calendar (14:00 ET).
+EVENTS = [
+    {
+        "ts": datetime(2026, 7, 29, 18, 0, tzinfo=UTC),
+        "pair": "fed-jul26-no-change",  # resolved YES
+        "companions": ["fed-jul26-cut-25bps"],
+        "title": "the 2026-07-29 FOMC decision",
+        "outcome": "no change",
+        "blurb": "the densest pair in the sample",
+    },
+    # 2026-09-16 FOMC: add after the decision —
+    # {"ts": datetime(2026, 9, 16, 18, 0, tzinfo=UTC),
+    #  "pair": "fed-sep26-no-change",
+    #  "companions": ["fed-sep26-hike-25", "fed-sep26-cut-25"],
+    #  "title": "the 2026-09-16 FOMC decision", "outcome": "...",
+    #  "blurb": "..."},
+]
 
 
 def load_rows() -> list[dict]:
@@ -57,23 +71,24 @@ def cents(v: Decimal | None) -> str:
     return "—" if v is None else f"{v * 100:.1f}¢"
 
 
-def event_section(rows: list[dict], w) -> None:
-    """FOMC event study — every number below is recomputed from the parquet."""
-    if not any(r["event_key"] == FOMC_PAIR for r in rows):
+def event_section(rows: list[dict], w, ev: dict) -> None:
+    """One scheduled-release event study — every number recomputed from parquet."""
+    event_ts, pair = ev["ts"], ev["pair"]
+    if not any(r["event_key"] == pair for r in rows):
         return
-    day = FOMC_TS.date()
-    wk = venue_event_window(rows, FOMC_PAIR, "kalshi", FOMC_TS)
-    wp = venue_event_window(rows, FOMC_PAIR, "polymarket", FOMC_TS)
+    day = event_ts.date()
+    wk = venue_event_window(rows, pair, "kalshi", event_ts)
+    wp = venue_event_window(rows, pair, "polymarket", event_ts)
     rp = find_reprice(
-        rows, FOMC_PAIR, "polymarket",
-        window=(FOMC_TS - timedelta(minutes=10), FOMC_TS + timedelta(minutes=10)),
+        rows, pair, "polymarket",
+        window=(event_ts - timedelta(minutes=10), event_ts + timedelta(minutes=10)),
     )
 
-    w("## Event study: the 2026-07-29 FOMC decision")
+    w(f"## Event study: {ev['title']}")
     w("")
-    w(f"`{FOMC_PAIR}` — the densest pair in the sample — resolved mid-"
-      f"recording: the statement (no change) dropped at "
-      f"{FOMC_TS:%H:%M} UTC (14:00 ET) with the recorder on its normal "
+    w(f"`{pair}` — {ev['blurb']} — resolved mid-"
+      f"recording: the statement ({ev['outcome']}) dropped at "
+      f"{event_ts:%H:%M} UTC (14:00 ET) with the recorder on its normal "
       f"~60s cadence. What each venue's book did:")
     w("")
     w("| venue | last two-sided quote before release | first after |")
@@ -93,20 +108,20 @@ def event_section(rows: list[dict], w) -> None:
     w(f"| polymarket | {side(wp)} | {after(wp)} |")
     w("")
     if wk.last_ts is not None:
-        gap = (FOMC_TS - wk.last_ts).total_seconds()
+        gap = (event_ts - wk.last_ts).total_seconds()
         w(f"- **Kalshi does not trade the announcement.** Its book was pulled "
           f"{gap:.0f}s before the release stamp and never returned — the "
           f"market's scheduled close IS the announcement time. Event-time "
           f"price discovery on this pair was structurally 100% Polymarket.")
     if rp is not None:
-        lead = (FOMC_TS - rp.ts).total_seconds()
+        lead = (event_ts - rp.ts).total_seconds()
         when = (f"{abs(lead):.0f}s BEFORE" if lead > 0
                 else f"{abs(lead):.0f}s after")
         w(f"- **Polymarket repriced inside one snapshot bracket**: mid "
           f"{cents(rp.prior_mid)} at {rp.prior_ts:%H:%M:%S} → "
           f"{cents(rp.mid)} at {rp.ts:%H:%M:%S} ({rp.interval_s:.0f}s "
           f"bracket, jump {cents(rp.jump)}). The landing snapshot is "
-          f"stamped {when} the official 18:00:00 release. One recorder, "
+          f"stamped {when} the official {event_ts:%H:%M:%S} release. One recorder, "
           f"NTP clock, books fetched seconds after the stamp — a few "
           f"seconds of skew is plausible in either direction, so the "
           f"defensible claim is: the reprice completed within seconds of "
@@ -119,8 +134,8 @@ def event_section(rows: list[dict], w) -> None:
     w("### Decision-day lead-lag (pre-release ticks only)")
     w("")
     s = build_series(
-        [r for r in rows if r["ts"].date() == day and r["ts"] < FOMC_TS],
-        FOMC_PAIR,
+        [r for r in rows if r["ts"].date() == day and r["ts"] < event_ts],
+        pair,
     )
     w("| leader | moves | simul | F/O/U | follow | med lag | p |")
     w("|---|---:|---:|---:|---:|---:|---:|")
@@ -129,13 +144,13 @@ def event_section(rows: list[dict], w) -> None:
     w("")
     w("### Edge environment around the decision")
     w("")
-    w("After-fee at-size edge ticks per UTC day, `" + FOMC_PAIR + "` "
+    w("After-fee at-size edge ticks per UTC day, `" + pair + "` "
       "(best lock = largest single-tick edge x displayed size, floored to "
       "the cent — a snapshot of what was on display, not a tradable total):")
     w("")
     w("| day | ticks | +edge ticks | max edge | best lock |")
     w("|---|---:|---:|---:|---:|")
-    days = daily_edge_summary(rows, FOMC_PAIR)
+    days = daily_edge_summary(rows, pair)
     for d in days:
         mark = " **(decision day)**" if d.day == day else ""
         best = f"${d.best_profit}" if d.best_profit is not None else "—"
@@ -153,19 +168,20 @@ def event_section(rows: list[dict], w) -> None:
                   if d.day != day and d.best_profit is not None]
     if (dd is not None and dd.best_profit is not None and other_best
             and dd.best_profit > max(other_best)):
-        mins = (FOMC_TS - dd.best_ts).total_seconds() / 60
+        mins = (event_ts - dd.best_ts).total_seconds() / 60
         w(f"- The largest at-size lock this pair ever displayed appeared "
           f"{mins:.0f} minutes BEFORE the release: ${dd.best_profit} of "
           f"after-fee profit on one tick at {dd.best_ts:%H:%M:%S} UTC "
           f"(vs ${max(other_best)} on the best non-decision day). Capacity "
           f"shows up exactly when it is about to disappear — the books "
           f"were institutional-size in the final pre-close hour.")
-    comp = [d for d in daily_edge_summary(rows, FOMC_COMPANION) if d.day == day]
-    if comp and comp[0].pos_ticks == 0:
-        w(f"- The companion tail pair `{FOMC_COMPANION}` showed zero "
-          f"positive-edge ticks on decision day — its Kalshi book was "
-          f"one-sided nearly all day. Edges need two venues actually "
-          f"quoting, which concentrates them in the dense contract.")
+    for companion in ev["companions"]:
+        comp = [d for d in daily_edge_summary(rows, companion) if d.day == day]
+        if comp and comp[0].pos_ticks == 0:
+            w(f"- The companion tail pair `{companion}` showed zero "
+              f"positive-edge ticks on decision day — its Kalshi book was "
+              f"one-sided nearly all day. Edges need two venues actually "
+              f"quoting, which concentrates them in the dense contract.")
     w("")
 
 
@@ -276,7 +292,8 @@ def main() -> None:
             return f"{r.follows / n:.0%} (p={pv}, n={n})"
         w(f"| {thr * 100}¢ | {cell(pk)} | {cell(pp)} |")
     w("")
-    event_section(rows, w)
+    for ev in EVENTS:
+        event_section(rows, w, ev)
     w("## Caveats")
     w("")
     w("- Both venues are sampled at the same instant per snapshot, so "

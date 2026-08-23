@@ -13,14 +13,15 @@ Recorded venue data answers it — see
 (auto-generated from decimal128 parquet history by
 `scripts/research_note.py`, data accumulating continuously):
 
-- **5.2%** of 387k recorded pair-ticks showed a positive lock edge after
+- **9.9%** of 788k recorded pair-ticks showed a positive lock edge after
   exact taker fees at displayed size (max 8.56¢/contract).
-- When edges appear they **persist** — median ~5 minutes; one pair carried
-  a continuously executable after-fee edge for **4.7 days**: nobody is
+- When edges appear they **persist** — median ~7 minutes; one pair carried
+  a continuously executable after-fee edge for **6.6 days**: nobody is
   bridging these venues at size.
-- **Capacity, not latency, is the binding constraint**: entering ~5 min
-  late still captures 93% of instant-entry P&L, but taking every edge over
-  20 days locks only ~$1,066 on ~$329k deployed. The backtest
+- **Capacity is the binding constraint**: taking every edge over 40 days
+  locks only ~$5,874 on ~$980k deployed (0.6% absolute) — though latency
+  is starting to matter as the sample grows (~5-min-late entry now keeps
+  66% of instant P&L, down from 93% three weeks ago). The backtest
   (`packages/backtest`) is deliberately conservative — one lock per
   episode, floor-quantized edges, verified pairs only.
 
