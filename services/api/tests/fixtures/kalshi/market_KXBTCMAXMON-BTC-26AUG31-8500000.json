@@ -1,0 +1,52 @@
+{
+ "market": {
+  "can_close_early": true,
+  "close_time": "2026-09-01T03:59:59Z",
+  "created_time": "2026-08-21T08:50:45.395046Z",
+  "early_close_condition": "This market will close and expire early if the price criterion is met.",
+  "event_ticker": "KXBTCMAXMON-BTC-26AUG31",
+  "exchange_index": 0,
+  "expected_expiration_time": "2026-09-01T03:59:59Z",
+  "expiration_time": "2026-09-08T03:59:59Z",
+  "expiration_value": "",
+  "floor_strike": 85000,
+  "last_price_dollars": "0.1600",
+  "latest_expiration_time": "2026-09-08T03:59:59Z",
+  "liquidity_dollars": "0.0000",
+  "market_type": "binary",
+  "no_ask_dollars": "0.8600",
+  "no_bid_dollars": "0.8500",
+  "no_sub_title": "Above $85,000.00",
+  "notional_value_dollars": "1.0000",
+  "occurrence_datetime": "2026-09-01T03:59:59Z",
+  "open_interest_fp": "71475.66",
+  "open_time": "2026-08-21T09:00:00Z",
+  "previous_price_dollars": "0.2400",
+  "previous_yes_ask_dollars": "0.2400",
+  "previous_yes_bid_dollars": "0.2200",
+  "price_level_structure": "linear_cent",
+  "price_ranges": [
+   {
+    "end": "1.0000",
+    "start": "0.0000",
+    "step": "0.0100"
+   }
+  ],
+  "result": "",
+  "rules_primary": "If the price of BTC after issuance and through 11:59 PM ET on Aug 31, 2026 is ever above $\n85000.00, then the market resolves to Yes.",
+  "rules_secondary": "At each minute throughout the market duration, a settlement value is calculated using every minute-by-minute CF BRTI price for BTC. For each of these individual minute-by-minute checks, the top 20% and bottom 20% of the cumulative dataset are removed before calculating the average of the remaining values. If the trimmed mean associated with any single minute during the period is above the threshold, the market resolves to Yes. This methodology reduces the impact of extreme price spikes or drops. The measurement period runs from when the market is issued until the specified end time. If CF Benchmarks data is unavailable or incomplete at the expiration time, affected strikes resolve to No. For cryptocurrencies with multiple versions, the Exchange will specify which version or ticker is being tracked.",
+  "settlement_timer_seconds": 1800,
+  "status": "active",
+  "strike_type": "greater",
+  "ticker": "KXBTCMAXMON-BTC-26AUG31-8500000",
+  "title": "Will BTC trimmed mean be above $85000.00 by 11:59 PM ET on Aug 31, 2026?",
+  "updated_time": "2026-08-21T19:12:53.445553Z",
+  "volume_24h_fp": "56859.68",
+  "volume_fp": "85749.21",
+  "yes_ask_dollars": "0.1500",
+  "yes_ask_size_fp": "8.08",
+  "yes_bid_dollars": "0.1400",
+  "yes_bid_size_fp": "1202.90",
+  "yes_sub_title": "Above $85,000.00"
+ }
+}

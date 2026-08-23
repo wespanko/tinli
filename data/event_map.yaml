@@ -120,3 +120,75 @@ pairs:
   criteria_verified: true
   pm_fee_category: sports
   notes: 'added from in-app curation 2026-07-28; compare both venues'' resolution rules before trusting any edge | 2026-07-28: same structure as nba27-pistons. Rules compared 2026-07-28 (Wes).'
+- event_key: mlb26-brewers
+  question: Will Milwaukee win the 2026 Pro Baseball Championship?
+  kalshi_ticker: KXMLB-26-MIL
+  pm_condition_id: '0x3db74f14fa0c4d8acb19ff4ffa18d523597a8e553ec565d494290a908d99395a'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-08-22 (score 1.00); VERIFY: K settlement window runs to 2028-10-31 vs PM ends 2026-10-31 — compare season-postponement tails before trusting any edge'
+- event_key: dem28-aoc
+  question: Will Alexandria Ocasio-Cortez be the 2028 Democratic nominee?
+  kalshi_ticker: KXPRESNOMD-28-AOC
+  pm_condition_id: '0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-08-22 (score 0.82); VERIFY: both say ''wins and accepts the nomination'' — compare PM''s replacement-nominee clause vs K rules before trusting any edge'
+- event_key: dem28-walz
+  question: Will Tim Walz be the 2028 Democratic nominee?
+  kalshi_ticker: KXPRESNOMD-28-TW
+  pm_condition_id: '0x3265b10daeb30dbcc3214bd02e488551d0a5d3028392f4152e4750b943fbfc91'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-08-22 (score 0.78); VERIFY: same structure as dem28-aoc — compare replacement-nominee tails'
+- event_key: uso26-fils
+  question: Will Arthur Fils win the US Open Men's Singles?
+  kalshi_ticker: KXATP-26USO-FIL
+  pm_condition_id: '0x98ff544c14009c21ab3ce4032b8e00bfd59bc9ad56a44d0de5b4ff1dacfdce17'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-08-22 (score 0.71); final ~2026-09-13; VERIFY: walkover/retirement and cancelled-final tails on both venues before trusting any edge'
+- event_key: senate26-me-gop
+  question: Will Republicans win the Maine Senate race?
+  kalshi_ticker: SENATEME-26-R
+  pm_condition_id: '0x2c00cb09722a0f0501c5e49131b898ed57bb5c075db4dc2bcbc14908f45b8c48'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-08-22 (score 0.71); VERIFY: K resolves on a Republican being SWORN IN for the term beginning 2027; PM on the certified 2026 election winner incl. runoffs — death/withdrawal between election and seating diverges'
+- event_key: cle26-wk1-shedeur
+  question: Will Shedeur Sanders start at QB for Cleveland in Week 1?
+  kalshi_ticker: KXSTARTINGQBWEEK1-W1-26SEP15-CLE-SSAN
+  pm_condition_id: '0x6a889ebbdf34f7ddc218b00b062f5e10433b29a35e56090928aa9e2daaa4d9db'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-08-22 (score 0.56); resolves ~2026-09-15; VERIFY: what counts as ''starting'' (announced starter vs first offensive snap) and postponement tails on both venues'
+- event_key: btcaug26-90k
+  question: Will BTC trade above $90k in August 2026?
+  kalshi_ticker: KXBTCMAXMON-BTC-26AUG31-9000000
+  pm_condition_id: '0xb1e1ae2c6ee3f17b3c79b7ff2c36b2d90766dd6c0f2e6ba467d5232d882522d1'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: crypto
+  notes: 'added from discovery 2026-08-22 (score 0.40); resolves 2026-09-01; VERIFY: K uses its trimmed-mean index max through Aug 31 11:59PM ET, PM ''reach $90,000'' per its own price source — different indexes can straddle the strike; compare sources and cutoffs'
+- event_key: btcaug26-85k
+  question: Will BTC trade above $85k in August 2026?
+  kalshi_ticker: KXBTCMAXMON-BTC-26AUG31-8500000
+  pm_condition_id: '0x7f668805bfee7909997562f60489ddef01e40a3dca43781efeb59ce380779295'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: crypto
+  notes: added from discovery 2026-08-22 (score 0.40); same structure and index caveat as btcaug26-90k
+- event_key: nfl27-cowboys
+  question: Will Dallas win the 2027 Pro Football Championship?
+  kalshi_ticker: KXSB-27-DAL
+  pm_condition_id: '0x93158447b78290c1abb5ccf3e025dd03290865972b3fc9c8d2803aa64ae1cbfd'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-08-22 (score 0.38); VERIFY: K ''2027 Pro Football Championship'' (settlement window to 2029) vs PM ''2027 NFL league championship'' ends 2027-03-31 — confirm same season/game; NOTE trap sibling: K AFC-CHAMP markets match PM league-championship text but are DIFFERENT contracts'

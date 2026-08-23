@@ -1,0 +1,53 @@
+{
+ "market": {
+  "can_close_early": true,
+  "close_time": "2026-09-15T03:59:00Z",
+  "created_time": "2026-01-14T23:45:17.272086Z",
+  "custom_strike": {
+   "Player": "Shedeur Sanders"
+  },
+  "early_close_condition": "This market will close and expire early if the official depth chart is released.",
+  "event_ticker": "KXSTARTINGQBWEEK1-W1-26SEP15-CLE",
+  "exchange_index": 0,
+  "expected_expiration_time": "2026-09-15T14:00:00Z",
+  "expiration_time": "2026-09-22T14:00:00Z",
+  "expiration_value": "",
+  "last_price_dollars": "0.4700",
+  "latest_expiration_time": "2026-09-22T14:00:00Z",
+  "liquidity_dollars": "0.0000",
+  "market_type": "binary",
+  "no_ask_dollars": "0.5400",
+  "no_bid_dollars": "0.5300",
+  "no_sub_title": "Shedeur Sanders",
+  "notional_value_dollars": "1.0000",
+  "open_interest_fp": "120960.48",
+  "open_time": "2026-01-15T00:00:00Z",
+  "previous_price_dollars": "0.1700",
+  "previous_yes_ask_dollars": "0.1700",
+  "previous_yes_bid_dollars": "0.1600",
+  "price_level_structure": "linear_cent",
+  "price_ranges": [
+   {
+    "end": "1.0000",
+    "start": "0.0000",
+    "step": "0.0100"
+   }
+  ],
+  "result": "",
+  "rules_primary": "If Shedeur Sanders is officially designated as Cleveland's starting Quarterback for Week 1 of the Pro Football season, then the market resolves to Yes.",
+  "rules_secondary": "Position designation is determined by the official depth chart published by the team for the specified week. If no official depth chart is available, the designation comes from official team communications (injury reports, press releases). For bye weeks, the market uses the last available depth chart before the bye. If the player is injured but still officially listed at the position, the market resolves to Yes.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+  "settlement_timer_seconds": 1800,
+  "status": "active",
+  "strike_type": "custom",
+  "ticker": "KXSTARTINGQBWEEK1-W1-26SEP15-CLE-SSAN",
+  "title": "Will Shedeur Sanders be starting Quarterback for Cleveland in Week 1?",
+  "updated_time": "2026-07-13T21:31:32.511076Z",
+  "volume_24h_fp": "57983.52",
+  "volume_fp": "197922.34",
+  "yes_ask_dollars": "0.4700",
+  "yes_ask_size_fp": "1183.21",
+  "yes_bid_dollars": "0.4600",
+  "yes_bid_size_fp": "307.88",
+  "yes_sub_title": "Shedeur Sanders"
+ }
+}
