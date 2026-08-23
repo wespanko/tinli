@@ -23,7 +23,7 @@
   "open_time": "2026-08-21T09:00:00Z",
   "previous_price_dollars": "0.1300",
   "previous_yes_ask_dollars": "0.1300",
-  "previous_yes_bid_dollars": "0.1200",
+  "previous_yes_bid_dollars": "0.1000",
   "price_level_structure": "linear_cent",
   "price_ranges": [
    {
@@ -44,7 +44,7 @@
   "volume_24h_fp": "121625.22",
   "volume_fp": "138280.78",
   "yes_ask_dollars": "0.0700",
-  "yes_ask_size_fp": "4000.00",
+  "yes_ask_size_fp": "6292.00",
   "yes_bid_dollars": "0.0600",
   "yes_bid_size_fp": "3149.11",
   "yes_sub_title": "Above $90,000.00"

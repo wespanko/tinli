@@ -192,3 +192,83 @@ pairs:
   criteria_verified: false
   pm_fee_category: sports
   notes: 'added from discovery 2026-08-22 (score 0.38); VERIFY: K ''2027 Pro Football Championship'' (settlement window to 2029) vs PM ''2027 NFL league championship'' ends 2027-03-31 — confirm same season/game; NOTE trap sibling: K AFC-CHAMP markets match PM league-championship text but are DIFFERENT contracts'
+- event_key: fed-sep26-cut-25
+  question: Will the Fed cut rates by 25bps at the September 2026 meeting?
+  kalshi_ticker: KXFEDDECISION-26SEP-C25
+  pm_condition_id: '0xac02cbb049e46d6a3627c0fdf52fa554982a9025d45968207b362acb6ca4b830'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: finance
+  notes: 'added from deep discovery 2026-08-22 (score 0.38, PM vol 617k); completes the Sep-16 Fed set; VERIFY: same structure as the verified fed-sep26 pairs — exact-bracket vs rounding tails'
+- event_key: btcaug26-100k
+  question: Will BTC trade above $100k in August 2026?
+  kalshi_ticker: KXBTCMAXMON-BTC-26AUG31-10000000
+  pm_condition_id: '0x39ea1503427df7f1439e7dd6567aad5ed72284ed49c58d09e5b917a24389fab7'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: crypto
+  notes: added from deep discovery 2026-08-22 (PM vol 209k); resolves 2026-09-01; same index-source caveat as btcaug26-90k
+- event_key: ethaug26-3k
+  question: Will ETH trade above $3k in August 2026?
+  kalshi_ticker: KXETHMAXMON-ETH-26AUG31-300000
+  pm_condition_id: '0xdb4123deb55868184575c563cb904af0054df8ced4b5426a21557b0b5e38eef0'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: crypto
+  notes: 'added from deep discovery 2026-08-22; resolves 2026-09-01; VERIFY: K trimmed-mean index vs PM price source, same shape as the BTC monthlies'
+- event_key: uso26-alcaraz
+  question: Will Carlos Alcaraz win the US Open Men's Singles?
+  kalshi_ticker: KXATP-26USO-ALC
+  pm_condition_id: '0xcf4cf0cf9882b50018054826d561f688e319e6e51de956437fa6dbf642696a40'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from deep discovery 2026-08-22 (score 0.71); final ~2026-09-13; VERIFY: same walkover/retirement tails as uso26-fils'
+- event_key: uso26-djokovic
+  question: Will Novak Djokovic win the US Open Men's Singles?
+  kalshi_ticker: KXATP-26USO-DJO
+  pm_condition_id: '0x15f8f202d13a8bf70566cc9d015331f2b7c4673ce7c0f3bd9274122143da98d7'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from deep discovery 2026-08-22 (score 0.71); final ~2026-09-13; VERIFY: same walkover/retirement tails as uso26-fils'
+- event_key: mlb26-orioles
+  question: Will Baltimore win the 2026 Pro Baseball Championship?
+  kalshi_ticker: KXMLB-26-BAL
+  pm_condition_id: '0xae8cf6ba7bd936d12c4c77b77b800dc378a76f02d0276fbc1dc1932f01f8eb9e'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from deep discovery 2026-08-22 (score 1.00); VERIFY: same settlement-window tail as mlb26-brewers'
+- event_key: brpres26-santos
+  question: Will Renan Santos win the 2026 Brazilian presidential election?
+  kalshi_ticker: KXBRPRES-26-RSAN
+  pm_condition_id: '0x05297f854d3b757d5e51a1a29c7f225a80b14b2a161d6b7f9a61677da7a80ced'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from deep discovery 2026-08-22 (score 1.00, PM vol 83k); election 2026-10-04; VERIFY: K close 2027-10 covers a runoff — compare runoff and annulment tails vs PM'
+- event_key: nba27-warriors
+  question: Will Golden State win the 2027 Pro Basketball Finals?
+  kalshi_ticker: KXNBA-27-GSW
+  pm_condition_id: '0x0687236dace728be2aa72be8b802918f45de83e4ded7d0c3fa3fe9b83c83db74'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from deep discovery 2026-08-22 (score 0.86); VERIFY: same structure as the verified nba27 pairs (PM no-champion-by-Jul-2027 tail, K window to 2029)'
+- event_key: pres28-aoc
+  question: Will Alexandria Ocasio-Cortez win the 2028 presidential election?
+  kalshi_ticker: KXPRESPERSON-28-AOCA
+  pm_condition_id: '0xf232b565995e4b3a3e7fa6cef775eeff1cecd20ad7c013cb9fc8dadabfe279a9'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from deep discovery 2026-08-22 (score 0.67, K vol 167k / PM 139k); ELECTION market, distinct from dem28-aoc (nomination); VERIFY: K ''next presidential election'' == 2028 general, and elected-vs-inaugurated tails'
+- event_key: house26-dem
+  question: Will Democrats win the House in 2026?
+  kalshi_ticker: CONTROLH-2026-D
+  pm_condition_id: '0xd5d9fc47718bd553592d126b1fa5e87183d27f3936975b0c04cc0f2dec1f1bb4'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from deep discovery 2026-08-22 (score 0.38); legacy-series ticker; VERIFY: K ''win the House'' vs PM ''control after the 2026 midterms'' — speaker-election vs seat-count definitions; NOTE the -R sibling cross-matched a single NY-05 seat market, a trap'

@@ -20,7 +20,7 @@
   "no_bid_dollars": "0.5300",
   "no_sub_title": "Shedeur Sanders",
   "notional_value_dollars": "1.0000",
-  "open_interest_fp": "120960.48",
+  "open_interest_fp": "121599.84",
   "open_time": "2026-01-15T00:00:00Z",
   "previous_price_dollars": "0.1700",
   "previous_yes_ask_dollars": "0.1700",
@@ -42,12 +42,12 @@
   "ticker": "KXSTARTINGQBWEEK1-W1-26SEP15-CLE-SSAN",
   "title": "Will Shedeur Sanders be starting Quarterback for Cleveland in Week 1?",
   "updated_time": "2026-07-13T21:31:32.511076Z",
-  "volume_24h_fp": "57983.52",
-  "volume_fp": "197922.34",
+  "volume_24h_fp": "57995.23",
+  "volume_fp": "198574.05",
   "yes_ask_dollars": "0.4700",
-  "yes_ask_size_fp": "1183.21",
+  "yes_ask_size_fp": "397.56",
   "yes_bid_dollars": "0.4600",
-  "yes_bid_size_fp": "307.88",
+  "yes_bid_size_fp": "402.20",
   "yes_sub_title": "Shedeur Sanders"
  }
 }

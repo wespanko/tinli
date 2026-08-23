@@ -1,5 +1,5 @@
 {
- "recorded_at": "2026-08-23T05:43:15.188965+00:00",
+ "recorded_at": "2026-08-23T05:54:10.622798+00:00",
  "pairs": [
   {
    "event_key": "bdor26-yamal",
@@ -105,6 +105,56 @@
    "event_key": "nfl27-cowboys",
    "kalshi_ticker": "KXSB-27-DAL",
    "pm_condition_id": "0x93158447b78290c1abb5ccf3e025dd03290865972b3fc9c8d2803aa64ae1cbfd"
+  },
+  {
+   "event_key": "fed-sep26-cut-25",
+   "kalshi_ticker": "KXFEDDECISION-26SEP-C25",
+   "pm_condition_id": "0xac02cbb049e46d6a3627c0fdf52fa554982a9025d45968207b362acb6ca4b830"
+  },
+  {
+   "event_key": "btcaug26-100k",
+   "kalshi_ticker": "KXBTCMAXMON-BTC-26AUG31-10000000",
+   "pm_condition_id": "0x39ea1503427df7f1439e7dd6567aad5ed72284ed49c58d09e5b917a24389fab7"
+  },
+  {
+   "event_key": "ethaug26-3k",
+   "kalshi_ticker": "KXETHMAXMON-ETH-26AUG31-300000",
+   "pm_condition_id": "0xdb4123deb55868184575c563cb904af0054df8ced4b5426a21557b0b5e38eef0"
+  },
+  {
+   "event_key": "uso26-alcaraz",
+   "kalshi_ticker": "KXATP-26USO-ALC",
+   "pm_condition_id": "0xcf4cf0cf9882b50018054826d561f688e319e6e51de956437fa6dbf642696a40"
+  },
+  {
+   "event_key": "uso26-djokovic",
+   "kalshi_ticker": "KXATP-26USO-DJO",
+   "pm_condition_id": "0x15f8f202d13a8bf70566cc9d015331f2b7c4673ce7c0f3bd9274122143da98d7"
+  },
+  {
+   "event_key": "mlb26-orioles",
+   "kalshi_ticker": "KXMLB-26-BAL",
+   "pm_condition_id": "0xae8cf6ba7bd936d12c4c77b77b800dc378a76f02d0276fbc1dc1932f01f8eb9e"
+  },
+  {
+   "event_key": "brpres26-santos",
+   "kalshi_ticker": "KXBRPRES-26-RSAN",
+   "pm_condition_id": "0x05297f854d3b757d5e51a1a29c7f225a80b14b2a161d6b7f9a61677da7a80ced"
+  },
+  {
+   "event_key": "nba27-warriors",
+   "kalshi_ticker": "KXNBA-27-GSW",
+   "pm_condition_id": "0x0687236dace728be2aa72be8b802918f45de83e4ded7d0c3fa3fe9b83c83db74"
+  },
+  {
+   "event_key": "pres28-aoc",
+   "kalshi_ticker": "KXPRESPERSON-28-AOCA",
+   "pm_condition_id": "0xf232b565995e4b3a3e7fa6cef775eeff1cecd20ad7c013cb9fc8dadabfe279a9"
+  },
+  {
+   "event_key": "house26-dem",
+   "kalshi_ticker": "CONTROLH-2026-D",
+   "pm_condition_id": "0xd5d9fc47718bd553592d126b1fa5e87183d27f3936975b0c04cc0f2dec1f1bb4"
   }
  ]
 }
