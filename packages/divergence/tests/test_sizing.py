@@ -124,10 +124,39 @@ def test_no_optimal_when_lock_never_profits():
     assert curve.optimal is None
 
 
+def test_fractional_depth_floors_to_whole_contracts():
+    # YES ask 0.46 x 2.5 vs NO ask 0.48 (PM bid 0.52) x 10: capacity 2.5,
+    # floored to a single point at 2 contracts.
+    #   cost = (0.46 + 0.48) * 2 = 1.88; zero fees -> profit = 2 - 1.88 = 0.12
+    curve = walk_lock(
+        book("kalshi", bids=[("0.44", "10")], asks=[("0.46", "2.5")]),
+        book("polymarket", bids=[("0.52", "10")], asks=[("0.54", "10")]),
+        NullFees(),
+        NullFees(),
+    )
+    assert [p.size for p in curve.points] == [Decimal("2")]
+    assert curve.points[0].total_profit == Decimal("0.12")
+    assert curve.optimal is not None and curve.optimal.size == Decimal("2")
+
+
+def test_sub_contract_depth_yields_empty_curve():
+    # 0.9 contracts of depth cannot fill one whole contract: no points, no
+    # optimal, and no fabricated sub-contract "lock"
+    curve = walk_lock(
+        book("kalshi", bids=[("0.44", "10")], asks=[("0.46", "0.9")]),
+        book("polymarket", bids=[("0.52", "10")], asks=[("0.54", "10")]),
+        NullFees(),
+        NullFees(),
+    )
+    assert curve.points == []
+    assert curve.optimal is None
+
+
 # ---- properties ------------------------------------------------------------
 
 prices = st.decimals(min_value="0.01", max_value="0.99", places=2)
-sizes = st.integers(min_value=1, max_value=500).map(Decimal)
+# fractional sizes exercise the whole-contract flooring
+sizes = st.decimals(min_value="0.01", max_value="500", places=2)
 
 
 def _sorted_book(venue: str, bid_levels, ask_levels) -> Orderbook:
@@ -158,6 +187,8 @@ def test_zero_fee_per_contract_edge_never_increases_with_size(kb, ka, pb, pa):
     edges = [p.per_contract_edge for p in curve.points]
     assert all(a >= b for a, b in zip(edges, edges[1:]))
     assert all(a.size < b.size for a, b in zip(curve.points, curve.points[1:]))
+    # every point is an executable whole-contract size
+    assert all(p.size == p.size.to_integral_value() for p in curve.points)
 
 
 @given(levels, levels, levels, levels)

@@ -145,6 +145,10 @@ LOCK_ASSUMPTIONS = [
     "Direction is fixed at top-of-book; a direction flip at depth is not modeled.",
     "Both legs are priced from the same book snapshot; leg risk (one side "
     "moving while the other fills) is not modeled.",
+    "Lock sizes are whole contracts — the unit both venues always accept; "
+    "fractional book depth is floored away (can only understate the lock). "
+    "Venue minimum order notionals are NOT modeled: a small lock below a "
+    "venue's minimum ticket may not be submittable.",
     "Annualized return is simple (profit/capital x 365/horizon), horizon = later "
     "venue close time, floored at 6 hours; venues may resolve before close.",
 ]

@@ -19,7 +19,10 @@ lock with EXECUTABLE asks only:
 
   gross_edge          = 1 - ask_yes - ask_no          (per contract)
   fee_adjusted_edge   = gross_edge - fees(1 contract, idealized unrounded)
-  max_lock_size       = min(top-of-book depth on both legs)
+  max_lock_size       = min(top-of-book depth on both legs), floored to
+                        WHOLE contracts — the executable unit both venues
+                        always accept (fractional trading exists on some
+                        markets; ignoring it only understates size)
   edge_at_size        = per-contract edge at max_lock_size with each
                         venue's EXACT fee rounding applied to the full fill
 
@@ -68,7 +71,10 @@ class DivergenceItem(BaseModel):
     fee_adjusted_edge: Decimal | None = Field(
         description="per-contract lock edge in dollars after idealized taker fees"
     )
-    max_lock_size: Decimal | None = Field(description="min top-of-book depth across both legs")
+    max_lock_size: Decimal | None = Field(
+        description="min top-of-book depth across both legs, floored to whole "
+        "contracts (the always-executable unit; sizing rounds against the user)"
+    )
     edge_at_size: Decimal | None = Field(
         description="per-contract edge at max_lock_size with exact venue fee rounding"
     )
@@ -155,7 +161,10 @@ def compute_pair(
         fee_adjusted_edge, gross, chosen = best
         direction, ask_yes, yes_size, yes_fees, ask_no, no_size, no_fees = chosen
 
-        max_lock_size = min(yes_size, no_size)
+        # whole contracts only: Kalshi books quote 2dp sizes and some markets
+        # allow fractional trading, but an integer order is valid everywhere —
+        # flooring can only understate the lock (docs/VENUES.md recon)
+        max_lock_size = min(yes_size, no_size).to_integral_value(rounding=ROUND_FLOOR)
         if max_lock_size > 0:
             exact_fees = yes_fees.taker_fee(ask_yes, max_lock_size) + no_fees.taker_fee(
                 ask_no, max_lock_size

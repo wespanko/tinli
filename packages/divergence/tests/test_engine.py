@@ -251,6 +251,37 @@ def test_direction_is_always_the_better_of_the_two(k_bid, k_spread, p_bid, p_spr
     assert curve.direction == item.direction
 
 
+def test_fractional_depth_floors_max_lock_size():
+    # PM bid depth 12.75 shares vs Kalshi ask 30: min is 12.75, floored to 12
+    # whole contracts (the always-executable unit); zero fees keep edge 0.06.
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "30")], asks=[("0.46", "30")]),
+        book("polymarket", bids=[("0.52", "12.75")], asks=[("0.54", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+    )
+    assert item.max_lock_size == Decimal("12")
+    assert item.edge_at_size == Decimal("0.06")
+
+
+def test_sub_contract_depth_has_no_edge_at_size():
+    # 0.4 shares of PM depth cannot fill one whole contract — no size, no
+    # edge_at_size; fee_adjusted_edge (a per-contract rate) still reported
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "30")], asks=[("0.46", "30")]),
+        book("polymarket", bids=[("0.52", "0.4")], asks=[("0.54", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+    )
+    assert item.max_lock_size == Decimal("0")
+    assert item.edge_at_size is None
+    assert item.fee_adjusted_edge == Decimal("0.06")
+
+
 def test_missing_fee_category_flags_worst_case():
     item = compute_pair(
         pair(pm_fee_category=None),
