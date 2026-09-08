@@ -344,6 +344,142 @@ def test_legging_cost_never_negative(k_bid, k_spread, p_bid, p_spread):
     assert item.legging_cost_per_contract >= 0
 
 
+def test_carry_adjustment_discounts_the_dollar():
+    # Zero fees, K 0.44/0.46 vs PM 0.52/0.54 -> cost 0.46 + 0.48 = 0.94,
+    # fee_adjusted_edge 0.06. rf = 4%, horizon exactly one year:
+    #   pv = 1 / (1 + 0.04 * 365/365) = 1/1.04 = 0.9615384615...
+    #   carry_adjusted_edge = 0.961538... - 0.94 = 0.021538461...
+    #     -> floored to 6dp = 0.021538 (edges never round up)
+    #   annualized excess = 0.06/0.94 * 365/365 - 0.04
+    #     = 0.0638297... - 0.04 = 0.0238297... -> floored 4dp = 0.0238
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+        book("polymarket", bids=[("0.52", "200")], asks=[("0.54", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+        horizon_days=Decimal("365"),
+        rf_rate=Decimal("0.04"),
+    )
+    assert item.horizon_days == Decimal("365.0000")
+    assert item.rf_rate == Decimal("0.04")
+    assert item.carry_adjusted_edge == Decimal("0.021538")
+    assert item.annualized_excess_return == Decimal("0.0238")
+
+
+def test_carry_at_zero_rate_is_the_fee_adjusted_edge():
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+        book("polymarket", bids=[("0.52", "200")], asks=[("0.54", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+        horizon_days=Decimal("365"),
+        rf_rate=Decimal("0"),
+    )
+    assert item.carry_adjusted_edge == item.fee_adjusted_edge == Decimal("0.06")
+
+
+def test_carry_fields_none_without_a_horizon():
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+        book("polymarket", bids=[("0.52", "200")], asks=[("0.54", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+        rf_rate=Decimal("0.04"),
+    )
+    assert item.carry_adjusted_edge is None
+    assert item.annualized_excess_return is None
+    assert item.horizon_days is None
+
+
+def test_horizon_is_floored_at_six_hours():
+    # a stale close (or one minutes away) must not annualize into absurdity
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+        book("polymarket", bids=[("0.52", "200")], asks=[("0.54", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+        horizon_days=Decimal("0.001"),
+        rf_rate=Decimal("0.04"),
+    )
+    assert item.horizon_days == Decimal("0.2500")
+
+
+@given(
+    rf=st.decimals(min_value="0.001", max_value="0.20", places=3),
+    days=st.decimals(min_value="0.25", max_value="1500", places=2),
+)
+def test_carry_only_ever_shrinks_the_edge(rf, days):
+    # rf > 0 -> pv < 1 -> the carry-adjusted edge is strictly below the
+    # fee-adjusted edge, and it decays as either rf or the horizon grows
+    def item_at(horizon):
+        return compute_pair(
+            pair(),
+            book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+            book("polymarket", bids=[("0.52", "200")], asks=[("0.54", "200")]),
+            NOW,
+            horizon_days=horizon,
+            rf_rate=rf,
+        )
+
+    it = item_at(days)
+    assert it.carry_adjusted_edge < it.fee_adjusted_edge
+    later = item_at(days * 2)
+    assert later.carry_adjusted_edge <= it.carry_adjusted_edge
+    assert later.annualized_excess_return <= it.annualized_excess_return
+
+
+def test_sort_ranks_actionable_locks_by_annualized_excess():
+    # Three verified pairs: a small fast edge, a bigger slow edge, and a
+    # negative divergence. The fast lock's annualized excess dominates, so
+    # it outranks the bigger absolute edge; the negative pair trails both.
+    fast = compute_pair(
+        pair(event_key="fast"),
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+        book("polymarket", bids=[("0.52", "200")], asks=[("0.54", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+        horizon_days=Decimal("7"),
+        rf_rate=Decimal("0.04"),
+    )
+    slow = compute_pair(
+        pair(event_key="slow"),
+        book("kalshi", bids=[("0.40", "100")], asks=[("0.42", "100")]),
+        book("polymarket", bids=[("0.50", "200")], asks=[("0.52", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+        horizon_days=Decimal("730"),
+        rf_rate=Decimal("0.04"),
+    )
+    negative = compute_pair(
+        pair(event_key="negative"),
+        book("kalshi", bids=[("0.45", "10")], asks=[("0.47", "10")]),
+        book("polymarket", bids=[("0.44", "10")], asks=[("0.46", "10")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+        horizon_days=Decimal("7"),
+        rf_rate=Decimal("0.04"),
+    )
+    # fast: edge 0.06/0.94 over 7d -> ann excess ~ 3.29/yr
+    # slow: edge 0.08/0.92 over 730d -> ann excess ~ 0.0035/yr — and its
+    # carry edge is negative at 4% over 2y (pv 0.9259 < cost 0.92 + ...) —
+    # wait: pv = 1/(1+0.04*2) = 0.925926 > 0.92 -> carry edge 0.005926 > 0,
+    # still actionable, just far behind on excess return.
+    assert fast.annualized_excess_return > slow.annualized_excess_return
+    ordered = sort_items([slow, negative, fast])
+    assert [i.event_key for i in ordered] == ["fast", "slow", "negative"]
+
+
 def test_missing_fee_category_flags_worst_case():
     item = compute_pair(
         pair(pm_fee_category=None),

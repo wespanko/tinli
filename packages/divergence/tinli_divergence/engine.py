@@ -44,6 +44,9 @@ from tinli_divergence.fees import FeeModel, KalshiFees, PolymarketFees
 ONE = Decimal("1")
 HUNDRED = Decimal("100")
 SIX_DP = Decimal("0.000001")
+FOUR_DP = Decimal("0.0001")
+DAYS_PER_YEAR = Decimal("365")
+MIN_HORIZON_DAYS = Decimal("0.25")  # 6h floor: don't annualize into absurdity
 
 
 class VenueTop(BaseModel):
@@ -77,6 +80,30 @@ class DivergenceItem(BaseModel):
     )
     edge_at_size: Decimal | None = Field(
         description="per-contract edge at max_lock_size with exact venue fee rounding"
+    )
+    horizon_days: Decimal | None = Field(
+        default=None,
+        description="days until the lock pays out (later venue close, the "
+        "observable conservative bound), floored at 6h; None when no venue "
+        "publishes a close time",
+    )
+    rf_rate: Decimal | None = Field(
+        default=None,
+        description="annual risk-free rate used for the carry adjustment "
+        "(TINLI_RF_RATE); in the payload so the assumption travels with the "
+        "numbers",
+    )
+    carry_adjusted_edge: Decimal | None = Field(
+        default=None,
+        description="fee-adjusted edge net of the opportunity cost of capital: "
+        "the $1 payoff discounted at rf over the horizon (simple interest), "
+        "minus cost and idealized fees. Equals fee_adjusted_edge at rf=0.",
+    )
+    annualized_excess_return: Decimal | None = Field(
+        default=None,
+        description="simple annualized return on per-contract capital minus "
+        "rf_rate; the number to compare across horizons. None without a "
+        "horizon.",
     )
     legging_cost_per_contract: Decimal | None = Field(
         default=None,
@@ -113,10 +140,14 @@ def compute_pair(
     fetched_at: datetime,
     kalshi_fees: FeeModel | None = None,
     pm_fees: FeeModel | None = None,
+    horizon_days: Decimal | None = None,
+    rf_rate: Decimal | None = None,
 ) -> DivergenceItem:
     k_fees = kalshi_fees if kalshi_fees is not None else KalshiFees()
     p_fees = pm_fees if pm_fees is not None else PolymarketFees(pair.pm_fee_category)
     k, p = top(kalshi_book), top(pm_book)
+    if horizon_days is not None:
+        horizon_days = max(horizon_days, MIN_HORIZON_DAYS)
 
     k_mid, p_mid = _mid(k), _mid(p)
     raw_basis = HUNDRED * (k_mid - p_mid) if k_mid is not None and p_mid is not None else None
@@ -126,6 +157,8 @@ def compute_pair(
     max_lock_size = None
     edge_at_size = None
     legging_cost = None
+    carry_adjusted_edge = None
+    annualized_excess_return = None
 
     # NO ask on a venue = 1 - its YES bid (books are YES-side normalized);
     # the NO leg consumes the YES bid's depth.
@@ -165,8 +198,8 @@ def compute_pair(
             )
             edge = gross - per_contract_fees
             if best is None or edge > best[0]:
-                best = (edge, gross, cand)
-        fee_adjusted_edge, gross, chosen = best
+                best = (edge, gross, per_contract_fees, cand)
+        fee_adjusted_edge, gross, per_contract_fees, chosen = best
         direction, ask_yes, yes_size, yes_fees, ask_no, no_size, no_fees = chosen
 
         # LEGGING RISK: if only one leg fills, the worst-case bail-out is an
@@ -190,6 +223,21 @@ def compute_pair(
                 _unwind(ONE - k.bid, ONE - k.ask, k_fees),
             )
         legging_cost = worst.quantize(SIX_DP, rounding=ROUND_CEILING)
+
+        # CARRY: a lock is a zero-coupon bond — $1 at resolution for
+        # cost + fees today. Discount the payoff at the risk-free rate over
+        # the horizon (simple interest, matching the simple annualized-return
+        # convention everywhere else) so a 2029 edge and a next-week edge
+        # stop looking alike. rf > 0 only ever SHRINKS the edge; floored,
+        # never rounded into existence.
+        cost_pc = ask_yes + ask_no + per_contract_fees
+        if horizon_days is not None and rf_rate is not None:
+            pv = ONE / (ONE + rf_rate * horizon_days / DAYS_PER_YEAR)
+            carry_adjusted_edge = (pv - cost_pc).quantize(SIX_DP, rounding=ROUND_FLOOR)
+            if cost_pc > 0:
+                annualized_excess_return = (
+                    fee_adjusted_edge / cost_pc * DAYS_PER_YEAR / horizon_days - rf_rate
+                ).quantize(FOUR_DP, rounding=ROUND_FLOOR)  # a return is an edge: floor
 
         # whole contracts only: Kalshi books quote 2dp sizes and some markets
         # allow fractional trading, but an integer order is valid everywhere —
@@ -217,6 +265,10 @@ def compute_pair(
         fee_adjusted_edge=fee_adjusted_edge,
         max_lock_size=max_lock_size,
         edge_at_size=edge_at_size,
+        horizon_days=horizon_days.quantize(FOUR_DP) if horizon_days is not None else None,
+        rf_rate=rf_rate,
+        carry_adjusted_edge=carry_adjusted_edge,
+        annualized_excess_return=annualized_excess_return,
         legging_cost_per_contract=legging_cost,
         fee_assumed_worst_case=getattr(p_fees, "assumed_worst_case", False),
         fetched_at=fetched_at,
@@ -224,16 +276,31 @@ def compute_pair(
 
 
 def sort_items(items: list[DivergenceItem]) -> list[DivergenceItem]:
-    """|fee_adjusted_edge| desc; edgeless items after edged ones; and
-    UNVERIFIED PAIRS ALWAYS LAST — a big 'edge' on mismatched resolution
-    criteria is a trap, and burying it below verified pairs is the point."""
+    """Within each verification bucket: ACTIONABLE locks first — positive
+    carry-adjusted edge (or positive fee-adjusted edge when no horizon is
+    quotable) — ranked by annualized excess return, the number that makes a
+    next-week edge and a 2029 edge comparable; then everything else by
+    |fee_adjusted_edge| desc (a big negative divergence is still worth
+    watching); edgeless items last. And UNVERIFIED PAIRS ALWAYS LAST — a
+    big 'edge' on mismatched resolution criteria is a trap, and burying it
+    below verified pairs is the point."""
+
+    ZERO = Decimal("0")
 
     def key(item: DivergenceItem):
         has_edge = item.fee_adjusted_edge is not None
-        return (
-            0 if item.criteria_verified else 1,
-            0 if has_edge else 1,
-            -abs(item.fee_adjusted_edge) if has_edge else Decimal("0"),
+        effective = (
+            item.carry_adjusted_edge
+            if item.carry_adjusted_edge is not None
+            else item.fee_adjusted_edge
         )
+        actionable = has_edge and effective > 0
+        ann = item.annualized_excess_return
+        if actionable:
+            # horizonless positives rank below annualizable ones, by edge
+            rank = (0 if ann is not None else 1, -(ann if ann is not None else ZERO), -effective)
+        else:
+            rank = (0 if has_edge else 1, -abs(item.fee_adjusted_edge) if has_edge else ZERO, ZERO)
+        return (0 if item.criteria_verified else 1, 0 if actionable else 1, rank)
 
     return sorted(items, key=key)

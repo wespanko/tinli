@@ -1,5 +1,5 @@
 import type { DivergenceItem } from '../types'
-import { cents, qty } from '../format'
+import { cents, pct, qty } from '../format'
 import Signed from './Signed'
 
 function dirLabel(item: DivergenceItem): string {
@@ -36,10 +36,16 @@ export default function DivergencePanel({
             SIZE
           </th>
           <th
-            className={`${th} text-right px-3`}
+            className={`${th} text-right px-1`}
             title="edge per contract at max size, exact venue fee rounding"
           >
             @SIZE¢
+          </th>
+          <th
+            className={`${th} text-right px-3`}
+            title="annualized excess return over the risk-free rate to the later venue close — makes fast and slow locks comparable"
+          >
+            XS/YR
           </th>
         </tr>
       </thead>
@@ -113,11 +119,23 @@ export default function DivergencePanel({
               </td>
               <td className="text-right px-1 tabular-nums text-muted">{qty(it.max_lock_size)}</td>
               <td
-                className={`text-right px-3 tabular-nums ${
+                className={`text-right px-1 tabular-nums ${
                   executable ? 'text-gold' : 'text-muted'
                 }`}
               >
                 {it.edge_at_size == null ? '—' : cents(it.edge_at_size, 2)}
+              </td>
+              <td
+                className={`text-right px-3 tabular-nums ${
+                  executable && it.annualized_excess_return != null ? 'text-text' : 'text-muted'
+                }`}
+                title={
+                  it.horizon_days == null
+                    ? 'no venue close published — carry not quotable'
+                    : `${parseFloat(it.horizon_days).toFixed(1)}d to later venue close, rf ${pct(it.rf_rate)}`
+                }
+              >
+                {pct(it.annualized_excess_return)}
               </td>
             </tr>
           )

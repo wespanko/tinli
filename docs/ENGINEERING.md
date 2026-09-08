@@ -158,6 +158,24 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
 - The recorder runs continuously (Windows scheduled task `TinliSnapshot`,
   `snapshot.py --loop 60`) — re-run the note as data accumulates.
 
+### Precise arb model (M14)
+- Direction: both leg assignments are priced and the better fee-adjusted
+  edge wins (the cheaper-ask shortcut mislabels wide-spread pairs; a
+  positive edge can never hide in the rejected direction — proof in
+  engine.py). Screener and walk_lock share the rule.
+- Whole-contract sizing: max_lock_size and every curve point floor to
+  integer contracts (understates only); sub-contract depth means no size
+  and no edge_at_size. Minimum order notionals are stated as unmodeled,
+  not guessed.
+- Carry: the lock is priced as a zero-coupon bond — carry_adjusted_edge
+  discounts the $1 payoff at TINLI_RF_RATE (default 0.04, in every
+  payload as rf_rate) to the later venue close; annualized_excess_return
+  makes a next-week and a 2029 edge comparable, and the screener ranks
+  actionable locks by it.
+- Legging risk: legging_cost_per_contract quotes the worst case of
+  missing one leg — an immediate taker unwind at that venue's
+  top-of-book, spread plus fees both ways, rounded up.
+
 ### Usability layer (M12)
 - In-app curation (`tinli_api/curation.py` + CURATE view): candidate
   discovery with both venues' resolution text, add / verify / retire from

@@ -41,11 +41,14 @@ tick** — was on display 36 minutes before the release.
 v0 feature-complete through M12: venue adapters, divergence + risk
 engines, terminal UI, history snapshots, live streaming (M8), BYOK Kalshi
 auth (M9), research layer (M10–M11), in-app pair curation + keyboard nav
-(M12). Read-only public market data — no order placement, ever.
+(M12), precise arb model (M14: carry-adjusted edges, whole-contract
+sizing, legging risk). Read-only public market data — no order placement,
+ever.
 
 The terminal is one dense screen: watchlist (click a pair to load its
 books), cross-venue orderbook ladders, the fee-adjusted divergence
-screener, and the risk panel — streamed live (Polymarket websocket + Kalshi
+screener (ranked by annualized excess return over the risk-free rate, so
+a next-week lock and a 2029 lock are comparable), and the risk panel — streamed live (Polymarket websocket + Kalshi
 fast-poll) with a 3s-polling fallback, demo badge when on fixtures.
 
 Positions for the risk engine (`/v1/risk`) are self-reported: edit

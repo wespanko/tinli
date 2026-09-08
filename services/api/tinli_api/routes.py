@@ -80,13 +80,16 @@ def get_orderbook(market_id: str) -> Orderbook:
 
 @router.get("/divergence")
 def divergence() -> list[DivergenceItem]:
-    """Cross-venue divergence per mapped pair, sorted by |fee_adjusted_edge|
-    descending with UNVERIFIED pairs always last.
+    """Cross-venue divergence per mapped pair. Ordering (authoritative
+    statement in tinli_divergence.engine.sort_items): actionable locks first
+    ranked by annualized excess return over TINLI_RF_RATE, then divergences
+    by |fee_adjusted_edge|, with UNVERIFIED pairs always last.
 
     Sign convention (authoritative statement in tinli_divergence.engine):
     raw_basis_cents = 100 x (kalshi_yes_mid - polymarket_yes_mid); positive
     means Kalshi prices YES richer than Polymarket. Edges are computed from
-    executable top-of-book asks only, never mids or last trades.
+    executable top-of-book asks only, never mids or last trades; the carry
+    fields discount the $1 payoff to the later venue close.
     """
     return compute_all(get_source())
 
