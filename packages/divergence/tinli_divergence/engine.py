@@ -11,10 +11,11 @@ locks $1.00 at resolution regardless of outcome (assuming the resolution
 criteria really are equivalent — hence criteria_verified). We price the
 lock with EXECUTABLE asks only:
 
-  YES leg: the venue whose YES ask is cheaper, at that ask.
-  NO  leg: the other venue, at its NO ask. Books are normalized YES-side,
-           so the NO ask at price p is the YES bid at 1-p (both venues'
-           complement identity; sizes carry over).
+  Direction: both assignments of the YES/NO legs are priced and the one
+           with the better fee-adjusted edge is reported (rationale at the
+           selection site in compute_pair). Books are normalized YES-side,
+           so a venue's NO ask at price p is its YES bid at 1-p (both
+           venues' complement identity; sizes carry over).
 
   gross_edge          = 1 - ask_yes - ask_no          (per contract)
   fee_adjusted_edge   = gross_edge - fees(1 contract, idealized unrounded)
@@ -114,23 +115,45 @@ def compute_pair(
 
     # NO ask on a venue = 1 - its YES bid (books are YES-side normalized);
     # the NO leg consumes the YES bid's depth.
+    #
+    # DIRECTION: evaluate the fee-adjusted edge of BOTH lock directions and
+    # keep the better one. The obvious shortcut (cheaper YES ask takes the
+    # YES leg) is wrong on wide-spread pairs: gross_K + gross_P =
+    # -(k.ask - k.bid) - (p.ask - p.bid) <= 0, so at most one direction has
+    # positive gross, and it is the one with the LOWER TOTAL COST
+    # ask_yes + ask_no — which compares mids (k.ask + k.bid vs p.ask +
+    # p.bid), not asks. A positive edge can never hide in the rejected
+    # direction under either rule (that would need p.ask < k.bid <= k.ask
+    # <= p.ask, a crossed book), but the ask rule could report the worse of
+    # two negative edges. Fees are venue-asymmetric, so we compare after
+    # fees rather than by cost alone; kalshi-YES wins ties for determinism.
     legs_ready = k.ask is not None and p.ask is not None and k.bid is not None and p.bid is not None
     if legs_ready:
-        if k.ask <= p.ask:
-            direction = "buy_yes_kalshi_no_polymarket"
-            ask_yes, yes_size, yes_fees = k.ask, k.ask_size, k_fees
-            ask_no, no_size, no_fees = ONE - p.bid, p.bid_size, p_fees
-        else:
-            direction = "buy_yes_polymarket_no_kalshi"
-            ask_yes, yes_size, yes_fees = p.ask, p.ask_size, p_fees
-            ask_no, no_size, no_fees = ONE - k.bid, k.bid_size, k_fees
-
-        gross = ONE - ask_yes - ask_no
-        per_contract_fees = (
-            yes_fees.taker_rate() * ask_yes * (ONE - ask_yes)
-            + no_fees.taker_rate() * ask_no * (ONE - ask_no)
-        )
-        fee_adjusted_edge = gross - per_contract_fees
+        candidates = [
+            (
+                "buy_yes_kalshi_no_polymarket",
+                k.ask, k.ask_size, k_fees,
+                ONE - p.bid, p.bid_size, p_fees,
+            ),
+            (
+                "buy_yes_polymarket_no_kalshi",
+                p.ask, p.ask_size, p_fees,
+                ONE - k.bid, k.bid_size, k_fees,
+            ),
+        ]
+        best = None
+        for cand in candidates:
+            _, ask_yes, _, yes_fees, ask_no, _, no_fees = cand
+            gross = ONE - ask_yes - ask_no
+            per_contract_fees = (
+                yes_fees.taker_rate() * ask_yes * (ONE - ask_yes)
+                + no_fees.taker_rate() * ask_no * (ONE - ask_no)
+            )
+            edge = gross - per_contract_fees
+            if best is None or edge > best[0]:
+                best = (edge, gross, cand)
+        fee_adjusted_edge, gross, chosen = best
+        direction, ask_yes, yes_size, yes_fees, ask_no, no_size, no_fees = chosen
 
         max_lock_size = min(yes_size, no_size)
         if max_lock_size > 0:

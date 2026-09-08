@@ -4,9 +4,19 @@ comments — if a test fails, redo the arithmetic before touching the engine."""
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from hypothesis import given
+from hypothesis import strategies as st
+
 from tinli_schema import Orderbook, OrderbookLevel, PairMapping
 
-from tinli_divergence import NullFees, compute_pair, sort_items
+from tinli_divergence import (
+    KalshiFees,
+    NullFees,
+    PolymarketFees,
+    compute_pair,
+    sort_items,
+    walk_lock,
+)
 
 NOW = datetime(2026, 7, 6, tzinfo=UTC)
 
@@ -158,6 +168,87 @@ def test_unverified_pairs_sort_last_regardless_of_edge():
     assert abs(big_unverified.fee_adjusted_edge) > abs(small_verified.fee_adjusted_edge)
     ordered = sort_items([big_unverified, small_verified])
     assert [i.event_key for i in ordered] == ["small-but-real", "trap"]
+
+
+def test_direction_minimizes_cost_not_cheapest_yes_ask():
+    # WIDE-SPREAD case where the naive rule (cheaper YES ask takes the YES
+    # leg) picks the wrong direction. K: bid 0.40 / ask 0.50, PM: bid 0.20 /
+    # ask 0.51. Zero fees.
+    #   YES on Kalshi (naive pick, ask 0.50 <= 0.51):
+    #     gross = 1 - 0.50 - (1 - 0.20) = 1 - 0.50 - 0.80 = -0.30
+    #   YES on Polymarket:
+    #     gross = 1 - 0.51 - (1 - 0.40) = 1 - 0.51 - 0.60 = -0.11  <- better
+    # No positive edge exists either way (that would need a crossed book),
+    # but the reported divergence must be the best executable one.
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.40", "10")], asks=[("0.50", "10")]),
+        book("polymarket", bids=[("0.20", "10")], asks=[("0.51", "10")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+    )
+    assert item.direction == "buy_yes_polymarket_no_kalshi"
+    assert item.fee_adjusted_edge == Decimal("-0.11")
+
+
+def test_direction_tie_in_gross_broken_by_fees():
+    # Equal mids -> equal gross both ways; venue fee asymmetry decides.
+    # K: bid 0.89 / ask 0.91 (mid 0.90), PM: bid 0.895 / ask 0.905 (mid 0.90).
+    # gross either way = 1 - 0.91 - 0.105 = 1 - 0.905 - 0.11 = -0.015.
+    # Fees (Kalshi 7%, PM sports 3%), f(p) = rate*p*(1-p):
+    #   YES Kalshi:  0.07*0.91*0.09 + 0.03*0.105*0.895
+    #              = 0.0057330 + 0.00281925 = 0.00855225
+    #   YES PM:      0.03*0.905*0.095 + 0.07*0.11*0.89
+    #              = 0.00257925 + 0.0068530  = 0.00943225
+    # Kalshi-YES puts the expensive 7% venue at the price FARTHEST from 0.5
+    # where p*(1-p) is smallest -> cheaper. edge = -0.015 - 0.00855225.
+    # The naive ask rule (0.905 < 0.91) would pick the worse PM-YES side.
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.89", "10")], asks=[("0.91", "10")]),
+        book("polymarket", bids=[("0.895", "10")], asks=[("0.905", "10")]),
+        NOW,
+    )
+    assert item.direction == "buy_yes_kalshi_no_polymarket"
+    assert item.fee_adjusted_edge == Decimal("-0.02355225")
+
+
+@given(
+    k_bid=st.integers(min_value=1, max_value=97),
+    k_spread=st.integers(min_value=1, max_value=20),
+    p_bid=st.integers(min_value=1, max_value=97),
+    p_spread=st.integers(min_value=1, max_value=20),
+)
+def test_direction_is_always_the_better_of_the_two(k_bid, k_spread, p_bid, p_spread):
+    # Invariants, any non-crossed books (prices on the cent grid, capped
+    # below 1): (1) the chosen direction's fee-adjusted edge is >= the
+    # rejected direction's; (2) walk_lock agrees with the screener.
+    cent = Decimal("0.01")
+    kb, ka = cent * k_bid, cent * min(k_bid + k_spread, 99)
+    pb, pa = cent * p_bid, cent * min(p_bid + p_spread, 99)
+    k_book = book("kalshi", bids=[(str(kb), "50")], asks=[(str(ka), "50")])
+    p_book = book("polymarket", bids=[(str(pb), "50")], asks=[(str(pa), "50")])
+    kf, pf = KalshiFees(), PolymarketFees("sports")
+    item = compute_pair(pair(), k_book, p_book, NOW)
+
+    def edge(ask_yes, yes_f, ask_no, no_f):
+        one = Decimal("1")
+        return (
+            one - ask_yes - ask_no
+            - yes_f.taker_rate() * ask_yes * (one - ask_yes)
+            - no_f.taker_rate() * ask_no * (one - ask_no)
+        )
+
+    k_yes = edge(ka, kf, Decimal("1") - pb, pf)
+    p_yes = edge(pa, pf, Decimal("1") - kb, kf)
+    assert item.fee_adjusted_edge == max(k_yes, p_yes)
+    expected = (
+        "buy_yes_kalshi_no_polymarket" if k_yes >= p_yes else "buy_yes_polymarket_no_kalshi"
+    )
+    assert item.direction == expected
+    curve = walk_lock(k_book, p_book, kf, pf)
+    assert curve.direction == item.direction
 
 
 def test_missing_fee_category_flags_worst_case():

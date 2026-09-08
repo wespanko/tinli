@@ -5,7 +5,7 @@ walk_lock."""
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis import strategies as st
 
 from tinli_schema import Orderbook, OrderbookLevel
@@ -166,6 +166,11 @@ def test_real_fees_only_ever_reduce_the_curve(kb, ka, pb, pa):
     p_book = _sorted_book("polymarket", pb, pa)
     free = walk_lock(k_book, p_book, NullFees(), NullFees())
     paid = walk_lock(k_book, p_book, KalshiFees(), PolymarketFees("sports"))
+    # venue-asymmetric fees can legitimately flip the better direction (on
+    # gross ties, or on the crossed books this strategy can generate); the
+    # free-vs-paid comparison is only leg-for-leg meaningful when both walks
+    # took the same legs
+    assume(free.direction == paid.direction)
     assert [p.size for p in free.points] == [p.size for p in paid.points]
     for f, p in zip(free.points, paid.points):
         assert p.capital >= f.capital  # fees only add to capital

@@ -68,7 +68,20 @@ def walk_lock(
     if k_ask is None or p_ask is None or k_bid is None or p_bid is None:
         return LockCurve(direction=None, points=[], optimal=None, depth_exhausted=True)
 
-    if k_ask <= p_ask:
+    # Same direction rule as the screener (authoritative rationale in
+    # engine.py): compare both directions' fee-adjusted top-of-book edge,
+    # kalshi-YES wins ties. The two modules MUST agree — a curve whose
+    # direction differs from the screener row it expands would be nonsense.
+    def _edge(ask_yes: Decimal, yes_f: FeeModel, ask_no: Decimal, no_f: FeeModel) -> Decimal:
+        return (
+            ONE - ask_yes - ask_no
+            - yes_f.taker_rate() * ask_yes * (ONE - ask_yes)
+            - no_f.taker_rate() * ask_no * (ONE - ask_no)
+        )
+
+    k_yes_edge = _edge(k_ask, kalshi_fees, ONE - p_bid, pm_fees)
+    p_yes_edge = _edge(p_ask, pm_fees, ONE - k_bid, kalshi_fees)
+    if k_yes_edge >= p_yes_edge:
         direction = "buy_yes_kalshi_no_polymarket"
         yes_levels = [(lv.price, lv.size) for lv in kalshi_book.asks]
         no_levels = [(ONE - lv.price, lv.size) for lv in pm_book.bids]  # best-first ✓
