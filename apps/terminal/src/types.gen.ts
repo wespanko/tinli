@@ -61,6 +61,7 @@ export type DivergenceItem = {
   fee_adjusted_edge: string | null
   max_lock_size: string | null
   edge_at_size: string | null
+  legging_cost_per_contract: string | null
   fee_assumed_worst_case: boolean
   fetched_at: string
 }

@@ -32,7 +32,7 @@ no claimed edge.
 """
 
 from datetime import datetime
-from decimal import ROUND_FLOOR, Decimal
+from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -78,6 +78,13 @@ class DivergenceItem(BaseModel):
     edge_at_size: Decimal | None = Field(
         description="per-contract edge at max_lock_size with exact venue fee rounding"
     )
+    legging_cost_per_contract: Decimal | None = Field(
+        default=None,
+        description="worst case of missing ONE leg: unwind the filled leg "
+        "immediately at its venue's top-of-book, paying the spread plus taker "
+        "fees both ways (idealized rates, rounded up). Adverse moves between "
+        "fill and unwind are not modeled.",
+    )
     fee_assumed_worst_case: bool = Field(
         description="True when the PM fee category was missing and the worst-case rate was used"
     )
@@ -118,6 +125,7 @@ def compute_pair(
     fee_adjusted_edge = None
     max_lock_size = None
     edge_at_size = None
+    legging_cost = None
 
     # NO ask on a venue = 1 - its YES bid (books are YES-side normalized);
     # the NO leg consumes the YES bid's depth.
@@ -161,6 +169,28 @@ def compute_pair(
         fee_adjusted_edge, gross, chosen = best
         direction, ask_yes, yes_size, yes_fees, ask_no, no_size, no_fees = chosen
 
+        # LEGGING RISK: if only one leg fills, the worst-case bail-out is an
+        # immediate taker unwind on that leg's own venue — pay the spread
+        # plus fees both ways. The NO leg's round trip is buy NO at
+        # 1 - yes_bid, sell NO at 1 - yes_ask: the same venue YES spread.
+        # A cost rounds UP, like every number charged against the user.
+        def _unwind(p_in: Decimal, p_out: Decimal, f: FeeModel) -> Decimal:
+            return (p_in - p_out) + f.taker_rate() * (
+                p_in * (ONE - p_in) + p_out * (ONE - p_out)
+            )
+
+        if direction == "buy_yes_kalshi_no_polymarket":
+            worst = max(
+                _unwind(k.ask, k.bid, k_fees),
+                _unwind(ONE - p.bid, ONE - p.ask, p_fees),
+            )
+        else:
+            worst = max(
+                _unwind(p.ask, p.bid, p_fees),
+                _unwind(ONE - k.bid, ONE - k.ask, k_fees),
+            )
+        legging_cost = worst.quantize(SIX_DP, rounding=ROUND_CEILING)
+
         # whole contracts only: Kalshi books quote 2dp sizes and some markets
         # allow fractional trading, but an integer order is valid everywhere —
         # flooring can only understate the lock (docs/VENUES.md recon)
@@ -187,6 +217,7 @@ def compute_pair(
         fee_adjusted_edge=fee_adjusted_edge,
         max_lock_size=max_lock_size,
         edge_at_size=edge_at_size,
+        legging_cost_per_contract=legging_cost,
         fee_assumed_worst_case=getattr(p_fees, "assumed_worst_case", False),
         fetched_at=fetched_at,
     )

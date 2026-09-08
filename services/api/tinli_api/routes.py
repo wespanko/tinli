@@ -143,8 +143,10 @@ LOCK_ASSUMPTIONS = [
     "Taker-only: both legs cross the spread; fees charged per price level with "
     "each venue's exact rounding (can only overstate fees, never understate).",
     "Direction is fixed at top-of-book; a direction flip at depth is not modeled.",
-    "Both legs are priced from the same book snapshot; leg risk (one side "
-    "moving while the other fills) is not modeled.",
+    "Both legs are priced from the same book snapshot. The screener's "
+    "legging_cost_per_contract quotes the worst case of missing one leg — an "
+    "immediate taker unwind at that venue's top-of-book (spread + fees both "
+    "ways); adverse moves between fill and unwind are not modeled.",
     "Lock sizes are whole contracts — the unit both venues always accept; "
     "fractional book depth is floored away (can only understate the lock). "
     "Venue minimum order notionals are NOT modeled: a small lock below a "

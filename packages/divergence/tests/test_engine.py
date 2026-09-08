@@ -282,6 +282,68 @@ def test_sub_contract_depth_has_no_edge_at_size():
     assert item.fee_adjusted_edge == Decimal("0.06")
 
 
+def test_legging_cost_is_the_worse_legs_round_trip():
+    # K bid 0.44 / ask 0.46, PM bid 0.52 / ask 0.54 (sports 3%), direction
+    # YES-on-Kalshi. Missing a leg means an immediate taker unwind on the
+    # filled leg's venue: spread + idealized fees both ways.
+    #   YES leg (Kalshi 7%): 0.02 + 0.07*(0.46*0.54 + 0.44*0.56)
+    #                      = 0.02 + 0.07*(0.2484 + 0.2464) = 0.0546360
+    #   NO leg (PM 3%): buy NO at 0.48, sell NO at 0.46:
+    #     0.02 + 0.03*(0.48*0.52 + 0.46*0.54)
+    #   = 0.02 + 0.03*(0.2496 + 0.2484) = 0.0349400
+    # worst case = 0.054636 (already 6dp; a cost would round UP)
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+        book("polymarket", bids=[("0.52", "200")], asks=[("0.54", "200")]),
+        NOW,
+    )
+    assert item.direction == "buy_yes_kalshi_no_polymarket"
+    assert item.legging_cost_per_contract == Decimal("0.054636")
+
+
+def test_legging_cost_zero_fees_is_the_wider_spread():
+    # zero fees: unwind cost per leg is exactly that venue's YES spread;
+    # K spread 0.02, PM spread 0.06 -> worst case 0.06
+    item = compute_pair(
+        pair(),
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100")]),
+        book("polymarket", bids=[("0.50", "200")], asks=[("0.56", "200")]),
+        NOW,
+        kalshi_fees=NullFees(),
+        pm_fees=NullFees(),
+    )
+    assert item.legging_cost_per_contract == Decimal("0.06")
+
+
+@given(
+    k_bid=st.integers(min_value=1, max_value=97),
+    k_spread=st.integers(min_value=1, max_value=20),
+    p_bid=st.integers(min_value=1, max_value=97),
+    p_spread=st.integers(min_value=1, max_value=20),
+)
+def test_legging_cost_never_negative(k_bid, k_spread, p_bid, p_spread):
+    # non-crossed books: spread >= 0 and fees >= 0, so the worst-case unwind
+    # can never be a profit
+    cent = Decimal("0.01")
+    item = compute_pair(
+        pair(),
+        book(
+            "kalshi",
+            bids=[(str(cent * k_bid), "50")],
+            asks=[(str(cent * min(k_bid + k_spread, 99)), "50")],
+        ),
+        book(
+            "polymarket",
+            bids=[(str(cent * p_bid), "50")],
+            asks=[(str(cent * min(p_bid + p_spread, 99)), "50")],
+        ),
+        NOW,
+    )
+    assert item.legging_cost_per_contract is not None
+    assert item.legging_cost_per_contract >= 0
+
+
 def test_missing_fee_category_flags_worst_case():
     item = compute_pair(
         pair(pm_fee_category=None),
