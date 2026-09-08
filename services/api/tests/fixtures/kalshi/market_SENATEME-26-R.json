@@ -22,11 +22,11 @@
   "no_sub_title": "Susan Collins",
   "notional_value_dollars": "1.0000",
   "occurrence_datetime": "2027-01-03T15:00:00Z",
-  "open_interest_fp": "1309820.66",
+  "open_interest_fp": "1634462.84",
   "open_time": "2024-12-03T15:00:00Z",
-  "previous_price_dollars": "0.3500",
-  "previous_yes_ask_dollars": "0.3500",
-  "previous_yes_bid_dollars": "0.3400",
+  "previous_price_dollars": "0.3200",
+  "previous_yes_ask_dollars": "0.3200",
+  "previous_yes_bid_dollars": "0.3100",
   "price_level_structure": "tapered_deci_cent",
   "price_ranges": [
    {
@@ -55,12 +55,12 @@
   "ticker": "SENATEME-26-R",
   "title": "Will Republicans win the Senate race in Maine?",
   "updated_time": "2026-08-17T16:54:23.574173Z",
-  "volume_24h_fp": "43202.57",
-  "volume_fp": "2168300.30",
+  "volume_24h_fp": "2001.22",
+  "volume_fp": "2691721.17",
   "yes_ask_dollars": "0.3200",
-  "yes_ask_size_fp": "454.72",
+  "yes_ask_size_fp": "10263.28",
   "yes_bid_dollars": "0.3100",
-  "yes_bid_size_fp": "433.36",
+  "yes_bid_size_fp": "8318.71",
   "yes_sub_title": "Susan Collins"
  }
 }

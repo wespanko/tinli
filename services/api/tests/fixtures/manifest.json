@@ -1,5 +1,5 @@
 {
- "recorded_at": "2026-08-23T05:54:10.622798+00:00",
+ "recorded_at": "2026-09-08T00:21:54.123628+00:00",
  "pairs": [
   {
    "event_key": "bdor26-yamal",
@@ -92,16 +92,6 @@
    "pm_condition_id": "0x6a889ebbdf34f7ddc218b00b062f5e10433b29a35e56090928aa9e2daaa4d9db"
   },
   {
-   "event_key": "btcaug26-90k",
-   "kalshi_ticker": "KXBTCMAXMON-BTC-26AUG31-9000000",
-   "pm_condition_id": "0xb1e1ae2c6ee3f17b3c79b7ff2c36b2d90766dd6c0f2e6ba467d5232d882522d1"
-  },
-  {
-   "event_key": "btcaug26-85k",
-   "kalshi_ticker": "KXBTCMAXMON-BTC-26AUG31-8500000",
-   "pm_condition_id": "0x7f668805bfee7909997562f60489ddef01e40a3dca43781efeb59ce380779295"
-  },
-  {
    "event_key": "nfl27-cowboys",
    "kalshi_ticker": "KXSB-27-DAL",
    "pm_condition_id": "0x93158447b78290c1abb5ccf3e025dd03290865972b3fc9c8d2803aa64ae1cbfd"
@@ -110,16 +100,6 @@
    "event_key": "fed-sep26-cut-25",
    "kalshi_ticker": "KXFEDDECISION-26SEP-C25",
    "pm_condition_id": "0xac02cbb049e46d6a3627c0fdf52fa554982a9025d45968207b362acb6ca4b830"
-  },
-  {
-   "event_key": "btcaug26-100k",
-   "kalshi_ticker": "KXBTCMAXMON-BTC-26AUG31-10000000",
-   "pm_condition_id": "0x39ea1503427df7f1439e7dd6567aad5ed72284ed49c58d09e5b917a24389fab7"
-  },
-  {
-   "event_key": "ethaug26-3k",
-   "kalshi_ticker": "KXETHMAXMON-ETH-26AUG31-300000",
-   "pm_condition_id": "0xdb4123deb55868184575c563cb904af0054df8ced4b5426a21557b0b5e38eef0"
   },
   {
    "event_key": "uso26-alcaraz",
@@ -155,6 +135,96 @@
    "event_key": "house26-dem",
    "kalshi_ticker": "CONTROLH-2026-D",
    "pm_condition_id": "0xd5d9fc47718bd553592d126b1fa5e87183d27f3936975b0c04cc0f2dec1f1bb4"
+  },
+  {
+   "event_key": "house26-gop",
+   "kalshi_ticker": "CONTROLH-2026-R",
+   "pm_condition_id": "0x4e4f77e7dbf4cab666e9a1943674d7ae66348e862df03ea6f44b11eb95731928"
+  },
+  {
+   "event_key": "senate26-nhprim-manzur",
+   "kalshi_ticker": "KXSENATENHD-26-KMAN",
+   "pm_condition_id": "0x1cf96ff28b0fa76e23f12a0cf299fc3bced8b26e0addfc1ef11fb58347c0216e"
+  },
+  {
+   "event_key": "senate26-nhprim-pappas",
+   "kalshi_ticker": "KXSENATENHD-26-CPAP",
+   "pm_condition_id": "0xf78be595172a9db8c6323e1927aa44b2fa2d52805d97bf4a9664593b42326534"
+  },
+  {
+   "event_key": "brpres26-bolsonaro",
+   "kalshi_ticker": "KXBRPRES-26-JB",
+   "pm_condition_id": "0x63d8f3a34c90bd5342dda8acf62b6a898dfa52f86475efaf180b66493ef6af80"
+  },
+  {
+   "event_key": "dem28-mamdani",
+   "kalshi_ticker": "KXPRESNOMD-28-ZMAM",
+   "pm_condition_id": "0x3535fb2f4aef6619dde8b367cb5e5d209526bb496d5d9778428c58a0252435e3"
+  },
+  {
+   "event_key": "dem28-mobama",
+   "kalshi_ticker": "KXPRESNOMD-28-MO",
+   "pm_condition_id": "0x3e218c99a1335641b3a5ee6c887521d19b0c28fddd6b99c254a07968e35c0b1b"
+  },
+  {
+   "event_key": "gop28-thune",
+   "kalshi_ticker": "KXPRESNOMR-28-JT",
+   "pm_condition_id": "0x7190eccbd0677d5d0ae8cdf598b37e945a346915c666dda11468dc9970657a56"
+  },
+  {
+   "event_key": "fed-sep26-hike-gt25",
+   "kalshi_ticker": "KXFEDDECISION-26SEP-H26",
+   "pm_condition_id": "0x2e4b58fc18dbffd74d5275d89fb076943f21992763c45dcadd81391b83bde13c"
+  },
+  {
+   "event_key": "ucl27-barca",
+   "kalshi_ticker": "KXUCL-27-BAR",
+   "pm_condition_id": "0xa23467e95abf6544819a9dcb90b7719846aacf300b991ea07204e1f1649097cb"
+  },
+  {
+   "event_key": "nfl27-49ers",
+   "kalshi_ticker": "KXSB-27-SF",
+   "pm_condition_id": "0x6099e6b30c4ee1d3121e5ebe4760ebff446ec5d7eef1b9c43dd2e9cfd59a556c"
+  },
+  {
+   "event_key": "uso26-michelsen",
+   "kalshi_ticker": "KXATP-26USO-MIC",
+   "pm_condition_id": "0x9d25e2578bd41f75d15b2dc336c951d5e453f64322bb08c8fe0cbe1963d3b65c"
+  },
+  {
+   "event_key": "uso26-khachanov",
+   "kalshi_ticker": "KXATP-26USO-KHA",
+   "pm_condition_id": "0x7faccea31c6d55a57330d9ddf5f92c26db7677847391556484e975012a01c552"
+  },
+  {
+   "event_key": "uso26-shelton",
+   "kalshi_ticker": "KXATP-26USO-SHE",
+   "pm_condition_id": "0x5d1e8a08b738d682ce49308c73f0a83ae192476cc9472cb82cc989e4d83a7e7f"
+  },
+  {
+   "event_key": "uso26-zverev",
+   "kalshi_ticker": "KXATP-26USO-ZVE",
+   "pm_condition_id": "0x39b718f6e0a66a3ae5e459e76c74a694b521eaff5f6015857d1d191f1fc03c61"
+  },
+  {
+   "event_key": "wuso26-navarro",
+   "kalshi_ticker": "KXWTA-26USO-NAV",
+   "pm_condition_id": "0x9de54dfbde0a307a744df57c897874bae97c79ce02be36db8a12f8e29c3ef6a9"
+  },
+  {
+   "event_key": "wuso26-zheng",
+   "kalshi_ticker": "KXWTA-26USO-ZHE",
+   "pm_condition_id": "0x32abb83d872a85d5abca961367456a72ddb40fe756f945a16fb49940d17627ce"
+  },
+  {
+   "event_key": "wuso26-rybakina",
+   "kalshi_ticker": "KXWTA-26USO-RYB",
+   "pm_condition_id": "0x06a3407e2639729c2aefa0d124f4cec064875f47fb0a85e3b3a82978878e5a12"
+  },
+  {
+   "event_key": "wuso26-andreeva",
+   "kalshi_ticker": "KXWTA-26USO-AND",
+   "pm_condition_id": "0x42fd10ad753ecf6804c89db31000bf09ec8aedb90a5c6e67db6513586c168419"
   }
  ]
 }

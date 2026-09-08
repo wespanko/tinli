@@ -19,9 +19,9 @@
   "no_bid_dollars": "0.1500",
   "no_sub_title": "Democratic Party",
   "notional_value_dollars": "1.0000",
-  "open_interest_fp": "5993474.13",
+  "open_interest_fp": "6401976.40",
   "open_time": "2024-11-06T15:00:00Z",
-  "previous_price_dollars": "0.8500",
+  "previous_price_dollars": "0.8400",
   "previous_yes_ask_dollars": "0.8500",
   "previous_yes_bid_dollars": "0.8400",
   "price_level_structure": "tapered_deci_cent",
@@ -51,12 +51,12 @@
   "ticker": "CONTROLH-2026-D",
   "title": "Will Democrats win the House in 2026?",
   "updated_time": "2026-07-14T16:40:55.905016Z",
-  "volume_24h_fp": "21639.55",
-  "volume_fp": "9522993.06",
+  "volume_24h_fp": "29109.23",
+  "volume_fp": "10063647.25",
   "yes_ask_dollars": "0.8500",
-  "yes_ask_size_fp": "82374.11",
+  "yes_ask_size_fp": "453179.96",
   "yes_bid_dollars": "0.8400",
-  "yes_bid_size_fp": "259774.70",
+  "yes_bid_size_fp": "143621.72",
   "yes_sub_title": "Democratic Party"
  }
 }

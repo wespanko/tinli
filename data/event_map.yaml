@@ -18,10 +18,10 @@
 #                      mapping itself); the divergence fee model reads it.
 #   notes:             resolution-criteria differences, esp. tail cases.
 #
-# Refreshed 2026-07-20 (previous refresh 2026-07-16; the World Cup pairs
-# settled with the Jul 19 final and were retired, as were the earlier
-# group-stage and Wimbledon pairs — their fixtures remain on disk for
-# adapter tests).
+# Refreshed 2026-09-07 (previous refresh 2026-07-20; the BTC/ETH August
+# monthlies resolved 2026-09-01 and were retired — like the World Cup,
+# group-stage and Wimbledon pairs before them, their fixtures remain on
+# disk for adapter tests and their history stays in data/history/).
 
 pairs:
 - event_key: bdor26-yamal
@@ -168,22 +168,6 @@ pairs:
   criteria_verified: false
   pm_fee_category: sports
   notes: 'added from discovery 2026-08-22 (score 0.56); resolves ~2026-09-15; VERIFY: what counts as ''starting'' (announced starter vs first offensive snap) and postponement tails on both venues'
-- event_key: btcaug26-90k
-  question: Will BTC trade above $90k in August 2026?
-  kalshi_ticker: KXBTCMAXMON-BTC-26AUG31-9000000
-  pm_condition_id: '0xb1e1ae2c6ee3f17b3c79b7ff2c36b2d90766dd6c0f2e6ba467d5232d882522d1'
-  pm_yes_token: 0
-  criteria_verified: false
-  pm_fee_category: crypto
-  notes: 'added from discovery 2026-08-22 (score 0.40); resolves 2026-09-01; VERIFY: K uses its trimmed-mean index max through Aug 31 11:59PM ET, PM ''reach $90,000'' per its own price source — different indexes can straddle the strike; compare sources and cutoffs'
-- event_key: btcaug26-85k
-  question: Will BTC trade above $85k in August 2026?
-  kalshi_ticker: KXBTCMAXMON-BTC-26AUG31-8500000
-  pm_condition_id: '0x7f668805bfee7909997562f60489ddef01e40a3dca43781efeb59ce380779295'
-  pm_yes_token: 0
-  criteria_verified: false
-  pm_fee_category: crypto
-  notes: added from discovery 2026-08-22 (score 0.40); same structure and index caveat as btcaug26-90k
 - event_key: nfl27-cowboys
   question: Will Dallas win the 2027 Pro Football Championship?
   kalshi_ticker: KXSB-27-DAL
@@ -200,22 +184,6 @@ pairs:
   criteria_verified: false
   pm_fee_category: finance
   notes: 'added from deep discovery 2026-08-22 (score 0.38, PM vol 617k); completes the Sep-16 Fed set; VERIFY: same structure as the verified fed-sep26 pairs — exact-bracket vs rounding tails'
-- event_key: btcaug26-100k
-  question: Will BTC trade above $100k in August 2026?
-  kalshi_ticker: KXBTCMAXMON-BTC-26AUG31-10000000
-  pm_condition_id: '0x39ea1503427df7f1439e7dd6567aad5ed72284ed49c58d09e5b917a24389fab7'
-  pm_yes_token: 0
-  criteria_verified: false
-  pm_fee_category: crypto
-  notes: added from deep discovery 2026-08-22 (PM vol 209k); resolves 2026-09-01; same index-source caveat as btcaug26-90k
-- event_key: ethaug26-3k
-  question: Will ETH trade above $3k in August 2026?
-  kalshi_ticker: KXETHMAXMON-ETH-26AUG31-300000
-  pm_condition_id: '0xdb4123deb55868184575c563cb904af0054df8ced4b5426a21557b0b5e38eef0'
-  pm_yes_token: 0
-  criteria_verified: false
-  pm_fee_category: crypto
-  notes: 'added from deep discovery 2026-08-22; resolves 2026-09-01; VERIFY: K trimmed-mean index vs PM price source, same shape as the BTC monthlies'
 - event_key: uso26-alcaraz
   question: Will Carlos Alcaraz win the US Open Men's Singles?
   kalshi_ticker: KXATP-26USO-ALC
@@ -272,3 +240,147 @@ pairs:
   criteria_verified: false
   pm_fee_category: politics
   notes: 'added from deep discovery 2026-08-22 (score 0.38); legacy-series ticker; VERIFY: K ''win the House'' vs PM ''control after the 2026 midterms'' — speaker-election vs seat-count definitions; NOTE the -R sibling cross-matched a single NY-05 seat market, a trap'
+- event_key: house26-gop
+  question: Will Republicans win the House in 2026?
+  kalshi_ticker: CONTROLH-2026-R
+  pm_condition_id: '0x4e4f77e7dbf4cab666e9a1943674d7ae66348e862df03ea6f44b11eb95731928'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-09-07 (score 0.38); this run found the correct PM House-control market (the 2026-08-22 run cross-matched a single NY-05 seat, a trap); VERIFY: same speaker-election vs majority-of-seats caveat as house26-dem, plus PM''s no-majority clause'
+- event_key: senate26-nhprim-manzur
+  question: NH Dem Senate Nominee (Karishma Manzur)
+  kalshi_ticker: KXSENATENHD-26-KMAN
+  pm_condition_id: '0x1cf96ff28b0fa76e23f12a0cf299fc3bced8b26e0addfc1ef11fb58347c0216e'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-09-07 (score 1.00, K vol 108k); primary is 2026-09-08 — resolves within a day; VERIFY: K resolves on winning the NOMINATION (closes Nov 3) vs PM on the PRIMARY winner (ends Sep 8) — a post-primary replacement or cancelled primary (PM ''Other'') diverges'
+- event_key: senate26-nhprim-pappas
+  question: NH Dem Senate Nominee (Chris Pappas)
+  kalshi_ticker: KXSENATENHD-26-CPAP
+  pm_condition_id: '0xf78be595172a9db8c6323e1927aa44b2fa2d52805d97bf4a9664593b42326534'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-09-07 (score 1.00, K vol 86k); same structure and nomination-vs-primary tail as senate26-nhprim-manzur'
+- event_key: brpres26-bolsonaro
+  question: Will Jair Bolsonaro win the 2026 Brazilian presidential election?
+  kalshi_ticker: KXBRPRES-26-JB
+  pm_condition_id: '0x63d8f3a34c90bd5342dda8acf62b6a898dfa52f86475efaf180b66493ef6af80'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-09-07 (score 1.00, PM vol 38k); election 2026-10-04; VERIFY: same runoff/annulment tails as brpres26-santos — K close 2027-10 covers a runoff, PM has an unknown-by-2027-06-30 clause; also confirm Bolsonaro-eligibility edge cases resolve the same way'
+- event_key: dem28-mamdani
+  question: Will Zohran Mamdani be the 2028 Democratic nominee?
+  kalshi_ticker: KXPRESNOMD-28-ZMAM
+  pm_condition_id: '0x3535fb2f4aef6619dde8b367cb5e5d209526bb496d5d9778428c58a0252435e3'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-09-07 (score 0.78, K vol 114k / PM 67k); VERIFY: same structure as dem28-aoc — both ''wins and accepts'' — compare PM''s replacement-nominee clause vs K rules'
+- event_key: dem28-mobama
+  question: Will Michelle Obama be the 2028 Democratic nominee?
+  kalshi_ticker: KXPRESNOMD-28-MO
+  pm_condition_id: '0x3e218c99a1335641b3a5ee6c887521d19b0c28fddd6b99c254a07968e35c0b1b'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-09-07 (score 0.78); same structure as dem28-mamdani; NOTE trap sibling: K Barack Obama market cross-matched this same PM Michelle market in discovery'
+- event_key: gop28-thune
+  question: Will John Thune be the 2028 Republican nominee?
+  kalshi_ticker: KXPRESNOMR-28-JT
+  pm_condition_id: '0x7190eccbd0677d5d0ae8cdf598b37e945a346915c666dda11468dc9970657a56'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: politics
+  notes: 'added from discovery 2026-09-07 (score 0.45, PM vol 60k); GOP mirror of the dem28 pairs — VERIFY the same wins-and-accepts / replacement-nominee tails'
+- event_key: fed-sep26-hike-gt25
+  question: Fed September Decision (Hike >25bps)
+  kalshi_ticker: KXFEDDECISION-26SEP-H26
+  pm_condition_id: '0x2e4b58fc18dbffd74d5275d89fb076943f21992763c45dcadd81391b83bde13c'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: finance
+  notes: 'added from discovery 2026-09-07 (score 0.38, PM vol 269k); completes the Sep-16 Fed set; VERIFY: K ''hike >25bps'' vs PM ''increase 50+ bps'' — equivalent ON the 25bp grid, but an off-grid 30–49bp hike depends on PM''s bracket rounding — compare bracket rules; NOTE trap sibling: K Cut->25bps cross-matched this same PM INCREASE market in discovery'
+- event_key: ucl27-barca
+  question: UCL 2026-27 Winner (Barcelona)
+  kalshi_ticker: KXUCL-27-BAR
+  pm_condition_id: '0xa23467e95abf6544819a9dcb90b7719846aacf300b991ea07204e1f1649097cb'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.57); VERIFY: both resolve on the 2026-27 UEFA Champions League winner; K closes 2027-06-19 vs PM ends 2027-05-30 — compare postponed-final and abandoned-season tails'
+- event_key: nfl27-49ers
+  question: Will San Francisco win the 2027 Pro Football Championship?
+  kalshi_ticker: KXSB-27-SF
+  pm_condition_id: '0x6099e6b30c4ee1d3121e5ebe4760ebff446ec5d7eef1b9c43dd2e9cfd59a556c'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.44, K vol 186k); VERIFY: same season/game caveat as nfl27-cowboys (K settlement window to 2029 vs PM ends 2027-03-31; conference-champ sibling markets are traps)'
+- event_key: uso26-michelsen
+  question: Will Alex Michelsen win the US Open Men's Singles?
+  kalshi_ticker: KXATP-26USO-MIC
+  pm_condition_id: '0x9d25e2578bd41f75d15b2dc336c951d5e453f64322bb08c8fe0cbe1963d3b65c'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.71, K vol 459k); final ~2026-09-13; VERIFY: same walkover/retirement tails as uso26-fils'
+- event_key: uso26-khachanov
+  question: Will Karen Khachanov win the US Open Men's Singles?
+  kalshi_ticker: KXATP-26USO-KHA
+  pm_condition_id: '0x7faccea31c6d55a57330d9ddf5f92c26db7677847391556484e975012a01c552'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.71, K vol 258k / PM 46k); final ~2026-09-13; VERIFY: same walkover/retirement tails as uso26-fils'
+- event_key: uso26-shelton
+  question: Will Ben Shelton win the US Open Men's Singles?
+  kalshi_ticker: KXATP-26USO-SHE
+  pm_condition_id: '0x5d1e8a08b738d682ce49308c73f0a83ae192476cc9472cb82cc989e4d83a7e7f'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.71, PM vol 58k); final ~2026-09-13; VERIFY: same walkover/retirement tails as uso26-fils'
+- event_key: uso26-zverev
+  question: Will Alexander Zverev win the US Open Men's Singles?
+  kalshi_ticker: KXATP-26USO-ZVE
+  pm_condition_id: '0x39b718f6e0a66a3ae5e459e76c74a694b521eaff5f6015857d1d191f1fc03c61'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.71); final ~2026-09-13; VERIFY: same walkover/retirement tails as uso26-fils'
+- event_key: wuso26-navarro
+  question: Will Emma Navarro win the US Open Women's Singles?
+  kalshi_ticker: KXWTA-26USO-NAV
+  pm_condition_id: '0x9de54dfbde0a307a744df57c897874bae97c79ce02be36db8a12f8e29c3ef6a9'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.62, K vol 315k / PM 43k); final ~2026-09-12; VERIFY: same walkover/retirement and cancelled-final tails as the men''s uso26 pairs; K closes 2026-09-27 vs PM ends 2026-09-13'
+- event_key: wuso26-zheng
+  question: Will Qinwen Zheng win the US Open Women's Singles?
+  kalshi_ticker: KXWTA-26USO-ZHE
+  pm_condition_id: '0x32abb83d872a85d5abca961367456a72ddb40fe756f945a16fb49940d17627ce'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.62, PM vol 52k); same structure and tails as wuso26-navarro'
+- event_key: wuso26-rybakina
+  question: Will Elena Rybakina win the US Open Women's Singles?
+  kalshi_ticker: KXWTA-26USO-RYB
+  pm_condition_id: '0x06a3407e2639729c2aefa0d124f4cec064875f47fb0a85e3b3a82978878e5a12'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.62); same structure and tails as wuso26-navarro'
+- event_key: wuso26-andreeva
+  question: Will Mirra Andreeva win the US Open Women's Singles?
+  kalshi_ticker: KXWTA-26USO-AND
+  pm_condition_id: '0x42fd10ad753ecf6804c89db31000bf09ec8aedb90a5c6e67db6513586c168419'
+  pm_yes_token: 0
+  criteria_verified: false
+  pm_fee_category: sports
+  notes: 'added from discovery 2026-09-07 (score 0.62); same structure and tails as wuso26-navarro'

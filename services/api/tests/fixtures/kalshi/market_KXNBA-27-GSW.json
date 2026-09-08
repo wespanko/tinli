@@ -21,9 +21,9 @@
   "no_sub_title": "Golden State",
   "notional_value_dollars": "1.0000",
   "occurrence_datetime": "2027-07-31T14:00:00Z",
-  "open_interest_fp": "851196.49",
+  "open_interest_fp": "952451.75",
   "open_time": "2026-06-14T08:00:00Z",
-  "previous_price_dollars": "0.0200",
+  "previous_price_dollars": "0.0100",
   "previous_yes_ask_dollars": "0.0200",
   "previous_yes_bid_dollars": "0.0100",
   "price_level_structure": "linear_cent",
@@ -43,12 +43,12 @@
   "ticker": "KXNBA-27-GSW",
   "title": "Will Golden State win the 2027 Pro Basketball Finals?",
   "updated_time": "2026-07-24T16:41:17.536752Z",
-  "volume_24h_fp": "23266.25",
-  "volume_fp": "1612112.16",
+  "volume_24h_fp": "534.33",
+  "volume_fp": "1757729.62",
   "yes_ask_dollars": "0.0200",
-  "yes_ask_size_fp": "544316.81",
+  "yes_ask_size_fp": "478950.80",
   "yes_bid_dollars": "0.0100",
-  "yes_bid_size_fp": "62143.34",
+  "yes_bid_size_fp": "55559.01",
   "yes_sub_title": "Golden State"
  }
 }

@@ -12,7 +12,7 @@
   "expected_expiration_time": "2027-07-31T14:00:00Z",
   "expiration_time": "2029-07-30T14:00:00Z",
   "expiration_value": "",
-  "last_price_dollars": "0.2400",
+  "last_price_dollars": "0.2300",
   "latest_expiration_time": "2029-07-30T14:00:00Z",
   "liquidity_dollars": "0.0000",
   "market_type": "binary",
@@ -21,11 +21,11 @@
   "no_sub_title": "San Antonio",
   "notional_value_dollars": "1.0000",
   "occurrence_datetime": "2027-07-31T14:00:00Z",
-  "open_interest_fp": "435177.10",
+  "open_interest_fp": "448912.66",
   "open_time": "2026-06-14T08:00:00Z",
-  "previous_price_dollars": "0.2400",
-  "previous_yes_ask_dollars": "0.2400",
-  "previous_yes_bid_dollars": "0.2300",
+  "previous_price_dollars": "0.2300",
+  "previous_yes_ask_dollars": "0.2300",
+  "previous_yes_bid_dollars": "0.2200",
   "price_level_structure": "linear_cent",
   "price_ranges": [
    {
@@ -43,12 +43,12 @@
   "ticker": "KXNBA-27-SAS",
   "title": "Will San Antonio win the 2027 Pro Basketball Finals?",
   "updated_time": "2026-07-24T16:41:17.536752Z",
-  "volume_24h_fp": "1940.94",
-  "volume_fp": "627156.24",
+  "volume_24h_fp": "2639.28",
+  "volume_fp": "672118.57",
   "yes_ask_dollars": "0.2300",
-  "yes_ask_size_fp": "1.28",
+  "yes_ask_size_fp": "207773.77",
   "yes_bid_dollars": "0.2200",
-  "yes_bid_size_fp": "52531.09",
+  "yes_bid_size_fp": "75026.46",
   "yes_sub_title": "San Antonio"
  }
 }

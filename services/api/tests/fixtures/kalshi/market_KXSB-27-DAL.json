@@ -20,7 +20,7 @@
   "no_bid_dollars": "0.9500",
   "no_sub_title": "Dallas",
   "notional_value_dollars": "1.0000",
-  "open_interest_fp": "4046943.04",
+  "open_interest_fp": "5044167.02",
   "open_time": "2026-02-08T20:00:00Z",
   "previous_price_dollars": "0.0500",
   "previous_yes_ask_dollars": "0.0500",
@@ -42,12 +42,12 @@
   "ticker": "KXSB-27-DAL",
   "title": "Will Dallas win the 2027 Pro Football Championship?",
   "updated_time": "2026-07-24T02:22:58.550048Z",
-  "volume_24h_fp": "180176.21",
-  "volume_fp": "4899314.79",
+  "volume_24h_fp": "81090.63",
+  "volume_fp": "6240278.65",
   "yes_ask_dollars": "0.0500",
-  "yes_ask_size_fp": "3503485.20",
+  "yes_ask_size_fp": "917020.88",
   "yes_bid_dollars": "0.0400",
-  "yes_bid_size_fp": "129672.83",
+  "yes_bid_size_fp": "141641.37",
   "yes_sub_title": "Dallas"
  }
 }
