@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { BasisStats, BookLevel, DivergenceItem, HistoryPoint, MarketQuote, Orderbook, Pair } from '../types'
 import type { LockReport } from '../types.gen'
 import { cents, clock, qty } from '../format'
@@ -7,6 +8,7 @@ import LockPanel from './LockPanel'
 import Signed from './Signed'
 
 const DEPTH = 6
+const DEPTH_KEY = 'tinli-depth-open'
 
 type Mid = { mid: number | null; spread: number | null }
 
@@ -158,6 +160,9 @@ export default function MarketPanel({
   pmBook: Orderbook | null
   lock: LockReport | null
 }) {
+  // depth curves + raw ladders are the second layer: off by default, one
+  // toggle reveals both venues at once, remembered across pairs and reloads
+  const [depth, setDepth] = useState(() => localStorage.getItem(DEPTH_KEY) === '1')
   if (!pair) return <div className="p-3 text-muted text-[12px]">select a pair</div>
   // guard against stale books from a previous selection still in state
   const freshK = kalshiBook && pair.kalshi && kalshiBook.market_id === pair.kalshi.id ? kalshiBook : null
@@ -166,6 +171,11 @@ export default function MarketPanel({
   const k = midOf(freshK)
   const p = midOf(freshP)
   const basis = k.mid != null && p.mid != null ? k.mid - p.mid : null
+  const toggleDepth = () => {
+    const next = !depth
+    localStorage.setItem(DEPTH_KEY, next ? '1' : '0')
+    setDepth(next)
+  }
   return (
     <div className="p-3 flex flex-col gap-3 h-full">
       <div>
@@ -193,15 +203,6 @@ export default function MarketPanel({
 
       <BasisChart points={history} stats={historyStats} />
 
-      <div className="flex gap-1.5 items-stretch">
-        <DepthChart label="KALSHI DEPTH" book={freshK} />
-        <DepthChart label="POLYMARKET DEPTH" book={freshP} />
-      </div>
-
-      <div className="flex gap-1.5 items-start">
-        <Ladder label="KALSHI BOOK" quote={pair.kalshi} book={freshK} />
-        <Ladder label="POLYMARKET BOOK" quote={pair.polymarket} book={freshP} />
-      </div>
 
       {/* full depth-walked curve when the selected pair's lock has loaded;
           the top-of-book summary is the fallback while it's in flight */}
@@ -209,6 +210,30 @@ export default function MarketPanel({
         <LockPanel lock={lock} />
       ) : (
         item && <LockEconomics item={item} />
+      )}
+
+      <button
+        onClick={toggleDepth}
+        className="flex items-center gap-2 text-[10px] tracking-[0.15em] text-muted hover:text-hover border-t border-line pt-2"
+        title="depth curves and raw ladders for both venues"
+      >
+        <span className="font-mono w-3 text-left">{depth ? '−' : '+'}</span>
+        <span className="font-sans font-medium">DEPTH · BOOKS</span>
+        <span className="ml-auto font-sans">{depth ? 'HIDE' : 'SHOW'}</span>
+      </button>
+
+      {depth && (
+        <>
+          <div className="flex gap-1.5 items-stretch">
+            <DepthChart label="KALSHI DEPTH" book={freshK} />
+            <DepthChart label="POLYMARKET DEPTH" book={freshP} />
+          </div>
+
+          <div className="flex gap-1.5 items-start">
+            <Ladder label="KALSHI BOOK" quote={pair.kalshi} book={freshK} />
+            <Ladder label="POLYMARKET BOOK" quote={pair.polymarket} book={freshP} />
+          </div>
+        </>
       )}
 
       {pair.notes && <div className="text-muted text-[11px]">{pair.notes}</div>}

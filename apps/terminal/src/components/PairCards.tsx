@@ -1,6 +1,6 @@
 import type { Pair } from '../types'
 import { cents } from '../format'
-import { basisCents } from './WatchTable'
+import { basisCents } from '../pairs'
 
 function DeltaChip({ basis }: { basis: number | null }) {
   if (basis == null) return <span className="text-muted text-sm">—</span>

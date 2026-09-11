@@ -45,11 +45,14 @@ auth (M9), research layer (M10–M11), in-app pair curation + keyboard nav
 sizing, legging risk). Read-only public market data — no order placement,
 ever.
 
-The terminal is one dense screen: watchlist (click a pair to load its
-books), cross-venue orderbook ladders, the fee-adjusted divergence
-screener (ranked by annualized excess return over the risk-free rate, so
-a next-week lock and a 2029 lock are comparable), and the risk panel — streamed live (Polymarket websocket + Kalshi
-fast-poll) with a 3s-polling fallback, demo badge when on fixtures.
+The terminal is two panes: one ranked pair list (each pair joined with
+its fee-adjusted lock edge at executable size; unverified and settled
+pairs collapsed under dividers) and the selected pair's market — venue
+quotes, basis history, the depth-walked lock curve with carry and legging
+risk, and depth curves plus raw ladders behind a DEPTH toggle. The
+self-reported book and risk engine live in a BOOK tab. Streamed live
+(Polymarket websocket + Kalshi fast-poll) with a 3s-polling fallback,
+demo badge when on fixtures.
 
 Positions for the risk engine (`/v1/risk`) are self-reported: edit
 `data/positions.yaml` (an example book ships with the repo). No venue auth

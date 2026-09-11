@@ -186,17 +186,25 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   preserved on rewrite; TINLI_EVENT_MAP overrides for tests), and the
   stream hub restarts after any map change so subscriptions follow.
   Read-only instances refuse all curation writes.
-- Keyboard-first: j/k / arrows drive the watchlist, `/` filters pairs
-  (watchlist + screener; MARKET keeps its selection), 1/2/3 switch views,
-  `?` help, Esc closes/clears. Handlers never fire while typing.
+- Keyboard-first: j/k / arrows drive the pair list (visible rows only —
+  collapsed groups are skipped), `/` filters pairs (and un-collapses the
+  matches; MARKET keeps its selection), 1/2/3/4 switch views, `?` help,
+  Esc closes/clears. Handlers never fire while typing.
 - First-load skeletons instead of panel pop-in; `python run.py [demo]` is
   the one-command start (bootstraps venv/npm on first run; make remains).
 
 ### Terminal UI (M5 + redesign)
-- One dense screen, 3s polling: selectable watchlist → selected pair's venue
-  quotes with basis history, depth-curve charts and book ladders → lock
-  economics → divergence screener → risk panel. A secondary CARDS view shows
-  all pairs as tiles.
+- Progressive disclosure (Sep 2026 declutter): the default screen is two
+  panes. PAIRS is the watchlist and divergence screener merged — one row
+  per pair with K·PM mids, raw basis, EDGE¢ at executable size (gold when
+  positive on a verified pair) and lock size; verified pairs ranked by
+  edge on top, UNVERIFIED and SETTLED under collapsible dividers that
+  start closed (choice persisted in localStorage). MARKET shows venue
+  quotes, basis history and the depth-walked lock economics; depth curves
+  and raw ladders sit behind one DEPTH · BOOKS toggle. The self-reported
+  book + risk engine (and the BYOK account panel) moved to a BOOK view;
+  CARDS shows all pairs as tiles. The first-run intro is three paragraphs
+  plus keys; FULL GUIDE / HELP / `?` unfold the complete explainer.
 - Post-redesign visual system: real type hierarchy, bundled **Inter (labels,
   names, prose) + JetBrains Mono (every number and id slug)**, CVD-validated
   up/down colors, depth charts. Don't regress this.

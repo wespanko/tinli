@@ -16,7 +16,6 @@ import type {
 import { cents } from './format'
 import AccountPanel from './components/AccountPanel'
 import CurateView from './components/CurateView'
-import DivergencePanel from './components/DivergencePanel'
 import EdgeAlert, { liveEdges } from './components/EdgeAlert'
 import IntroPanel from './components/IntroPanel'
 import MarketPanel from './components/MarketPanel'
@@ -24,14 +23,19 @@ import PairCards from './components/PairCards'
 import Panel from './components/Panel'
 import Skeleton from './components/Skeleton'
 import RiskPanel from './components/RiskPanel'
-import WatchTable, { sortPairs } from './components/WatchTable'
+import PairList from './components/PairList'
+import { groupRows, sortPairs } from './pairs'
 
-type View = 'terminal' | 'cards' | 'curate'
+type View = 'terminal' | 'book' | 'cards' | 'curate'
+const VIEWS: View[] = ['terminal', 'book', 'cards', 'curate']
+type Intro = 'off' | 'short' | 'full'
 
 const POLL_MS = 3000
 const STREAM_RETRY_MS = 15_000
 const INTRO_KEY = 'tinli-intro-seen'
 const ALERTS_KEY = 'tinli-alerts-on'
+const SHOW_UNVERIFIED_KEY = 'tinli-show-unverified'
+const SHOW_SETTLED_KEY = 'tinli-show-settled'
 
 function getJson<T>(url: string): Promise<T | null> {
   return fetch(url)
@@ -53,7 +57,23 @@ export default function App() {
   const [historyStats, setHistoryStats] = useState<BasisStats | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [view, setView] = useState<View>('terminal')
-  const [showIntro, setShowIntro] = useState(() => localStorage.getItem(INTRO_KEY) !== '1')
+  const [intro, setIntro] = useState<Intro>(() =>
+    localStorage.getItem(INTRO_KEY) !== '1' ? 'short' : 'off',
+  )
+  // the noise groups (unverified, settled) start collapsed; the choice sticks
+  const [show, setShow] = useState({
+    unverified: localStorage.getItem(SHOW_UNVERIFIED_KEY) === '1',
+    settled: localStorage.getItem(SHOW_SETTLED_KEY) === '1',
+  })
+  const toggleGroup = (g: 'unverified' | 'settled') =>
+    setShow((prev) => {
+      const next = { ...prev, [g]: !prev[g] }
+      localStorage.setItem(
+        g === 'unverified' ? SHOW_UNVERIFIED_KEY : SHOW_SETTLED_KEY,
+        next[g] ? '1' : '0',
+      )
+      return next
+    })
   const [alertsOn, setAlertsOn] = useState(() => localStorage.getItem(ALERTS_KEY) === '1')
   const [filter, setFilter] = useState('')
   const filterRef = useRef<HTMLInputElement>(null)
@@ -151,21 +171,13 @@ export default function App() {
     }
   }, [health?.mode, health?.stream])
 
-  // '/' filter narrows the watchlist + screener; MARKET keeps the active
-  // pair even when the filter hides it (deliberate: don't yank the reader)
-  const shownPairs = useMemo(
-    () =>
-      filter
-        ? pairs.filter((p) => p.question.toLowerCase().includes(filter.toLowerCase()))
-        : pairs,
-    [pairs, filter],
-  )
-  const shownDivergence = useMemo(
-    () =>
-      filter
-        ? divergence.filter((d) => shownPairs.some((p) => p.event_key === d.event_key))
-        : divergence,
-    [divergence, shownPairs, filter],
+  // one ranked list: pairs joined with their lock edges, grouped so the
+  // noise can collapse. '/' filter narrows it; MARKET keeps the active pair
+  // even when the filter or a collapsed group hides it (deliberate: don't
+  // yank the reader)
+  const groups = useMemo(
+    () => groupRows(pairs, divergence, filter, show),
+    [pairs, divergence, filter, show],
   )
 
   const activeKey = selected ?? pairs[0]?.event_key ?? null
@@ -182,7 +194,7 @@ export default function App() {
         if (typing) {
           t.blur()
           if (t === filterRef.current) setFilter('')
-        } else if (showIntro) setShowIntro(false)
+        } else if (intro !== 'off') setIntro('off')
         return
       }
       if (typing) return
@@ -192,25 +204,24 @@ export default function App() {
         return
       }
       if (e.key === '?') {
-        setShowIntro((v) => !v)
+        setIntro((v) => (v === 'off' ? 'full' : 'off'))
         return
       }
-      if (e.key === '1') setView('terminal')
-      else if (e.key === '2') setView('cards')
-      else if (e.key === '3') setView('curate')
+      const numbered = VIEWS[parseInt(e.key, 10) - 1]
+      if (numbered) setView(numbered)
       else if (['j', 'k', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
         e.preventDefault()
-        const list = shownPairs
+        const list = groups.visible
         if (!list.length) return
         const dir = e.key === 'j' || e.key === 'ArrowDown' ? 1 : -1
-        const idx = list.findIndex((p) => p.event_key === activeKey)
+        const idx = list.findIndex((r) => r.pair.event_key === activeKey)
         const next = list[Math.min(Math.max(idx + dir, 0), list.length - 1)] ?? list[0]
-        setSelected(next.event_key)
+        setSelected(next.pair.event_key)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [shownPairs, activeKey, showIntro])
+  }, [groups, activeKey, intro])
 
   // books ride the same cadence: `pairs` is replaced every heartbeat, which
   // re-runs this effect — no second timer needed
@@ -299,23 +310,19 @@ export default function App() {
     setAlertsOn(next)
   }
 
-  const settled = pairs.filter(
-    (p) => p.kalshi?.status !== 'open' && p.polymarket?.status !== 'open',
-  ).length
-
   const closeIntro = () => {
     localStorage.setItem(INTRO_KEY, '1')
-    setShowIntro(false)
+    setIntro('off')
   }
 
   return (
     <div className="h-screen flex flex-col gap-1 p-1">
-      {showIntro && <IntroPanel onClose={closeIntro} />}
+      {intro !== 'off' && <IntroPanel onClose={closeIntro} full={intro === 'full'} />}
       <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-9 shrink-0">
         <span className="font-mono text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
         <span className="text-muted text-[11px] tracking-[0.1em]">KALSHI × POLYMARKET</span>
         <nav className="ml-4 flex text-[10px] border border-line rounded-sm overflow-hidden">
-          {(['terminal', 'cards', 'curate'] as View[]).map((v) => (
+          {VIEWS.map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -398,16 +405,42 @@ export default function App() {
         />
       ) : view === 'cards' ? (
         <PairCards pairs={pairs} />
+      ) : view === 'book' ? (
+        <main className="flex-1 flex gap-1 min-h-0">
+          <div className="flex-1 max-w-[64rem] flex flex-col min-h-0">
+            <Panel title="BOOK · SELF-REPORTED POSITIONS · RISK">
+              <RiskPanel
+                report={risk}
+                error={riskError}
+                pairs={pairs}
+                readonly={health?.readonly ?? false}
+                onSaved={fetchRisk}
+              />
+            </Panel>
+          </div>
+          {(account?.byok || health?.byok) && (
+            <div className="flex-1 flex flex-col min-h-0">
+              <Panel title="KALSHI ACCOUNT · BYOK · READ-ONLY">
+                <AccountPanel report={account} pairs={pairs} />
+              </Panel>
+            </div>
+          )}
+        </main>
       ) : (
-        <main className="flex-1 grid grid-cols-[minmax(320px,26rem)_minmax(360px,1fr)_minmax(400px,34rem)] gap-1 min-h-0">
+        <main className="flex-1 grid grid-cols-[minmax(360px,34rem)_minmax(420px,1fr)] gap-1 min-h-0">
           <Panel
-            title={`WATCHLIST · ${filter ? `${shownPairs.length}/` : ''}${pairs.length} PAIRS`}
-            extra={settled > 0 ? `${settled} settled — retire in CURATE` : undefined}
+            title={`PAIRS · ${groups.verified.length} VERIFIED`}
+            extra={filter ? `${groups.visible.length} match` : 'fee-adjusted lock edges, ranked'}
           >
-            {pairs.length === 0 ? (
+            {pairs.length === 0 || divergence.length === 0 ? (
               <Skeleton rows={8} />
             ) : (
-              <WatchTable pairs={shownPairs} selected={activeKey} onSelect={setSelected} />
+              <PairList
+                groups={groups}
+                selected={activeKey}
+                onToggle={toggleGroup}
+                onSelect={setSelected}
+              />
             )}
           </Panel>
           <Panel title="MARKET">
@@ -421,36 +454,13 @@ export default function App() {
               lock={lock}
             />
           </Panel>
-          <div className="flex flex-col gap-1 min-h-0">
-            <Panel title="DIVERGENCE · FEE-ADJUSTED LOCK EDGES">
-              {divergence.length === 0 ? (
-                <Skeleton rows={8} />
-              ) : (
-                <DivergencePanel items={shownDivergence} selected={activeKey} onSelect={setSelected} />
-              )}
-            </Panel>
-            <Panel title="RISK · SELF-REPORTED BOOK">
-              <RiskPanel
-                report={risk}
-                error={riskError}
-                pairs={pairs}
-                readonly={health?.readonly ?? false}
-                onSaved={fetchRisk}
-              />
-            </Panel>
-            {(account?.byok || health?.byok) && (
-              <Panel title="KALSHI ACCOUNT · BYOK · READ-ONLY">
-                <AccountPanel report={account} pairs={pairs} />
-              </Panel>
-            )}
-          </div>
         </main>
       )}
       <footer className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-7 shrink-0 text-[10px] text-muted">
         <span>TINLI v0 · cross-venue analytics for prediction markets</span>
         <span>read-only public market data · quotes may be delayed · not investment advice</span>
         <button
-          onClick={() => setShowIntro(true)}
+          onClick={() => setIntro('full')}
           className="ml-auto tracking-[0.15em] hover:text-hover"
         >
           HELP
