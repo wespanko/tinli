@@ -27,6 +27,8 @@ pyarrow, tzdata, numpy, pytest, hypothesis (Python) ·
                         screener, parquet history
     packages/risk       risk engine (`tinli_risk`)
     packages/divergence divergence engine (`tinli_divergence`)
+    packages/crypto     crypto digital fair value (`tinli_crypto`): Kalshi
+                        BTC/ETH strikes vs the Deribit option chain (M15)
     packages/schema     pydantic models + generated TS types (`tinli_schema`)
     apps/terminal       React UI
     data/event_map.yaml curated cross-venue pair mappings
@@ -176,6 +178,32 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   missing one leg — an immediate taker unwind at that venue's
   top-of-book, spread plus fees both ways, rounded up.
 
+### Crypto digital fair value (M15)
+- A Kalshi "BTC above K at 5pm ET" contract is a cash-or-nothing digital.
+  `tinli_crypto` prices every open `KXBTCD` / `KXETHD` strike two ways
+  against the Deribit option chain (public, no auth — docs/VENUES.md):
+  MODEL = e^(-rT) N(d2) off the interpolated mark-IV surface (IV linear
+  in strike per expiry, total variance linear in time, forward linear
+  from the index) — an UNHEDGED view on vol; HEDGE = model-free bounds
+  from the listed call spreads adjacent to the strike (super-replication
+  ask / sub-replication bid, Deribit taker + worst-case delivery fees on
+  both legs), at the first Deribit expiry at or after the Kalshi close.
+  `hedge_edge` = buy the cheap side on Kalshi, take the opposite spread,
+  after both venues' fees, floored.
+- Honesty constraints, all in the payload: Deribit expires 08:00 UTC vs
+  Kalshi 21:00 UTC, so every hedge outlives its binary by
+  `hedge_gap_hours` (never zero); settlement indices differ (CF Benchmarks
+  60s average vs Deribit index); Deribit depth is not modeled (max_size is
+  Kalshi depth only); Kalshi's x.99 strikes are priced as the whole-dollar
+  listed strike. Range ("between") ladders and one-touch series are not
+  digitals and are out of scope for v1.
+- Float notice: `tinli_crypto.model` is model space (log/sqrt/erf) with one
+  Decimal boundary; every fee, edge and hedge cost is Decimal. Fixtures
+  (`kalshi/series_*.json`, `deribit/*.json`) carry their own
+  `crypto_recorded_at` clock so demo mode prices time-to-expiry as seen.
+  `/v1/crypto/{coin}`; UI = CRYPTO view (key 2) with both indices, per-
+  expiry tabs showing the hedge gap, and the live-zone strike filter.
+
 ### Usability layer (M12)
 - In-app curation (`tinli_api/curation.py` + CURATE view): candidate
   discovery with both venues' resolution text, add / verify / retire from
@@ -188,7 +216,7 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   Read-only instances refuse all curation writes.
 - Keyboard-first: j/k / arrows drive the pair list (visible rows only —
   collapsed groups are skipped), `/` filters pairs (and un-collapses the
-  matches; MARKET keeps its selection), 1/2/3/4 switch views, `?` help,
+  matches; MARKET keeps its selection), 1-5 switch views, `?` help,
   Esc closes/clears. Handlers never fire while typing.
 - First-load skeletons instead of panel pop-in; `python run.py [demo]` is
   the one-command start (bootstraps venv/npm on first run; make remains).
@@ -255,7 +283,7 @@ empower, game-changing.
 
 ## Status & working style
 
-v0 milestones M0–M13 are all shipped (M9's live-key verification is pending
+v0 milestones M0–M15 are all shipped (M9's live-key verification is pending
 a real Kalshi API key — grep TODO(BYOK-live)). Present a short plan before each new
 milestone-sized feature and WAIT for approval. Small commits. If a venue's
 real API differs from expectations, update docs/VENUES.md and adapt — don't

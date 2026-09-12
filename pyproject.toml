@@ -6,6 +6,7 @@ testpaths = [
     "packages/risk/tests",
     "packages/divergence/tests",
     "packages/backtest/tests",
+    "packages/crypto/tests",
     "services/api/tests",
 ]
 addopts = "-q"

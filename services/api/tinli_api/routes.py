@@ -15,6 +15,7 @@ from tinli_divergence import (
     SizePoint,
     walk_lock,
 )
+from tinli_crypto import CryptoLadder, compute_ladder
 from tinli_risk import RiskReport, build_report
 from tinli_schema import AccountPosition, Market, Orderbook, Position
 
@@ -27,7 +28,7 @@ from tinli_api.datasource import (
     save_positions,
 )
 from tinli_api.history import read_history
-from tinli_api.screener import compute_all
+from tinli_api.screener import compute_all, rf_rate
 from tinli_api.stats import BasisStats, basis_stats
 from tinli_api import curation
 from tinli_api.stream import StreamSource, get_hub, restart_hub
@@ -576,3 +577,26 @@ async def stream() -> StreamingResponse:
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# -- M15: crypto digital fair value ------------------------------------------
+
+
+@router.get("/crypto/{coin}")
+def crypto_ladder(coin: Literal["BTC", "ETH"]) -> CryptoLadder:
+    """Every open Kalshi above/below contract for the coin priced against
+    the Deribit option chain: model fair value (interpolated mark IV) and
+    model-free hedge bounds from listed call spreads, both venues' fees,
+    edges floored. Math + every assumption: tinli_crypto.engine. The
+    reference clock is the data's own fetched_at (the recording time in
+    demo mode), never wall-clock, so fixtures price the way they were seen.
+    """
+    source = get_source()
+    try:
+        binaries = source.crypto_binaries(coin)
+        options = source.deribit_options(coin)
+        index = source.deribit_index(coin)
+    except VenueHTTPError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    now = max((b.fetched_at for b in binaries), default=datetime.now(UTC))
+    return compute_ladder(coin, binaries, options, index, now=now, rf_rate=rf_rate())

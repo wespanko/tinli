@@ -234,3 +234,43 @@ Source: https://docs.polymarket.com/api-reference/rate-limits
   sanitized fixture.**
 - Keys: `TINLI_KALSHI_KEY_ID` + `TINLI_KALSHI_PRIVATE_KEY_PATH` (PEM) in
   .env. Read-only hosted instances refuse keys. GET only, ever.
+
+
+## Deribit (M15 — option chain for crypto digital fair value)
+
+Public JSON-RPC over HTTP, no auth for market data. Verified live 2026-09-12.
+
+- **Base URL:** `https://www.deribit.com/api/v2/public`
+- `GET /get_book_summary_by_currency?currency=BTC&kind=option` — ONE call
+  returns every listed option (946 BTC / 876 ETH on 2026-09-12): `bid_price`,
+  `ask_price` in COIN (null when the side is empty), `mark_iv` in PERCENT,
+  `mark_price`, `underlying_price` (USD forward for that expiry),
+  `open_interest`. No sizes — depth needs `/get_order_book` per instrument.
+- `GET /get_index_price?index_name=btc_usd` — `index_price` USD.
+- `GET /get_instruments?currency=BTC&kind=option&expired=false` — strike,
+  `expiration_timestamp` (ms), `option_type`, `contract_size` (1.0 coin),
+  `taker_commission` 0.0003, `min_trade_amount` 0.1.
+- Instrument names encode everything: `BTC-13SEP26-77000-C`. Every option
+  expires **08:00 UTC**; settlement is Deribit's own index (30-min TWAP
+  before expiry). Listed expiries: dailies (next ~4 days), Fridays, month-
+  and quarter-ends.
+- Fees (https://www.deribit.com/kb/fees): taker 0.0003 coin/contract capped
+  at 12.5% of premium; delivery 0.00015 coin/contract capped at 12.5%,
+  charged on ITM settlement only.
+
+### Kalshi crypto ladders (same milestone)
+
+- Series `KXBTCD` / `KXETHD` ("price Above/below"): daily events at **5pm
+  ET** (`close_time` 21:00Z), ~80 strikes each; three events open at a
+  time (today, tomorrow, Friday). `strike_type: "greater"`,
+  `floor_strike`, sizes in `yes_bid_size_fp` / `yes_ask_size_fp`.
+  Series listed `frequency: hourly` but the open events are daily.
+- Settlement: 60-second simple average of CF Benchmarks' real-time index
+  (BRTI / ETHUSD_RTI) before 5pm ET — NOT Deribit's index, and NOT a
+  point-in-time print.
+- Fees: series `fee_type: quadratic`, `fee_multiplier: 1` = the general
+  0.07 x P x (1-P) formula. (`KXBTCMAX150`/`KXBTCMAX125` are
+  `quadratic_with_maker_fees` — not mapped.)
+- `KXBTC` / `KXETH` are the RANGE ("between") ladders: `strike_type`
+  between with floor/cap — a digital call spread, not priced in M15 v1.
+

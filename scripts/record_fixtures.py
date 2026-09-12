@@ -13,7 +13,8 @@ from pathlib import Path
 
 import yaml
 
-from tinli_api.venues import kalshi, polymarket
+from tinli_api.datasource import CRYPTO_SERIES
+from tinli_api.venues import deribit, kalshi, polymarket
 from tinli_api.venues.client import get_json
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,8 +28,17 @@ def save(path: Path, payload) -> None:
 
 def main() -> int:
     pairs = yaml.safe_load((ROOT / "data" / "event_map.yaml").read_text(encoding="utf-8"))["pairs"]
-    recorded_at = datetime.now(UTC).isoformat()
-    manifest = {"recorded_at": recorded_at, "pairs": []}
+    manifest_path = FIXTURES / "manifest.json"
+    # --crypto-only re-records just the M15 ladders and keeps the pair
+    # fixtures (and their recorded_at) untouched — tests pin pair values
+    crypto_only = "--crypto-only" in sys.argv
+    if crypto_only and manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        recorded_at = manifest["recorded_at"]
+        pairs = []
+    else:
+        recorded_at = datetime.now(UTC).isoformat()
+        manifest = {"recorded_at": recorded_at, "pairs": []}
 
     for p in pairs:
         key = p["event_key"]
@@ -55,8 +65,26 @@ def main() -> int:
 
         manifest["pairs"].append({"event_key": key, "kalshi_ticker": kticker, "pm_condition_id": cid})
 
+    # M15 crypto ladders: the Kalshi above/below series + the Deribit chain
+    # and index, byte-for-byte, for BTC and ETH
+    for coin, series in CRYPTO_SERIES.items():
+        print(f"recording crypto {coin} ({series} + deribit) ...")
+        save(
+            FIXTURES / "kalshi" / f"series_{series}.json",
+            {"markets": kalshi.get_series_markets(series)},
+        )
+        save(
+            FIXTURES / "deribit" / f"summary_{coin}.json",
+            {"result": deribit.get_book_summaries(coin)},
+        )
+        save(FIXTURES / "deribit" / f"index_{coin}.json", deribit.get_index(coin))
+    manifest["crypto"] = list(CRYPTO_SERIES)
+    # the ladders' own clock: demo mode prices them as of THIS instant, so
+    # time-to-expiry is what it was when the chain was seen
+    manifest["crypto_recorded_at"] = datetime.now(UTC).isoformat()
+
     save(FIXTURES / "manifest.json", manifest)
-    print(f"recorded {len(pairs)} pairs at {recorded_at}")
+    print(f"recorded {len(pairs)} pairs + {len(CRYPTO_SERIES)} crypto ladders at {recorded_at}")
     return 0
 
 

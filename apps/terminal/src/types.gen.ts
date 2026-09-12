@@ -241,3 +241,41 @@ export type PairMutationResponse = {
   pair: PairQuote | null
   pairs: PairQuote[]
 }
+
+export type CryptoItem = {
+  ticker: string
+  question: string
+  strike: string
+  close_ts: string
+  kalshi: VenueTop
+  fair_value: string | null
+  iv: string | null
+  mispricing_cents: string | null
+  model_direction: "buy_yes" | "buy_no" | null
+  model_edge: string | null
+  hedge_bid: string | null
+  hedge_ask: string | null
+  hedge_legs: string | null
+  hedge_width: string | null
+  hedge_direction: "buy_yes_sell_spread" | "buy_no_buy_spread" | null
+  hedge_edge: string | null
+  max_size: string | null
+  fetched_at: string
+}
+
+export type ExpiryLadder = {
+  close_ts: string
+  hedge_expiry: string | null
+  hedge_gap_hours: string | null
+  atm_iv: string | null
+  items: CryptoItem[]
+}
+
+export type CryptoLadder = {
+  coin: "BTC" | "ETH"
+  index: string
+  rf_rate: string
+  expiries: ExpiryLadder[]
+  assumptions: string[]
+  fetched_at: string
+}

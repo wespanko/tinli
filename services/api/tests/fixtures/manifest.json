@@ -226,5 +226,10 @@
    "kalshi_ticker": "KXWTA-26USO-AND",
    "pm_condition_id": "0x42fd10ad753ecf6804c89db31000bf09ec8aedb90a5c6e67db6513586c168419"
   }
- ]
+ ],
+ "crypto": [
+  "BTC",
+  "ETH"
+ ],
+ "crypto_recorded_at": "2026-09-12T21:09:13.995057+00:00"
 }

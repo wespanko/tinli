@@ -45,8 +45,8 @@ export default function IntroPanel({
         </p>
 
         <p className="font-mono text-[12px] text-muted mt-3">
-          j / k — move · / — filter · 1 2 3 4 — TERMINAL / BOOK / CARDS / CURATE · ? — help ·
-          Esc — close
+          j / k — move · / — filter · 1-5 — TERMINAL / CRYPTO / BOOK / CARDS / CURATE · ? — help
+          · Esc — close
         </p>
 
         {expanded && (

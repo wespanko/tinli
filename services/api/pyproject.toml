@@ -25,6 +25,7 @@ dependencies = [
     "tinli-schema",
     "tinli-risk",
     "tinli-divergence",
+    "tinli-crypto",
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -15,6 +15,7 @@ import type {
 } from './types'
 import { cents } from './format'
 import AccountPanel from './components/AccountPanel'
+import CryptoView from './components/CryptoView'
 import CurateView from './components/CurateView'
 import EdgeAlert, { liveEdges } from './components/EdgeAlert'
 import IntroPanel from './components/IntroPanel'
@@ -26,8 +27,8 @@ import RiskPanel from './components/RiskPanel'
 import PairList from './components/PairList'
 import { groupRows, sortPairs } from './pairs'
 
-type View = 'terminal' | 'book' | 'cards' | 'curate'
-const VIEWS: View[] = ['terminal', 'book', 'cards', 'curate']
+type View = 'terminal' | 'crypto' | 'book' | 'cards' | 'curate'
+const VIEWS: View[] = ['terminal', 'crypto', 'book', 'cards', 'curate']
 type Intro = 'off' | 'short' | 'full'
 
 const POLL_MS = 3000
@@ -405,6 +406,8 @@ export default function App() {
         />
       ) : view === 'cards' ? (
         <PairCards pairs={pairs} />
+      ) : view === 'crypto' ? (
+        <CryptoView />
       ) : view === 'book' ? (
         <main className="flex-1 flex gap-1 min-h-0">
           <div className="flex-1 max-w-[64rem] flex flex-col min-h-0">

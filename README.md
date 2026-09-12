@@ -54,6 +54,13 @@ self-reported book and risk engine live in a BOOK tab. Streamed live
 (Polymarket websocket + Kalshi fast-poll) with a 3s-polling fallback,
 demo badge when on fixtures.
 
+The CRYPTO view (M15) prices every Kalshi BTC/ETH above/below strike
+against the Deribit option chain: a model fair value off the mark-IV
+surface, and a model-free hedge from the adjacent listed call spreads with
+both venues' fees. The hedge outlives the binary (Deribit expires 08:00
+UTC, Kalshi 5pm ET) and the gap is shown on every expiry rather than
+hidden.
+
 Positions for the risk engine (`/v1/risk`) are self-reported: edit
 `data/positions.yaml` (an example book ships with the repo). No venue auth
 in v0 — Tinli never sees your accounts.

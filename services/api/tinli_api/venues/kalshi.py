@@ -90,6 +90,48 @@ def get_markets(tickers: list[str]) -> list[Market]:
     return [parse_market(m, now) for m in raw.get("markets", [])]
 
 
+def get_series_markets(series_ticker: str, status: str = "open") -> list[dict]:
+    """Every market in a series (cursor-paginated; the crypto ladders run to
+    ~80 strikes per expiry x 3 expiries). Raw dicts — parsed by
+    parse_binary_market so fixtures stay byte-for-byte venue output."""
+    out: list[dict] = []
+    cursor: str | None = None
+    while True:
+        params: dict = {"series_ticker": series_ticker, "status": status, "limit": 1000}
+        if cursor:
+            params["cursor"] = cursor
+        raw = get_json(f"{BASE}/markets", params=params)
+        out.extend(raw.get("markets", []))
+        cursor = raw.get("cursor") or None
+        if not cursor:
+            return out
+
+
+def parse_binary_market(raw: dict, fetched_at: datetime):
+    """A strike-ladder market as a tinli_crypto.BinaryQuote, or None when the
+    market is not a plain 'above K' contract (ranges, 'less' types, one-touch
+    series are different payoffs and are not priced as digitals here).
+    Verified shape 2026-09-12: strike_type 'greater', floor_strike, sizes in
+    *_size_fp contracts, close_time = the 5pm ET settlement observation."""
+    from tinli_crypto import BinaryQuote
+
+    if raw.get("strike_type") != "greater" or raw.get("floor_strike") is None:
+        return None
+    bid = _price_or_none(raw.get("yes_bid_dollars"), empty=ZERO)
+    ask = _price_or_none(raw.get("yes_ask_dollars"), empty=ONE)
+    return BinaryQuote(
+        ticker=raw["ticker"],
+        question=raw.get("yes_sub_title") or raw.get("subtitle") or raw["ticker"],
+        strike=Decimal(str(raw["floor_strike"])),
+        close_ts=datetime.fromisoformat(raw["close_time"]),
+        bid=bid,
+        bid_size=Decimal(raw.get("yes_bid_size_fp") or "0") if bid is not None else None,
+        ask=ask,
+        ask_size=Decimal(raw.get("yes_ask_size_fp") or "0") if ask is not None else None,
+        fetched_at=fetched_at,
+    )
+
+
 def get_orderbook(ticker: str, depth: int = 20) -> Orderbook:
     raw = get_json(f"{BASE}/markets/{ticker}/orderbook", params={"depth": depth})
     return parse_orderbook(ticker, raw, datetime.now(UTC))

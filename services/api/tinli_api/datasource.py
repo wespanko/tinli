@@ -14,10 +14,12 @@ from typing import Protocol
 
 import yaml
 from cachetools import TTLCache
+from decimal import Decimal
 
+from tinli_crypto import BinaryQuote, OptionQuote
 from tinli_schema import Market, Orderbook, PairMapping, Position
 
-from tinli_api.venues import kalshi, polymarket
+from tinli_api.venues import deribit, kalshi, polymarket
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EVENT_MAP = REPO_ROOT / "data" / "event_map.yaml"
@@ -124,6 +126,18 @@ class DataSource(Protocol):
 
     def orderbook(self, pair: PairMapping, venue: str) -> Orderbook: ...
 
+    # M15 crypto ladders: Kalshi above/below strikes + the Deribit chain
+    def crypto_binaries(self, coin: str) -> list[BinaryQuote]: ...
+
+    def deribit_options(self, coin: str) -> list[OptionQuote]: ...
+
+    def deribit_index(self, coin: str) -> Decimal: ...
+
+
+# Kalshi series holding the daily 5pm-ET above/below strike ladders
+CRYPTO_SERIES = {"BTC": "KXBTCD", "ETH": "KXETHD"}
+CRYPTO_CACHE_TTL_S = 5.0  # the Deribit summary is ~900 instruments per call
+
 
 def _tag(markets: list[Market], by_kalshi: dict[str, str], by_pm: dict[str, str]) -> list[Market]:
     tagged = []
@@ -137,6 +151,7 @@ def _tag(markets: list[Market], by_kalshi: dict[str, str], by_pm: dict[str, str]
 class LiveSource:
     def __init__(self) -> None:
         self._cache: TTLCache = TTLCache(maxsize=256, ttl=CACHE_TTL_S)
+        self._crypto_cache: TTLCache = TTLCache(maxsize=16, ttl=CRYPTO_CACHE_TTL_S)
         # cachetools structures are not thread-safe; /v1/divergence fetches
         # books from a thread pool
         self._lock = threading.Lock()
@@ -175,6 +190,35 @@ class LiveSource:
         return book
 
 
+    # -- M15 crypto ladders (separate, longer TTL: the Deribit summary is big) --
+
+    def _crypto_cached(self, key: tuple, load):
+        with self._lock:
+            if key in self._crypto_cache:
+                return self._crypto_cache[key]
+        value = load()
+        with self._lock:
+            self._crypto_cache[key] = value
+        return value
+
+    def crypto_binaries(self, coin: str) -> list[BinaryQuote]:
+        def load():
+            now = datetime.now(UTC)
+            raw = kalshi.get_series_markets(CRYPTO_SERIES[coin])
+            parsed = (kalshi.parse_binary_market(m, now) for m in raw)
+            return [b for b in parsed if b is not None]
+
+        return self._crypto_cached(("binaries", coin), load)
+
+    def deribit_options(self, coin: str) -> list[OptionQuote]:
+        return self._crypto_cached(
+            ("options", coin), lambda: deribit.parse_summaries(deribit.get_book_summaries(coin))
+        )
+
+    def deribit_index(self, coin: str) -> Decimal:
+        return self._crypto_cached(("index", coin), lambda: deribit.parse_index(deribit.get_index(coin)))
+
+
 class FixtureSource:
     """Serves the recorded fixtures. Never presented as live: /healthz says
     demo, and every fetched_at is the recording timestamp, not now()."""
@@ -182,6 +226,11 @@ class FixtureSource:
     def __init__(self) -> None:
         manifest = json.loads((FIXTURES / "manifest.json").read_text(encoding="utf-8"))
         self.recorded_at = datetime.fromisoformat(manifest["recorded_at"])
+        # the crypto ladders are re-recorded on their own schedule and price
+        # off their own clock (time-to-expiry as seen at recording)
+        self.crypto_recorded_at = datetime.fromisoformat(
+            manifest.get("crypto_recorded_at", manifest["recorded_at"])
+        )
 
     def _load(self, rel: str) -> dict:
         return json.loads((FIXTURES / rel).read_text(encoding="utf-8"))
@@ -206,6 +255,20 @@ class FixtureSource:
             return kalshi.parse_orderbook(pair.kalshi_ticker, raw, self.recorded_at)
         raw = self._load(f"polymarket/book_{pair.pm_condition_id}.json")
         return polymarket.parse_book(pair.pm_condition_id, raw, self.recorded_at)
+
+
+    # -- M15 crypto ladders: raw venue payloads recorded by scripts/record_fixtures.py --
+
+    def crypto_binaries(self, coin: str) -> list[BinaryQuote]:
+        raw = self._load(f"kalshi/series_{CRYPTO_SERIES[coin]}.json")["markets"]
+        parsed = (kalshi.parse_binary_market(m, self.crypto_recorded_at) for m in raw)
+        return [b for b in parsed if b is not None]
+
+    def deribit_options(self, coin: str) -> list[OptionQuote]:
+        return deribit.parse_summaries(self._load(f"deribit/summary_{coin}.json")["result"])
+
+    def deribit_index(self, coin: str) -> Decimal:
+        return deribit.parse_index(self._load(f"deribit/index_{coin}.json"))
 
 
 _source: DataSource | None = None
