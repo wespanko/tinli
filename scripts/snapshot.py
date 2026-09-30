@@ -1,4 +1,4 @@
-"""Record cross-venue snapshots to parquet history (M6).
+"""Record cross-venue snapshots to parquet history.
 
     python scripts/snapshot.py              one snapshot, written immediately
     python scripts/snapshot.py --loop 30    every 30s until Ctrl+C

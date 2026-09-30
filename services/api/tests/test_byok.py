@@ -1,4 +1,4 @@
-"""M9 BYOK — Kalshi request signing, websocket book reconstruction, and the
+"""BYOK — Kalshi request signing, websocket book reconstruction, and the
 read-only account report.
 
 Signing spec and WS shapes are doc-derived (docs.kalshi.com, read

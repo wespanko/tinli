@@ -1,4 +1,4 @@
-"""M8 live streaming: Polymarket websocket + Kalshi fast-poll into one
+"""Live streaming: Polymarket websocket + Kalshi fast-poll into one
 in-process cache, consumed by the /v1/stream SSE endpoint.
 
 Venue asymmetry (recon 2026-07-20, docs/VENUES.md): Polymarket's CLOB
@@ -84,7 +84,7 @@ class PmBook:
 
 
 class KalshiBook:
-    """Mutable Kalshi book from websocket frames (BYOK path, M9).
+    """Mutable Kalshi book from websocket frames (BYOK path).
 
     Kalshi streams BIDS on both sides (yes/no) like its REST book, in the
     same dollar-string fixed-point shapes — and unlike Polymarket, deltas
@@ -238,7 +238,7 @@ class StreamHub:
             self.pm_last_ok = now
             self._bump()
 
-    # -- Kalshi websocket (BYOK, M9) -----------------------------------------
+    # -- Kalshi websocket (BYOK) ---------------------------------------------
 
     async def _kalshi_ws_loop(self) -> None:
         """Authenticated orderbook_delta stream. On ANY failure the loop

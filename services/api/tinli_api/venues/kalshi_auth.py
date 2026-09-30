@@ -1,4 +1,4 @@
-"""BYOK Kalshi request signing (M9).
+"""BYOK Kalshi request signing.
 
 Spec (https://docs.kalshi.com/getting_started/api_keys, read 2026-07-20):
 sign the string  f"{timestamp_ms}{METHOD}{path}"  — path WITHOUT the query

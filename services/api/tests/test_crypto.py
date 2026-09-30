@@ -1,4 +1,4 @@
-"""M15 crypto ladders: adapters on recorded fixtures, engine invariants on
+"""Crypto ladders: adapters on recorded fixtures, engine invariants on
 the real chain, and the /v1/crypto route in demo mode."""
 
 import os

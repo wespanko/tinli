@@ -48,7 +48,7 @@ def main() -> int:
     env = os.environ.copy()
     if args.demo:
         env["TINLI_DEMO"] = "1"
-        print("[dev] demo mode: SIMULATED DATA (market fixtures land in M1)")
+        print("[dev] demo mode: SIMULATED DATA")
 
     procs = [
         subprocess.Popen(

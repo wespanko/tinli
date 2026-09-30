@@ -1,4 +1,4 @@
-"""M2 endpoint tests — run entirely against recorded fixtures (TINLI_DEMO=1).
+"""Endpoint tests — run entirely against recorded fixtures (TINLI_DEMO=1).
 
 Counts and dates derive from data/event_map.yaml and the fixture manifest —
 the pair map is re-curated as markets resolve, and hardcoded totals would

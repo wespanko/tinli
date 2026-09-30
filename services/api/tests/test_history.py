@@ -1,4 +1,4 @@
-"""M6: parquet history round-trip and /v1/history endpoint (demo fixtures)."""
+"""Parquet history round-trip and /v1/history endpoint (demo fixtures)."""
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal

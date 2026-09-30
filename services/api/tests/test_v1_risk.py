@@ -1,4 +1,4 @@
-"""M4 endpoint tests — /v1/risk against recorded fixtures (TINLI_DEMO=1)
+"""Risk endpoint tests — /v1/risk against recorded fixtures (TINLI_DEMO=1)
 and the TEST-OWNED example book (fixtures/positions_example.yaml).
 
 data/positions.yaml is the user's editable file: the only assertion tests

@@ -29,7 +29,7 @@ def save(path: Path, payload) -> None:
 def main() -> int:
     pairs = yaml.safe_load((ROOT / "data" / "event_map.yaml").read_text(encoding="utf-8"))["pairs"]
     manifest_path = FIXTURES / "manifest.json"
-    # --crypto-only re-records just the M15 ladders and keeps the pair
+    # --crypto-only re-records just the crypto ladders and keeps the pair
     # fixtures (and their recorded_at) untouched — tests pin pair values
     crypto_only = "--crypto-only" in sys.argv
     if crypto_only and manifest_path.exists():
@@ -65,7 +65,7 @@ def main() -> int:
 
         manifest["pairs"].append({"event_key": key, "kalshi_ticker": kticker, "pm_condition_id": cid})
 
-    # M15 crypto ladders: the Kalshi above/below series + the Deribit chain
+    # crypto ladders: the Kalshi above/below series + the Deribit chain
     # and index, byte-for-byte, for BTC and ETH
     for coin, series in CRYPTO_SERIES.items():
         print(f"recording crypto {coin} ({series} + deribit) ...")

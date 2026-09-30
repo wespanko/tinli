@@ -1,4 +1,4 @@
-"""M8 stream core — Polymarket websocket book reconstruction against
+"""Stream core — Polymarket websocket book reconstruction against
 RECORDED frames (fixtures/polymarket/ws_frames_fed.json, captured live
 2026-07-20) plus hand-computed delta cases."""
 

@@ -126,7 +126,7 @@ class DataSource(Protocol):
 
     def orderbook(self, pair: PairMapping, venue: str) -> Orderbook: ...
 
-    # M15 crypto ladders: Kalshi above/below strikes + the Deribit chain
+    # crypto ladders: Kalshi above/below strikes + the Deribit chain
     def crypto_binaries(self, coin: str) -> list[BinaryQuote]: ...
 
     def deribit_options(self, coin: str) -> list[OptionQuote]: ...
@@ -190,7 +190,7 @@ class LiveSource:
         return book
 
 
-    # -- M15 crypto ladders (separate, longer TTL: the Deribit summary is big) --
+    # -- crypto ladders (separate, longer TTL: the Deribit summary is big) --
 
     def _crypto_cached(self, key: tuple, load):
         with self._lock:
@@ -257,7 +257,7 @@ class FixtureSource:
         return polymarket.parse_book(pair.pm_condition_id, raw, self.recorded_at)
 
 
-    # -- M15 crypto ladders: raw venue payloads recorded by scripts/record_fixtures.py --
+    # -- crypto ladders: raw venue payloads recorded by scripts/record_fixtures.py --
 
     def crypto_binaries(self, coin: str) -> list[BinaryQuote]:
         raw = self._load(f"kalshi/series_{CRYPTO_SERIES[coin]}.json")["markets"]

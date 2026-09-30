@@ -1,4 +1,4 @@
-"""In-app pair curation (M12): candidate discovery + guarded map editing.
+"""In-app pair curation: candidate discovery + guarded map editing.
 
 The hard rule stands — event matching is CURATED, never auto-matched. This
 module changes the ergonomics, not the doctrine:

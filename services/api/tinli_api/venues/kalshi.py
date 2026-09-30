@@ -137,7 +137,7 @@ def get_orderbook(ticker: str, depth: int = 20) -> Orderbook:
     return parse_orderbook(ticker, raw, datetime.now(UTC))
 
 
-# -- BYOK (M9): authenticated, READ-ONLY portfolio access ---------------------
+# -- BYOK: authenticated, READ-ONLY portfolio access ---------------------
 # Response shape from docs.kalshi.com/api-reference/portfolio/get-positions.md
 # (read 2026-07-20): market_positions[] with position_fp (signed fixed-point
 # contracts, + = YES / - = NO), *_dollars fixed-point strings, cursor

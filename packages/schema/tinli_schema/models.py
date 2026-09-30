@@ -132,7 +132,7 @@ class PairMapping(BaseModel):
 
 
 class AccountPosition(BaseModel):
-    """One real Kalshi account position (BYOK, read-only; M9).
+    """One real Kalshi account position (BYOK, read-only).
 
     Kalshi reports COST AGGREGATES, not an entry price — so this model
     carries exactly what the venue states and nothing derived that would

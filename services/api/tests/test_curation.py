@@ -1,4 +1,4 @@
-"""M12 in-app curation — map editing guards, doctrine enforcement, routes.
+"""In-app curation — map editing guards, doctrine enforcement, routes.
 
 Every test runs against a TEMP copy of the map (TINLI_EVENT_MAP); the real
 data/event_map.yaml is never touched.

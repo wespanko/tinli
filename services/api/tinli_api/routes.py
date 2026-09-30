@@ -415,7 +415,7 @@ def account() -> AccountReport:
     )
 
 
-# -- in-app curation (M12) ----------------------------------------------------
+# -- in-app curation ----------------------------------------------------------
 # Ergonomics only; the doctrine is enforced server-side: adds land flagged,
 # verification is a separate action that requires comparison notes, and every
 # write goes to data/event_map.yaml (still hand-editable).
@@ -579,7 +579,7 @@ async def stream() -> StreamingResponse:
     )
 
 
-# -- M15: crypto digital fair value ------------------------------------------
+# -- crypto digital fair value -----------------------------------------------
 
 
 @router.get("/crypto/{coin}")
