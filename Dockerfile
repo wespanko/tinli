@@ -21,6 +21,7 @@ COPY data ./data
 # data/event_map.yaml and friends relative to the source tree
 RUN pip install --no-cache-dir \
     -e ./packages/schema -e ./packages/risk -e ./packages/divergence \
+    -e ./packages/crypto \
     -e ./services/api
 COPY --from=ui /repo/apps/terminal/dist ./apps/terminal/dist
 
