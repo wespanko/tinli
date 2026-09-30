@@ -2,32 +2,7 @@ import { useState } from 'react'
 import type { Pair, Position, RiskReport } from '../types'
 import { cents, pct, qty, signedUsd, usd } from '../format'
 import Signed from './Signed'
-
-function Stat({
-  label,
-  value,
-  tone = 'text-text',
-  big = false,
-}: {
-  label: string
-  value: React.ReactNode
-  tone?: string
-  big?: boolean
-}) {
-  return (
-    <div className="bg-panel-2 border border-line rounded-sm px-3 py-1.5">
-      <div className="text-muted text-[10px] tracking-[0.12em]">{label}</div>
-      {/* standalone numbers: mono, proportional figures, not tabular */}
-      <div className={`font-mono ${big ? 'text-[22px] leading-7' : 'text-[15px]'} ${tone}`}>
-        {value}
-      </div>
-    </div>
-  )
-}
-
-const th = 'py-1 font-sans font-medium text-[10px] tracking-[0.12em] text-muted'
-const input =
-  'bg-bg border border-line rounded-sm px-1.5 py-0.5 font-mono text-[12px] text-text w-full'
+import Stat from './Stat'
 
 type Draft = {
   market_id: string
@@ -67,8 +42,8 @@ export default function RiskPanel({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  if (!report && !error) return <div className="p-3 text-muted text-[12px]">loading risk…</div>
-  if (!report) return <div className="p-3 text-gold text-[12px]">! {error}</div>
+  if (!report && !error) return <div className="p-3 text-muted text-[12px]">loading…</div>
+  if (!report) return <div className="p-3 text-gold text-[12px]">{error}</div>
   const r = report
 
   const marketOptions = pairs.flatMap((p) =>
@@ -120,123 +95,148 @@ export default function RiskPanel({
         onSaved()
       }
     } catch {
-      setSaveError('network error — book not saved')
+      setSaveError('network error, book not saved')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="p-3 flex flex-col gap-3 text-[13px]">
+    <div className="p-3 flex flex-col gap-4 text-[13px]">
       {error && (
         <div className="border border-gold text-gold text-[11px] rounded-sm px-2 py-1.5">
-          ! {error}
-          <div className="text-muted mt-0.5">
-            showing the last good report — numbers below are STALE
-          </div>
+          {error}
+          <div className="text-muted mt-0.5">showing the last good report; these numbers are stale</div>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-1.5">
-        <Stat label="VAR 95 · MONTE CARLO" value={usd(r.var_95_monte_carlo)} tone="text-gold" big />
+
+      <div className="flex flex-wrap gap-x-10 gap-y-3">
+        <Stat label="VaR 95 · Monte Carlo" value={<span className="text-gold">{usd(r.var_95_monte_carlo)}</span>} big />
         <Stat
-          label="UNREALIZED P&L"
+          label="Unrealized P&L"
           value={<Signed value={r.total_unrealized_pnl} text={signedUsd(r.total_unrealized_pnl)} />}
           big
         />
-      </div>
-      <div className="grid grid-cols-4 gap-1.5">
-        <Stat label="VAR PARAM" value={usd(r.var_95_parametric)} />
-        <Stat label="MAX LOSS" value={usd(r.max_loss)} />
-        <Stat label="MKT VALUE" value={usd(r.total_market_value)} />
-        <Stat label="COST BASIS" value={usd(r.total_cost_basis)} />
+        <Stat label="VaR 95 · parametric" value={usd(r.var_95_parametric)} />
+        <Stat label="Max loss" value={usd(r.max_loss)} />
+        <Stat label="Market value" value={usd(r.total_market_value)} />
+        <Stat label="Cost basis" value={usd(r.total_cost_basis)} />
       </div>
 
       {r.unmarked_positions > 0 && !editing && (
         <div className="text-gold text-[11px]">
-          ! {r.unmarked_positions} position(s) not in the feed — excluded from all numbers above
+          {r.unmarked_positions} position{r.unmarked_positions === 1 ? '' : 's'} not in the feed, excluded from the numbers above
         </div>
       )}
 
       {!editing ? (
-        <>
-          <table className="w-full font-mono">
-            <thead>
-              <tr className="border-b border-line">
-                <th className={`${th} text-left`}>POSITION</th>
-                <th className={`${th} text-left px-1`}>SIDE</th>
-                <th className={`${th} text-right px-1`}>QTY</th>
-                <th className={`${th} text-right px-1`}>ENTRY</th>
-                <th className={`${th} text-right px-1`}>MARK</th>
-                <th className={`${th} text-right px-1`}>P&L</th>
-                <th
-                  className={`${th} text-right pl-1`}
-                  title="half-Kelly fraction of bankroll, from your est_prob"
-                >
-                  K½
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.positions.map((row, i) => (
-                <tr key={i} className="border-b border-line/30">
-                  <td
-                    className={`font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-36 ${
-                      row.mark == null ? 'text-muted' : 'text-text'
-                    }`}
-                    title={`${row.event_id ?? ''} ${row.position.market_id}`.trim()}
-                  >
-                    {row.mark == null && (
-                      <span className="text-gold mr-1" title="not in market feed — unmarked">
-                        !
-                      </span>
-                    )}
-                    {eventName(row.event_id) ?? row.position.market_id}
-                  </td>
-                  <td className="px-1 uppercase text-[11px] text-muted">{row.position.side}</td>
-                  <td className="text-right px-1 tabular-nums text-text">
-                    {qty(row.position.contracts)}
-                  </td>
-                  <td className="text-right px-1 tabular-nums text-muted">
-                    {cents(row.position.entry_price)}
-                  </td>
-                  <td className="text-right px-1 tabular-nums text-text">{cents(row.mark)}</td>
-                  <td className="text-right px-1">
-                    <Signed value={row.unrealized_pnl} text={signedUsd(row.unrealized_pnl)} />
-                  </td>
-                  <td className="text-right pl-1 tabular-nums text-muted">{pct(row.kelly_half)}</td>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(280px,24rem)] gap-8 items-start">
+          <div>
+            <table className="w-full font-mono">
+              <thead>
+                <tr className="border-b border-line">
+                  <th className="th text-left">Position</th>
+                  <th className="th text-left px-1">Side</th>
+                  <th className="th text-right px-1">Qty</th>
+                  <th className="th text-right px-1">Entry</th>
+                  <th className="th text-right px-1">Mark</th>
+                  <th className="th text-right px-1">P&L</th>
+                  <th className="th text-right pl-1" title="half-Kelly fraction of bankroll, from your est_prob">
+                    K½
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {!readonly && (
-            <button
-              onClick={startEdit}
-              className="self-start border border-line text-muted hover:text-hover rounded-sm px-2.5 py-0.5 text-[10px] tracking-[0.15em]"
-            >
-              EDIT BOOK
-            </button>
+              </thead>
+              <tbody>
+                {r.positions.map((row, i) => (
+                  <tr key={i} className="border-b border-line/30">
+                    <td
+                      className={`font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-56 ${
+                        row.mark == null ? 'text-muted' : 'text-text'
+                      }`}
+                      title={row.mark == null ? 'not in the market feed' : undefined}
+                    >
+                      {eventName(row.event_id) ?? row.position.market_id}
+                    </td>
+                    <td className="px-1 uppercase text-[11px] text-muted">{row.position.side}</td>
+                    <td className="text-right px-1 tabular-nums text-text">
+                      {qty(row.position.contracts)}
+                    </td>
+                    <td className="text-right px-1 tabular-nums text-muted">
+                      {cents(row.position.entry_price)}
+                    </td>
+                    <td className="text-right px-1 tabular-nums text-text">{cents(row.mark)}</td>
+                    <td className="text-right px-1">
+                      <Signed value={row.unrealized_pnl} text={signedUsd(row.unrealized_pnl)} />
+                    </td>
+                    <td className="text-right pl-1 tabular-nums text-muted">{pct(row.kelly_half)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!readonly && (
+              <button onClick={startEdit} className="btn mt-3">
+                Edit book
+              </button>
+            )}
+          </div>
+
+          {r.by_event.length > 0 && (
+            <table className="w-full font-mono">
+              <thead>
+                <tr className="border-b border-line">
+                  <th className="th text-left">Exposure by event</th>
+                  <th className="th text-right px-1" title="yes minus no contracts">
+                    Net
+                  </th>
+                  <th className="th text-right px-1" title="P&L if the event resolves YES">
+                    If yes
+                  </th>
+                  <th className="th text-right pl-1" title="P&L if the event resolves NO">
+                    If no
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {r.by_event.map((e) => (
+                  <tr key={e.event_id} className="border-b border-line/30">
+                    <td className="font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-48 text-text">
+                      {eventName(e.event_id)}
+                    </td>
+                    <td className="text-right px-1 tabular-nums text-text">
+                      {qty(e.net_yes_contracts)}
+                    </td>
+                    <td className="text-right px-1">
+                      <Signed value={e.delta_if_yes} text={signedUsd(e.delta_if_yes)} />
+                    </td>
+                    <td className="text-right pl-1">
+                      <Signed value={e.delta_if_no} text={signedUsd(e.delta_if_no)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
-        </>
+        </div>
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2 max-w-3xl">
           {saveError && (
             <div className="border border-gold text-gold text-[11px] rounded-sm px-2 py-1.5">
-              ! {saveError}
+              {saveError}
             </div>
           )}
           <table className="w-full font-mono">
             <thead>
               <tr className="border-b border-line">
-                <th className={`${th} text-left`}>MARKET</th>
-                <th className={`${th} text-left px-1`}>SIDE</th>
-                <th className={`${th} text-right px-1`}>QTY</th>
-                <th className={`${th} text-right px-1`} title="dollars 0-1, e.g. 0.55">
-                  ENTRY $
+                <th className="th text-left">Market</th>
+                <th className="th text-left px-1">Side</th>
+                <th className="th text-right px-1">Qty</th>
+                <th className="th text-right px-1" title="dollars 0-1, e.g. 0.55">
+                  Entry $
                 </th>
-                <th className={`${th} text-right px-1`} title="your YES probability estimate, optional">
-                  EST P
+                <th className="th text-right px-1" title="your YES probability estimate, optional">
+                  Est p
                 </th>
-                <th className={th}></th>
+                <th className="th"></th>
               </tr>
             </thead>
             <tbody>
@@ -244,7 +244,7 @@ export default function RiskPanel({
                 <tr key={i} className="border-b border-line/30">
                   <td className="py-1 pr-1 max-w-44">
                     <select
-                      className={input}
+                      className="field w-full"
                       value={d.market_id}
                       onChange={(e) => set(i, 'market_id', e.target.value)}
                     >
@@ -260,7 +260,7 @@ export default function RiskPanel({
                   </td>
                   <td className="px-1 w-20">
                     <select
-                      className={input}
+                      className="field w-full"
                       value={d.side}
                       onChange={(e) => set(i, 'side', e.target.value)}
                     >
@@ -270,21 +270,21 @@ export default function RiskPanel({
                   </td>
                   <td className="px-1 w-20">
                     <input
-                      className={`${input} text-right`}
+                      className="field w-full text-right"
                       value={d.contracts}
                       onChange={(e) => set(i, 'contracts', e.target.value)}
                     />
                   </td>
                   <td className="px-1 w-20">
                     <input
-                      className={`${input} text-right`}
+                      className="field w-full text-right"
                       value={d.entry_price}
                       onChange={(e) => set(i, 'entry_price', e.target.value)}
                     />
                   </td>
                   <td className="px-1 w-20">
                     <input
-                      className={`${input} text-right`}
+                      className="field w-full text-right"
                       placeholder="—"
                       value={d.est_prob}
                       onChange={(e) => set(i, 'est_prob', e.target.value)}
@@ -303,7 +303,7 @@ export default function RiskPanel({
               ))}
             </tbody>
           </table>
-          <div className="flex gap-1.5">
+          <div className="flex gap-2 items-center">
             <button
               onClick={() =>
                 setDraft((rows) => [
@@ -318,77 +318,24 @@ export default function RiskPanel({
                   },
                 ])
               }
-              className="border border-line text-muted hover:text-hover rounded-sm px-2.5 py-0.5 text-[10px] tracking-[0.15em]"
+              className="btn"
             >
-              + ADD
+              + Add
             </button>
-            <button
-              onClick={save}
-              disabled={saving}
-              className="border border-gold text-gold rounded-sm px-3 py-0.5 text-[10px] tracking-[0.15em] hover:bg-gold/10 disabled:opacity-50"
-            >
-              {saving ? 'SAVING…' : 'SAVE BOOK'}
+            <button onClick={save} disabled={saving} className="btn-gold">
+              {saving ? 'Saving…' : 'Save book'}
             </button>
-            <button
-              onClick={() => setEditing(false)}
-              className="border border-line text-muted hover:text-hover rounded-sm px-2.5 py-0.5 text-[10px] tracking-[0.15em]"
-            >
-              CANCEL
+            <button onClick={() => setEditing(false)} className="btn">
+              Cancel
             </button>
-            <span className="text-muted text-[10px] self-center">
-              writes data/positions.yaml — hand-editing keeps working too
-            </span>
+            <span className="text-muted text-[10px] ml-2">writes your positions file</span>
           </div>
         </div>
       )}
 
-      {r.by_event.length > 0 && !editing && (
-        <div>
-          <div className="text-muted text-[10px] tracking-[0.15em] mb-1">EXPOSURE BY EVENT</div>
-          <table className="w-full font-mono">
-            <thead>
-              <tr className="border-b border-line">
-                <th className={`${th} text-left`}>EVENT</th>
-                <th className={`${th} text-right px-1`} title="yes − no contracts">
-                  NET
-                </th>
-                <th className={`${th} text-right px-1`} title="P&L if event resolves YES">
-                  IF YES
-                </th>
-                <th className={`${th} text-right pl-1`} title="P&L if event resolves NO">
-                  IF NO
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.by_event.map((e) => (
-                <tr key={e.event_id} className="border-b border-line/30">
-                  <td
-                    className="font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-40 text-text"
-                    title={e.event_id}
-                  >
-                    {eventName(e.event_id)}
-                  </td>
-                  <td className="text-right px-1 tabular-nums text-text">
-                    {qty(e.net_yes_contracts)}
-                  </td>
-                  <td className="text-right px-1">
-                    <Signed value={e.delta_if_yes} text={signedUsd(e.delta_if_yes)} />
-                  </td>
-                  <td className="text-right pl-1">
-                    <Signed value={e.delta_if_no} text={signedUsd(e.delta_if_no)} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       <details className="text-[11px] text-muted">
-        <summary className="cursor-pointer tracking-[0.12em] text-[10px]">
-          ASSUMPTIONS · VAR HORIZON = RESOLUTION · MC SEED {r.mc_seed} /{' '}
-          {r.mc_draws.toLocaleString('en-US')} DRAWS
+        <summary className="label cursor-pointer hover:text-hover">
+          Assumptions · VaR to resolution · MC seed {r.mc_seed}, {r.mc_draws.toLocaleString('en-US')} draws
         </summary>
         <ul className="mt-1.5 flex flex-col gap-1 list-disc pl-4 leading-snug">
           {r.assumptions.map((a, i) => (

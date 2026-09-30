@@ -2,15 +2,15 @@ import { useState } from 'react'
 import type { Orderbook } from '../types'
 import { qty } from '../format'
 
-/** Cumulative depth curve for one venue's YES book: bid depth (up hue)
-    stepping down-left from the touch, ask depth (down hue) up-right.
-    Area wash ~12% + 2px line per the mark specs; SVG carries shapes only,
-    text lives in HTML so nothing distorts. Hover shows price/cum-size. */
+/** Cumulative depth for one venue's YES book: bid depth stepping down-left
+    from the touch, ask depth up-right. 12% wash plus a 2px line; shapes in
+    SVG, text in HTML so nothing distorts. Hover reads price and cumulative
+    size. */
 
 const W = 400
 const H = 96
-const PAD_X = 0.01 // 1¢ of horizontal breathing room
-const WINDOW = 0.15 // show ±15¢ around mid — books carry dust at 1¢/99¢ that would squash the touch
+const PAD_X = 0.01 // a cent of horizontal breathing room
+const WINDOW = 0.15 // ±15¢ around mid: books carry dust at 1¢ and 99¢ that would squash the touch
 
 type Pt = { price: number; cum: number }
 
@@ -27,7 +27,7 @@ function stepPath(pts: { x: number; y: number }[], baseY: number, close: boolean
   if (!pts.length) return ''
   let d = `M ${pts[0].x} ${baseY} L ${pts[0].x} ${pts[0].y}`
   for (let i = 1; i < pts.length; i++) {
-    d += ` H ${pts[i].x} V ${pts[i].y}` // vertical-then-horizontal steps
+    d += ` H ${pts[i].x} V ${pts[i].y}`
   }
   if (close) d += ` L ${pts[pts.length - 1].x} ${baseY} Z`
   return d
@@ -73,7 +73,6 @@ export default function DepthChart({ label, book }: { label: string; book: Order
     // one-sided books hover whichever side exists; two-sided split at center
     const wantBid = asks.length === 0 || (bids.length > 0 && price <= center)
     if (wantBid) {
-      // deepest bid level at or above this price (bids run best→worst downward)
       const pt = bids.filter((p) => p.price >= price).at(-1)
       setHover(pt ? { x: x(pt.price), side: 'bid', pt } : null)
     } else {
@@ -85,11 +84,11 @@ export default function DepthChart({ label, book }: { label: string; book: Order
   return (
     <div className="flex-1 min-w-0 border border-line rounded-sm flex flex-col">
       <div className="flex items-center border-b border-line px-2.5 h-7">
-        <span className="text-muted text-[10px] tracking-[0.15em]">{label}</span>
+        <span className="label">{label} depth</span>
         <span className="ml-auto font-mono text-[10px] text-muted">
           {hover
             ? `${(hover.pt.price * 100).toFixed(1)}¢ · ${qty(String(hover.pt.cum))} cum`
-            : `±15¢ depth ${qty(String(maxCum))}`}
+            : `±15¢ · ${qty(String(maxCum))} contracts`}
         </span>
       </div>
       <div className="relative px-2.5 py-1.5">

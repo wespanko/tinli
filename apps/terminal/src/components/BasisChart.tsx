@@ -2,17 +2,16 @@ import { useState } from 'react'
 import type { BasisStats, HistoryPoint } from '../types'
 import { clock } from '../format'
 
-/** Basis-over-time line for the selected pair, from recorded snapshots
-    (/v1/history). 2px line, hairline zero baseline, hover crosshair with
-    the readout in the header. No history recorded -> say so; never fake a
-    backfill. Below the chart: window stats (mean/σ/z, AR(1) half-life) —
-    values arrive pre-rounded against the signal by the API; a missing
-    statistic renders as an em dash with the reason in the tooltip. */
+/** Basis over time for the selected pair, from recorded snapshots. 2px
+    line, hairline zero baseline, hover crosshair with the readout in the
+    header. No history means saying so, never a fake backfill. Window stats
+    (mean, σ, z, AR(1) half-life) arrive pre-rounded against the signal; a
+    missing statistic renders as a dash with the reason in the tooltip. */
 
 const W = 800
 const H = 110
 
-// stats values are already in cents — plain fixed formatting, no re-scaling
+// stats values are already in cents
 const c = (v: string, dp = 2) => {
   const n = parseFloat(v)
   return `${n > 0 ? '+' : ''}${n.toFixed(dp)}`
@@ -35,12 +34,10 @@ export default function BasisChart({
     return (
       <div className="border border-line rounded-sm">
         <div className="flex items-center border-b border-line px-2.5 h-7">
-          <span className="text-muted text-[10px] tracking-[0.15em]">BASIS · 24H</span>
+          <span className="label">Basis · 24h</span>
         </div>
         <div className="p-2.5 text-muted text-[11px]">
-          {pts.length === 0
-            ? 'no history recorded yet — run `make snapshot` (or scripts/snapshot.py --loop 30)'
-            : 'one snapshot recorded — need at least two points to draw a line'}
+          {pts.length === 0 ? 'No history recorded yet.' : 'One snapshot so far.'}
         </div>
       </div>
     )
@@ -74,13 +71,11 @@ export default function BasisChart({
   return (
     <div className="border border-line rounded-sm">
       <div className="flex items-center border-b border-line px-2.5 h-7">
-        <span className="text-muted text-[10px] tracking-[0.15em]">
-          BASIS · 24H · {pts.length} SNAPSHOTS
-        </span>
+        <span className="label">Basis · 24h</span>
         <span className="ml-auto font-mono text-[10px] text-muted">
           {hovered
             ? `${clock(new Date(hovered.t).toISOString())} · ${hovered.v > 0 ? '+' : ''}${hovered.v.toFixed(2)}¢`
-            : `last ${last.v > 0 ? '+' : ''}${last.v.toFixed(2)}¢`}
+            : `${pts.length} snapshots · last ${last.v > 0 ? '+' : ''}${last.v.toFixed(2)}¢`}
         </span>
       </div>
       <div className="px-2.5 py-1.5">
@@ -91,7 +86,6 @@ export default function BasisChart({
           onMouseMove={onMove}
           onMouseLeave={() => setHover(null)}
         >
-          {/* zero baseline: one hairline, solid, recessive */}
           <line
             x1="0"
             x2={W}
@@ -128,7 +122,7 @@ export default function BasisChart({
         </svg>
         <div className="flex justify-between font-mono text-[10px] text-muted leading-4">
           <span>{clock(new Date(t0).toISOString())}</span>
-          <span>kalshi mid − polymarket mid, ¢</span>
+          <span>Kalshi mid − Polymarket mid, ¢</span>
           <span>{clock(new Date(t1).toISOString())}</span>
         </div>
       </div>
@@ -142,7 +136,7 @@ export default function BasisChart({
             <span className="text-muted">σ </span>
             <span className="text-text">{parseFloat(stats.stdev_cents).toFixed(2)}¢</span>
           </span>
-          <span title="displacement of the latest basis from the window mean, in σ (rounded toward zero)">
+          <span title="latest basis minus the window mean, in σ, rounded toward zero">
             <span className="text-muted">z </span>
             {stats.z_last != null ? (
               <span className="text-text">{c(stats.z_last)}</span>
@@ -153,11 +147,11 @@ export default function BasisChart({
           <span
             title={
               stats.half_life_hours != null
-                ? `AR(1) φ=${parseFloat(stats.ar1_phi!).toFixed(2)}; intervals converted to hours via the MEDIAN snapshot spacing — an approximation. Rounded up: never claims faster reversion than measured.`
-                : 'no measurable mean reversion in window (needs ≥30 snapshots and an AR(1) φ strictly inside 0–1)'
+                ? `AR(1) φ=${parseFloat(stats.ar1_phi!).toFixed(2)}; hours via the median snapshot spacing, rounded up`
+                : 'no measurable mean reversion in the window (needs 30+ snapshots and 0 < φ < 1)'
             }
           >
-            <span className="text-muted">reversion t½ </span>
+            <span className="text-muted">t½ </span>
             {stats.half_life_hours != null ? (
               <span className="text-text">≈{parseFloat(stats.half_life_hours).toFixed(1)}h</span>
             ) : (

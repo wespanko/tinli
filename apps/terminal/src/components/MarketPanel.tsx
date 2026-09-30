@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import type { BasisStats, BookLevel, DivergenceItem, HistoryPoint, MarketQuote, Orderbook, Pair } from '../types'
+import type { BookLevel, BasisStats, DivergenceItem, HistoryPoint, MarketQuote, Orderbook, Pair } from '../types'
 import type { LockReport } from '../types.gen'
 import { cents, clock, qty } from '../format'
 import BasisChart from './BasisChart'
 import DepthChart from './DepthChart'
 import LockPanel from './LockPanel'
 import Signed from './Signed'
+import Stat from './Stat'
 
 const DEPTH = 6
 const DEPTH_KEY = 'tinli-depth-open'
@@ -23,8 +24,7 @@ function VenueQuote({ label, book }: { label: string; book: Orderbook | null }) 
   const { mid, spread } = midOf(book)
   return (
     <div className="flex-1 bg-panel-2 border border-line rounded-sm px-3 py-2">
-      <div className="text-muted text-[10px] tracking-[0.15em]">{label}</div>
-      {/* big standalone number: mono, proportional figures, not tabular */}
+      <div className="label">{label}</div>
       <div className="font-mono text-text text-[26px] leading-8">
         {mid == null ? '—' : mid.toFixed(1)}
       </div>
@@ -33,7 +33,7 @@ function VenueQuote({ label, book }: { label: string; book: Orderbook | null }) 
         <span className="mx-1.5">·</span>
         {book?.asks[0] ? <span className="text-down">{cents(book.asks[0].price)} ask</span> : 'no ask'}
         {spread != null && <span className="mx-1.5">·</span>}
-        {spread != null && `${spread.toFixed(1)}¢ sprd`}
+        {spread != null && `${spread.toFixed(1)}¢ spread`}
       </div>
     </div>
   )
@@ -75,8 +75,8 @@ function Ladder({
   return (
     <div className="flex-1 min-w-0 border border-line rounded-sm flex flex-col">
       <div className="flex items-center border-b border-line px-2.5 h-7">
-        <span className="text-muted text-[10px] tracking-[0.15em]">{label}</span>
-        <span className="ml-auto text-[10px] text-muted">PRICE / SIZE</span>
+        <span className="label">{label}</span>
+        <span className="ml-auto label">price / size</span>
       </div>
       {!fresh ? (
         <div className="p-2.5 text-muted text-[11px]">no book</div>
@@ -92,52 +92,45 @@ function Ladder({
   )
 }
 
+/** Top-of-book lock summary, shown while the depth-walked report is in flight. */
 function LockEconomics({ item }: { item: DivergenceItem }) {
   const dir =
     item.direction === 'buy_yes_kalshi_no_polymarket'
-      ? 'YES @ KALSHI + NO @ POLYMARKET'
+      ? 'YES on Kalshi, NO on Polymarket'
       : item.direction === 'buy_yes_polymarket_no_kalshi'
-        ? 'YES @ POLYMARKET + NO @ KALSHI'
-        : 'no executable lock (missing book side)'
-  const stat = (label: string, node: React.ReactNode) => (
-    <div className="bg-panel-2 border border-line rounded-sm px-3 py-1.5">
-      <div className="text-muted text-[10px] tracking-[0.12em]">{label}</div>
-      <div className="font-mono text-[15px]">{node}</div>
-    </div>
-  )
+        ? 'YES on Polymarket, NO on Kalshi'
+        : 'no executable lock'
   return (
     <div>
-      <div className="flex items-baseline gap-2 mb-1.5">
-        <span className="text-muted text-[10px] tracking-[0.15em]">LOCK</span>
+      <div className="flex items-baseline gap-2 mb-2">
+        <span className="label">Lock</span>
         <span className="text-text text-[12px]">{dir}</span>
         {item.fee_assumed_worst_case && (
-          <span className="text-gold text-[10px]" title="PM fee category unknown">
-            WORST-CASE FEE
+          <span className="label text-gold" title="Polymarket fee category unknown">
+            worst-case fee
           </span>
         )}
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        {stat(
-          'EDGE / CONTRACT',
-          <Signed
-            value={item.fee_adjusted_edge}
-            text={item.fee_adjusted_edge == null ? '—' : `${cents(item.fee_adjusted_edge, 2)}¢`}
-          />,
-        )}
-        {stat(
-          'MAX LOCK SIZE',
-          <span className="tabular-nums text-text">{qty(item.max_lock_size)}</span>,
-        )}
-        {stat(
-          'EDGE @ SIZE',
-          <Signed
-            value={item.edge_at_size}
-            text={item.edge_at_size == null ? '—' : `${cents(item.edge_at_size, 2)}¢`}
-          />,
-        )}
-      </div>
-      <div className="text-muted text-[11px] mt-1.5">
-        fee-adjusted, executable asks only — a positive edge locks $1 at resolution either way
+      <div className="flex gap-8">
+        <Stat
+          label="Edge / contract"
+          value={
+            <Signed
+              value={item.fee_adjusted_edge}
+              text={item.fee_adjusted_edge == null ? '—' : `${cents(item.fee_adjusted_edge, 2)}¢`}
+            />
+          }
+        />
+        <Stat label="Max size" value={qty(item.max_lock_size)} />
+        <Stat
+          label="Edge at size"
+          value={
+            <Signed
+              value={item.edge_at_size}
+              text={item.edge_at_size == null ? '—' : `${cents(item.edge_at_size, 2)}¢`}
+            />
+          }
+        />
       </div>
     </div>
   )
@@ -160,7 +153,7 @@ export default function MarketPanel({
   pmBook: Orderbook | null
   lock: LockReport | null
 }) {
-  // depth curves + raw ladders are the second layer: off by default, one
+  // depth curves and raw ladders are the second layer: off by default, one
   // toggle reveals both venues at once, remembered across pairs and reloads
   const [depth, setDepth] = useState(() => localStorage.getItem(DEPTH_KEY) === '1')
   if (!pair) return <div className="p-3 text-muted text-[12px]">select a pair</div>
@@ -180,32 +173,27 @@ export default function MarketPanel({
     <div className="p-3 flex flex-col gap-3 h-full">
       <div>
         <h2 className="text-text text-[16px] leading-snug">{pair.question}</h2>
-        <div className="text-muted text-[11px] mt-1">
-          {pair.event_key} · yes-side books · as of {clock(asOf)}
-          {!pair.criteria_verified && (
-            <span className="text-gold ml-2">! UNVERIFIED CRITERIA — GAP IS NOT EDGE</span>
-          )}
+        <div className="text-muted text-[11px] mt-1 flex items-baseline gap-3">
+          <span>yes-side books · as of {clock(asOf)}</span>
+          {!pair.criteria_verified && <span className="label text-gold">Unverified</span>}
         </div>
       </div>
 
       <div className="flex items-stretch gap-1.5">
-        <VenueQuote label="KALSHI" book={freshK} />
+        <VenueQuote label="Kalshi" book={freshK} />
         <div className="flex flex-col items-center justify-center px-2">
-          <div className="text-muted text-[10px] tracking-[0.12em]">BASIS</div>
+          <div className="label">Basis</div>
           <Signed
             value={basis}
             text={basis == null ? '—' : `${basis > 0 ? '+' : ''}${basis.toFixed(1)}¢`}
             className="font-mono text-[15px]"
           />
         </div>
-        <VenueQuote label="POLYMARKET" book={freshP} />
+        <VenueQuote label="Polymarket" book={freshP} />
       </div>
 
       <BasisChart points={history} stats={historyStats} />
 
-
-      {/* full depth-walked curve when the selected pair's lock has loaded;
-          the top-of-book summary is the fallback while it's in flight */}
       {lock && lock.event_key === pair.event_key && lock.points.length > 0 ? (
         <LockPanel lock={lock} />
       ) : (
@@ -214,24 +202,22 @@ export default function MarketPanel({
 
       <button
         onClick={toggleDepth}
-        className="flex items-center gap-2 text-[10px] tracking-[0.15em] text-muted hover:text-hover border-t border-line pt-2"
-        title="depth curves and raw ladders for both venues"
+        className="flex items-center gap-2 label hover:text-hover border-t border-line pt-2"
       >
         <span className="font-mono w-3 text-left">{depth ? '−' : '+'}</span>
-        <span className="font-sans font-medium">DEPTH · BOOKS</span>
-        <span className="ml-auto font-sans">{depth ? 'HIDE' : 'SHOW'}</span>
+        <span>Depth</span>
       </button>
 
       {depth && (
         <>
           <div className="flex gap-1.5 items-stretch">
-            <DepthChart label="KALSHI DEPTH" book={freshK} />
-            <DepthChart label="POLYMARKET DEPTH" book={freshP} />
+            <DepthChart label="Kalshi" book={freshK} />
+            <DepthChart label="Polymarket" book={freshP} />
           </div>
 
           <div className="flex gap-1.5 items-start">
-            <Ladder label="KALSHI BOOK" quote={pair.kalshi} book={freshK} />
-            <Ladder label="POLYMARKET BOOK" quote={pair.polymarket} book={freshP} />
+            <Ladder label="Kalshi" quote={pair.kalshi} book={freshK} />
+            <Ladder label="Polymarket" quote={pair.polymarket} book={freshP} />
           </div>
         </>
       )}

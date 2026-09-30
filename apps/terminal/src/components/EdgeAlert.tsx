@@ -1,9 +1,8 @@
 import type { DivergenceItem } from '../types'
 import { cents, qty } from '../format'
 
-/** Banner shown while any VERIFIED pair has a positive fee-adjusted edge at
-    executable size — the one signal this product exists to catch. Clicking
-    an entry loads the pair in the market panel. */
+/** Banner shown while any verified pair has a positive fee-adjusted edge at
+    executable size. Clicking an entry loads the pair. */
 
 export function liveEdges(items: DivergenceItem[]): DivergenceItem[] {
   return items.filter(
@@ -20,23 +19,20 @@ export default function EdgeAlert({
 }) {
   if (!edges.length) return null
   return (
-    <div className="flex items-center gap-3 border border-gold bg-panel rounded-sm px-3 py-1.5 shrink-0">
-      <span className="text-gold text-[10px] font-sans font-medium tracking-[0.2em]">
-        LIVE EDGE
-      </span>
+    <div className="flex items-center gap-4 border border-gold bg-panel rounded-sm px-3 py-1.5 shrink-0">
+      <span className="label text-gold">Live edge</span>
       {edges.map((e) => (
         <button
           key={e.event_key}
           onClick={() => onSelect(e.event_key)}
           className="text-[12px] text-gold hover:underline"
-          title={`${e.event_key} — click to load`}
         >
-          {e.question} <span className="font-mono">+{cents(e.edge_at_size, 2)}¢ × {qty(e.max_lock_size)}</span>
+          {e.question}{' '}
+          <span className="font-mono">
+            +{cents(e.edge_at_size, 2)}¢ × {qty(e.max_lock_size)}
+          </span>
         </button>
       ))}
-      <span className="ml-auto text-muted text-[10px]">
-        fee-adjusted, at executable size — verify criteria before trading
-      </span>
     </div>
   )
 }

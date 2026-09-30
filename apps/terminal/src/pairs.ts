@@ -1,6 +1,6 @@
 import type { DivergenceItem, Pair } from './types'
 
-/** Pair helpers shared by the terminal list, CARDS, and keyboard nav. */
+/** Pair helpers shared by the pair list and keyboard nav. */
 
 export function kalshiMid(p: Pair): number | null {
   const m = p.kalshi

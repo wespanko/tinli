@@ -38,12 +38,11 @@ tick** — was on display 36 minutes before the release.
 
 ## Status
 
-v0 feature-complete through M12: venue adapters, divergence + risk
-engines, terminal UI, history snapshots, live streaming (M8), BYOK Kalshi
-auth (M9), research layer (M10–M11), in-app pair curation + keyboard nav
-(M12), precise arb model (M14: carry-adjusted edges, whole-contract
-sizing, legging risk). Read-only public market data — no order placement,
-ever.
+v0 is feature-complete: venue adapters, divergence and risk engines,
+terminal UI, history snapshots, live streaming, BYOK Kalshi auth, a
+research layer, in-app pair curation with keyboard navigation, and a
+precise arb model (carry-adjusted edges, whole-contract sizing, legging
+risk). Read-only public market data — no order placement, ever.
 
 The terminal is two panes: one ranked pair list (each pair joined with
 its fee-adjusted lock edge at executable size; unverified and settled
@@ -54,7 +53,7 @@ self-reported book and risk engine live in a BOOK tab. Streamed live
 (Polymarket websocket + Kalshi fast-poll) with a 3s-polling fallback,
 demo badge when on fixtures.
 
-The CRYPTO view (M15) prices every Kalshi BTC/ETH above/below strike
+The CRYPTO view prices every Kalshi BTC/ETH above/below strike
 against the Deribit option chain: a model fair value off the mark-IV
 surface, and a model-free hedge from the adjacent listed call spreads with
 both venues' fees. The hedge outlives the binary (Deribit expires 08:00

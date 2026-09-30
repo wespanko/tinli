@@ -201,8 +201,8 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   Decimal boundary; every fee, edge and hedge cost is Decimal. Fixtures
   (`kalshi/series_*.json`, `deribit/*.json`) carry their own
   `crypto_recorded_at` clock so demo mode prices time-to-expiry as seen.
-  `/v1/crypto/{coin}`; UI = CRYPTO view (key 2) with both indices, per-
-  expiry tabs showing the hedge gap, and the live-zone strike filter.
+  `/v1/crypto/{coin}`; UI = CRYPTO view (key 2): both ladders stacked,
+  per-expiry tabs showing the hedge gap, and the live-zone strike filter.
 
 ### Usability layer (M12)
 - In-app curation (`tinli_api/curation.py` + CURATE view): candidate
@@ -216,23 +216,31 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
   Read-only instances refuse all curation writes.
 - Keyboard-first: j/k / arrows drive the pair list (visible rows only —
   collapsed groups are skipped), `/` filters pairs (and un-collapses the
-  matches; MARKET keeps its selection), 1-5 switch views, `?` help,
+  matches; MARKET keeps its selection), 1-4 switch views, `?` help,
   Esc closes/clears. Handlers never fire while typing.
 - First-load skeletons instead of panel pop-in; `python run.py [demo]` is
   the one-command start (bootstraps venv/npm on first run; make remains).
 
 ### Terminal UI (M5 + redesign)
-- Progressive disclosure (Sep 2026 declutter): the default screen is two
-  panes. PAIRS is the watchlist and divergence screener merged — one row
-  per pair with K·PM mids, raw basis, EDGE¢ at executable size (gold when
-  positive on a verified pair) and lock size; verified pairs ranked by
-  edge on top, UNVERIFIED and SETTLED under collapsible dividers that
-  start closed (choice persisted in localStorage). MARKET shows venue
-  quotes, basis history and the depth-walked lock economics; depth curves
-  and raw ladders sit behind one DEPTH · BOOKS toggle. The self-reported
-  book + risk engine (and the BYOK account panel) moved to a BOOK view;
-  CARDS shows all pairs as tiles. The first-run intro is three paragraphs
-  plus keys; FULL GUIDE / HELP / `?` unfold the complete explainer.
+- Progressive disclosure: the default screen is two panes. PAIRS is the
+  watchlist and divergence screener merged — one row per pair with K·PM
+  mids, raw basis, EDGE¢ at executable size (gold when positive on a
+  verified pair) and lock size; verified pairs ranked by edge on top,
+  Unverified and Settled under collapsible dividers that start closed
+  (choice persisted in localStorage). MARKET shows venue quotes, basis
+  history and the depth-walked lock economics; depth curves and raw
+  ladders sit behind one Depth toggle. The self-reported book + risk
+  engine (and the BYOK account panel) live in the BOOK view. The
+  first-run intro is two paragraphs plus keys; Full guide / Help / `?`
+  unfold the complete explainer.
+- Copy and labels (Sep 2026 polish): say each thing once, in the help
+  overlay, not in every row. Panel titles are one or two words; the only
+  middot chain is the basis chart header. Captions are the shared `label`
+  utility (10px, 0.06em tracking) — no wider tracking anywhere. Summary
+  numbers are caption-over-value strips, not bordered tile grids; an empty
+  state is one sentence. Slugs, file paths and env var names stay out of
+  the UI except where the reader must type them. Comments explain why,
+  never which milestone.
 - Post-redesign visual system: real type hierarchy, bundled **Inter (labels,
   names, prose) + JetBrains Mono (every number and id slug)**, CVD-validated
   up/down colors, depth charts. Don't regress this.

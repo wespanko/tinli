@@ -1,14 +1,6 @@
 import { Fragment, useState } from 'react'
 import type { Candidate, CandidatesResponse, Pair, PairMutationResponse } from '../types'
 
-const th = 'py-1 font-sans font-medium text-[10px] tracking-[0.12em] text-muted'
-const btn =
-  'border border-line text-muted hover:text-hover rounded-sm px-2 py-0.5 text-[10px] tracking-[0.12em]'
-const btnGold =
-  'border border-gold text-gold rounded-sm px-2 py-0.5 text-[10px] tracking-[0.12em] hover:bg-gold/10 disabled:opacity-50'
-const input =
-  'bg-bg border border-line rounded-sm px-1.5 py-0.5 font-mono text-[12px] text-text'
-
 const FEE_CATEGORIES = [
   '', 'crypto', 'sports', 'finance', 'politics', 'mentions', 'tech',
   'economics', 'culture', 'weather', 'geopolitical', 'other',
@@ -35,12 +27,12 @@ async function mutate(
     }
     return { ok: true, data: data as PairMutationResponse }
   } catch {
-    return { ok: false, error: 'network error — nothing changed' }
+    return { ok: false, error: 'network error, nothing changed' }
   }
 }
 
-/** Verify flow: the notes requirement is the doctrine's audit trail — the
- * server enforces >=20 chars; mirroring it here just makes the error nicer. */
+/** The notes requirement is the audit trail: the server enforces 20+
+    characters, mirrored here so the error is friendlier. */
 function VerifyBox({
   pair,
   onDone,
@@ -56,18 +48,17 @@ function VerifyBox({
   return (
     <div className="flex flex-col gap-1.5 bg-panel-2 border border-line rounded-sm p-2 my-1">
       <div className="text-[11px] text-muted leading-snug">
-        Confirm you compared BOTH venues' full resolution rules. Record what you compared and
-        any tail differences — this lands in the map's notes:
+        What you compared across both rulebooks, and any differences in the tails. Saved with the pair.
       </div>
       <textarea
-        className={`${input} w-full h-16 resize-none font-sans`}
-        placeholder="e.g. both settle on official X result; PM has explicit tie-breakers, Kalshi silent — tie risk accepted because…"
+        className="field w-full h-16 resize-none font-sans"
+        placeholder="e.g. both settle on the official result; Polymarket spells out tie-breakers, Kalshi is silent, tie risk accepted because…"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
-      <div className="flex gap-1.5 items-center">
+      <div className="flex gap-2 items-center">
         <button
-          className={btnGold}
+          className="btn-gold"
           disabled={busy || short}
           onClick={async () => {
             setBusy(true)
@@ -80,9 +71,9 @@ function VerifyBox({
             r.ok ? onDone(r.data) : onError(r.error)
           }}
         >
-          MARK VERIFIED
+          Mark verified
         </button>
-        {short && <span className="text-muted text-[10px]">notes required (≥ 20 chars)</span>}
+        {short && <span className="text-muted text-[10px]">20 characters minimum</span>}
       </div>
     </div>
   )
@@ -109,14 +100,14 @@ function CandidateCard({
       <div className="flex items-baseline gap-2">
         <span className="font-mono text-gold text-[12px]">{c.score.toFixed(2)}</span>
         <span className="font-sans text-text text-[13px]">{c.kalshi_title}</span>
-        <button className={`ml-auto ${btn}`} onClick={() => setOpen(!open)}>
-          {open ? 'COLLAPSE' : 'COMPARE RULES'}
+        <button className="btn ml-auto" onClick={() => setOpen(!open)}>
+          {open ? 'Collapse' : 'Compare rules'}
         </button>
       </div>
       <div className="grid grid-cols-2 gap-2 text-[11px]">
         <div>
           <a className="text-hover underline" href={c.kalshi_url} target="_blank" rel="noreferrer">
-            KALSHI <span className="font-mono">{c.kalshi_ticker}</span>
+            Kalshi <span className="font-mono">{c.kalshi_ticker}</span>
           </a>
           <span className="text-muted font-mono ml-2">
             vol {Math.round(c.kalshi_vol_24h).toLocaleString('en-US')}
@@ -125,7 +116,7 @@ function CandidateCard({
         </div>
         <div>
           <a className="text-hover underline" href={c.pm_url} target="_blank" rel="noreferrer">
-            POLYMARKET
+            Polymarket
           </a>
           <span className="font-sans text-muted ml-2">{c.pm_question}</span>
         </div>
@@ -133,12 +124,12 @@ function CandidateCard({
       {open && (
         <div className="grid grid-cols-2 gap-2 text-[11px] leading-snug bg-panel-2 border border-line rounded-sm p-2">
           <div>
-            <div className="text-muted tracking-[0.12em] text-[10px] mb-1">KALSHI RULES</div>
+            <div className="label mb-1">Kalshi rules</div>
             <div className="font-sans text-text whitespace-pre-wrap">{c.kalshi_rules || '—'}</div>
           </div>
           <div>
-            <div className="text-muted tracking-[0.12em] text-[10px] mb-1">
-              POLYMARKET DESCRIPTION · outcomes {JSON.stringify(c.pm_outcomes)}
+            <div className="label mb-1">
+              Polymarket description · outcomes {JSON.stringify(c.pm_outcomes)}
             </div>
             <div className="font-sans text-text whitespace-pre-wrap">
               {c.pm_description || '—'}
@@ -149,13 +140,13 @@ function CandidateCard({
       {!readonly && (
         <div className="flex gap-1.5 items-center flex-wrap">
           <input
-            className={`${input} w-52`}
+            className="field w-52"
             value={eventKey}
             onChange={(e) => setEventKey(e.target.value)}
-            title="stable slug for this pair (internal id)"
+            title="stable id for this pair"
           />
           <select
-            className={input}
+            className="field"
             value={yesToken === null ? '' : String(yesToken)}
             onChange={(e) => setYesToken(e.target.value === '' ? null : Number(e.target.value))}
             title="which Polymarket outcome corresponds to Kalshi YES"
@@ -168,19 +159,19 @@ function CandidateCard({
             ))}
           </select>
           <select
-            className={input}
+            className="field"
             value={fee}
             onChange={(e) => setFee(e.target.value)}
-            title="Polymarket taker-fee category (from their published schedule)"
+            title="Polymarket taker-fee category from their published schedule"
           >
             {FEE_CATEGORIES.map((f) => (
               <option key={f} value={f}>
-                {f === '' ? 'fee category? (worst-case if unset)' : f}
+                {f === '' ? 'fee category (worst case if unset)' : f}
               </option>
             ))}
           </select>
           <button
-            className={btnGold}
+            className="btn-gold"
             disabled={busy || yesToken === null || !eventKey.trim()}
             onClick={async () => {
               setBusy(true)
@@ -196,7 +187,7 @@ function CandidateCard({
               r.ok ? onDone(r.data) : onError(r.error)
             }}
           >
-            ADD AS FLAGGED
+            Add as unverified
           </button>
         </div>
       )}
@@ -249,26 +240,29 @@ export default function CurateView({
 
   const settledish = (p: Pair) =>
     p.kalshi?.status !== 'open' || p.polymarket?.status !== 'open'
+  const verifiedCount = pairs.filter((p) => p.criteria_verified).length
 
   return (
     <main className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
       <section className="border border-line bg-panel rounded-sm p-3">
-        <div className="text-muted text-[10px] tracking-[0.15em] mb-2">
-          CURRENT MAP · {pairs.length} PAIRS · data/event_map.yaml stays the source of truth —
-          hand-editing keeps working
+        <div className="flex items-baseline gap-3 mb-2">
+          <span className="label">Map</span>
+          <span className="text-[11px] text-muted">
+            {pairs.length} pairs · {verifiedCount} verified
+          </span>
         </div>
         {error && (
           <div className="border border-gold text-gold text-[11px] rounded-sm px-2 py-1.5 mb-2">
-            ! {error}
+            {error}
           </div>
         )}
         <table className="w-full font-mono">
           <thead>
             <tr className="border-b border-line">
-              <th className={`${th} text-left`}>PAIR</th>
-              <th className={`${th} text-left px-1`}>STATUS</th>
-              <th className={`${th} text-left px-1`}>RULES</th>
-              {!readonly && <th className={`${th} text-right`}>ACTIONS</th>}
+              <th className="th text-left">Pair</th>
+              <th className="th text-left px-1">Status</th>
+              <th className="th text-left px-1">Rules</th>
+              {!readonly && <th className="th text-right"></th>}
             </tr>
           </thead>
           <tbody>
@@ -276,22 +270,17 @@ export default function CurateView({
               <Fragment key={p.event_key}>
                 <tr className="border-b border-line/30">
                   <td className="font-sans py-1.5 pr-2 text-text">
-                    {!p.criteria_verified && (
-                      <span className="text-gold mr-1" title="unverified — treated as a trap">
-                        !
-                      </span>
-                    )}
                     {p.question}
                     <span className="text-muted font-mono text-[10px] ml-2">{p.event_key}</span>
                   </td>
-                  <td className="px-1 text-[11px]">
+                  <td className="px-1 text-[11px] whitespace-nowrap">
                     {settledish(p) ? (
-                      <span className="text-gold">settled/closed leg — retire?</span>
+                      <span className="text-gold">settled</span>
                     ) : (
-                      <span className="text-up">both open</span>
+                      <span className="text-up">open</span>
                     )}
-                    <span className="text-muted ml-2">
-                      {p.criteria_verified ? 'verified' : 'FLAGGED'}
+                    <span className={`ml-2 ${p.criteria_verified ? 'text-muted' : 'text-gold'}`}>
+                      {p.criteria_verified ? 'verified' : 'unverified'}
                     </span>
                   </td>
                   <td className="px-1 text-[11px] whitespace-nowrap">
@@ -310,7 +299,7 @@ export default function CurateView({
                     <td className="text-right py-1 whitespace-nowrap">
                       {p.criteria_verified ? (
                         <button
-                          className={btn}
+                          className="btn"
                           onClick={async () => {
                             const r = await mutate(
                               `/v1/curate/pairs/${encodeURIComponent(p.event_key)}/verify`,
@@ -320,18 +309,18 @@ export default function CurateView({
                             r.ok ? applied(r.data) : setError(r.error)
                           }}
                         >
-                          UNVERIFY
+                          Unverify
                         </button>
                       ) : (
                         <button
-                          className={btnGold}
+                          className={`btn ${verifying === p.event_key ? 'border-gold text-gold' : ''}`}
                           onClick={() => setVerifying(verifying === p.event_key ? null : p.event_key)}
                         >
-                          VERIFY…
+                          Verify
                         </button>
                       )}
                       <button
-                        className={`${btn} ml-1 ${retiring === p.event_key ? 'border-down text-down' : ''}`}
+                        className={`btn ml-1 ${retiring === p.event_key ? 'border-down text-down' : ''}`}
                         onClick={async () => {
                           if (retiring !== p.event_key) {
                             setRetiring(p.event_key)
@@ -344,7 +333,7 @@ export default function CurateView({
                           r.ok ? applied(r.data) : setError(r.error)
                         }}
                       >
-                        {retiring === p.event_key ? 'CONFIRM RETIRE' : 'RETIRE'}
+                        {retiring === p.event_key ? 'Confirm retire' : 'Retire'}
                       </button>
                     </td>
                   )}
@@ -363,25 +352,25 @@ export default function CurateView({
       </section>
 
       <section className="border border-line bg-panel rounded-sm p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-muted text-[10px] tracking-[0.15em]">
-            DISCOVER CANDIDATES · assisted, never auto-matched — every add lands flagged until
-            YOU compare both venues' rules
+        <div className="flex items-center gap-3 mb-2">
+          <span className="label">Candidates</span>
+          <span className="text-[11px] text-muted">
+            unmapped markets that look like the same event on both venues
           </span>
-          <button className={`ml-auto ${btnGold}`} disabled={scanning} onClick={() => scan(candidates !== null)}>
-            {scanning ? 'SCANNING…' : candidates === null ? 'SCAN VENUES' : 'RESCAN'}
+          <button className="btn ml-auto" disabled={scanning} onClick={() => scan(candidates !== null)}>
+            {scanning ? 'Scanning…' : candidates === null ? 'Scan venues' : 'Rescan'}
           </button>
         </div>
         {scanning && (
           <div className="text-muted text-[11px]">
-            scanning both venues' top-volume open markets — 30–60s on a cold cache…
+            scanning both venues' top markets, 30–60s on a cold cache
           </div>
         )}
         {!scanning && candidates !== null && (
           <>
             {cacheAge !== null && cacheAge > 1 && (
               <div className="text-muted text-[10px] mb-1.5">
-                cached scan from {Math.round(cacheAge)}s ago — RESCAN for fresh
+                cached scan from {Math.round(cacheAge)}s ago
               </div>
             )}
             {candidates.length === 0 ? (

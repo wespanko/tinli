@@ -1,5 +1,5 @@
-/** A signed value colored by direction: up green, down red, zero/absent muted.
-    Direction color rides the NUMBER only — labels stay in text tokens. */
+/** A signed value colored by direction: up green, down red, zero or absent
+    muted. The color rides the number only; labels stay in text tokens. */
 export default function Signed({
   value,
   text,

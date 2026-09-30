@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
-/* Tinli design tokens — the only place colors are defined. Gold is for CTAs
-   and key numbers ONLY. Radius ≤ 4px, 1px borders, no shadows.
-   up/down are direction semantics (bids/asks, signed P&L) — validated for
-   CVD separation and 3:1 contrast against --color-panel; never large fills,
-   only text and thin bars/washes. */
+/* Design tokens — the only place colors are defined. Gold is for CTAs and
+   key numbers only. Radius ≤ 4px, 1px borders, no shadows. up/down are
+   direction semantics (bids/asks, signed P&L): text and thin washes, never
+   large fills. */
 @theme {
   --color-bg: #0a1524;
   --color-panel: #0f1e33;
@@ -18,8 +17,7 @@
   --color-up: #2ebd85;
   --color-down: #e5484d;
 
-  /* Inter carries labels and prose; JetBrains Mono carries ALL numbers
-     (and id slugs in tables). Both bundled via @fontsource-variable. */
+  /* Inter for labels and prose, JetBrains Mono for every number. */
   --font-sans: "Inter Variable", Inter, system-ui, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 
@@ -40,4 +38,32 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-line) transparent;
   }
+}
+
+/* Shared pieces. `label` is the small-caps caption used for panel titles,
+   column headers and stat captions; `btn` is the quiet bordered button and
+   `btn-gold` the one call to action on a screen. */
+@utility label {
+  @apply font-sans text-[10px] font-medium uppercase text-muted;
+  letter-spacing: 0.06em;
+}
+@utility th {
+  @apply font-sans text-[10px] font-medium uppercase text-muted py-1.5;
+  letter-spacing: 0.06em;
+}
+@utility btn {
+  @apply font-sans text-[10px] font-medium uppercase text-muted border border-line rounded-sm px-2 py-0.5;
+  letter-spacing: 0.06em;
+  &:hover { color: var(--color-hover); }
+  &:disabled { opacity: 0.5; }
+}
+@utility btn-gold {
+  @apply font-sans text-[10px] font-medium uppercase text-gold border border-gold rounded-sm px-2.5 py-0.5;
+  letter-spacing: 0.06em;
+  &:hover { background-color: color-mix(in oklab, var(--color-gold) 10%, transparent); }
+  &:disabled { opacity: 0.5; }
+}
+@utility field {
+  @apply bg-bg border border-line rounded-sm px-1.5 py-0.5 font-mono text-[12px] text-text outline-none;
+  &:focus { border-color: var(--color-primary); }
 }

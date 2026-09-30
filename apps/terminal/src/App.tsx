@@ -20,15 +20,14 @@ import CurateView from './components/CurateView'
 import EdgeAlert, { liveEdges } from './components/EdgeAlert'
 import IntroPanel from './components/IntroPanel'
 import MarketPanel from './components/MarketPanel'
-import PairCards from './components/PairCards'
 import Panel from './components/Panel'
 import Skeleton from './components/Skeleton'
 import RiskPanel from './components/RiskPanel'
 import PairList from './components/PairList'
 import { groupRows, sortPairs } from './pairs'
 
-type View = 'terminal' | 'crypto' | 'book' | 'cards' | 'curate'
-const VIEWS: View[] = ['terminal', 'crypto', 'book', 'cards', 'curate']
+type View = 'terminal' | 'crypto' | 'book' | 'curate'
+const VIEWS: View[] = ['terminal', 'crypto', 'book', 'curate']
 type Intro = 'off' | 'short' | 'full'
 
 const POLL_MS = 3000
@@ -132,9 +131,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // live streaming (M8): subscribe to /v1/stream in live mode. Every failure
-  // path — demo 503, hub down, proxy without SSE — lands back on the 3s
-  // polling above; the stream is an upgrade, never a requirement.
+  // live mode subscribes to /v1/stream. Every failure path — demo 503, hub
+  // down, proxy without SSE — lands back on the 3s polling above; the
+  // stream is an upgrade, never a requirement.
   useEffect(() => {
     if (health?.mode !== 'live' || !health.stream) return
     let es: EventSource | null = null
@@ -185,8 +184,8 @@ export default function App() {
   const activePair = pairs.find((p) => p.event_key === activeKey) ?? null
   const activeItem = divergence.find((d) => d.event_key === activeKey) ?? null
 
-  // terminal-style keys: j/k or arrows drive the watchlist, / filters,
-  // 1/2/3 switch views, ? help, Esc closes/clears. Never while typing.
+  // terminal-style keys: j/k or arrows drive the list, / filters, 1-4
+  // switch views, ? help, Esc closes/clears. Never while typing.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
@@ -284,8 +283,8 @@ export default function App() {
   }, [activeKey])
 
   // browser notification when a verified pair's executable edge turns
-  // positive — the signal this product exists to catch. Alert on ENTER into
-  // the positive set only; the banner persists while the edge lives.
+  // positive. Alert on ENTER into the positive set only; the banner
+  // persists while the edge lives.
   const edges = liveEdges(divergence)
   const prevEdgeKeys = useRef<Set<string>>(new Set())
   useEffect(() => {
@@ -293,7 +292,7 @@ export default function App() {
     if (alertsOn && 'Notification' in window && Notification.permission === 'granted') {
       for (const e of edges) {
         if (!prevEdgeKeys.current.has(e.event_key)) {
-          new Notification('Tinli — executable lock edge', {
+          new Notification('Tinli — lock edge', {
             body: `${e.question}: +${cents(e.edge_at_size, 2)}¢/contract at size ${e.max_lock_size}`,
           })
         }
@@ -316,20 +315,46 @@ export default function App() {
     setIntro('off')
   }
 
+  const status = (() => {
+    if (health === null) return <span className="label text-down">API offline</span>
+    if (health.mode === 'demo') {
+      return (
+        <span className="label border border-gold text-gold px-2 py-0.5 rounded-sm">
+          Simulated data
+        </span>
+      )
+    }
+    const stale = Object.entries(streamed?.venues ?? {}).filter(([, v]) => v.state !== 'live')
+    if (streamOn && stale.length > 0) {
+      const [name, v] = stale[0]
+      return (
+        <span className="label text-gold" title="this venue's feed has not updated recently">
+          {name} {v.age_s != null ? `stale ${Math.round(v.age_s)}s` : 'connecting'}
+        </span>
+      )
+    }
+    return (
+      <span
+        className="label text-up"
+        title={streamOn ? 'pushed on change: Polymarket websocket, Kalshi fast-poll' : 'polling every 3s'}
+      >
+        ● Live{streamOn ? '' : ' · poll'}
+      </span>
+    )
+  })()
+
   return (
     <div className="h-screen flex flex-col gap-1 p-1">
       {intro !== 'off' && <IntroPanel onClose={closeIntro} full={intro === 'full'} />}
       <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-9 shrink-0">
         <span className="font-mono text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
-        <span className="text-muted text-[11px] tracking-[0.1em]">KALSHI × POLYMARKET</span>
-        <nav className="ml-4 flex text-[10px] border border-line rounded-sm overflow-hidden">
+        <span className="text-muted text-[11px]">Kalshi · Polymarket</span>
+        <nav className="ml-3 flex border border-line rounded-sm overflow-hidden">
           {VIEWS.map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-2.5 py-1 tracking-[0.12em] uppercase ${
-                view === v ? 'bg-primary text-text' : 'text-muted hover:text-hover'
-              }`}
+              className={`label px-2.5 py-1 ${view === v ? 'bg-primary text-text' : 'hover:text-hover'}`}
             >
               {v}
             </button>
@@ -337,18 +362,13 @@ export default function App() {
         </nav>
         <button
           onClick={toggleAlerts}
-          title="browser notification when a verified pair's executable edge turns positive"
-          className={`ml-3 border rounded-sm px-2 py-0.5 text-[10px] tracking-[0.12em] ${
-            alertsOn ? 'border-gold text-gold' : 'border-line text-muted hover:text-hover'
-          }`}
+          title="browser notification when a verified pair turns positive"
+          className={`label ml-2 ${alertsOn ? 'text-gold' : 'hover:text-hover'}`}
         >
-          ALERTS {alertsOn ? 'ON' : 'OFF'}
+          {alertsOn ? '● ' : '○ '}Alerts
         </button>
         {health?.byok && (
-          <span
-            className="ml-2 border border-primary text-hover rounded-sm px-2 py-0.5 text-[10px] tracking-[0.12em]"
-            title="your Kalshi API key is configured: authenticated websocket + real account positions, read-only"
-          >
+          <span className="label text-hover" title="Kalshi key configured: authenticated feed and account, read-only">
             BYOK
           </span>
         )}
@@ -357,45 +377,9 @@ export default function App() {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="/ filter"
-          title="filter watchlist + screener by pair name (press / to focus, Esc to clear)"
-          className="ml-3 w-28 bg-bg border border-line rounded-sm px-2 py-0.5 font-mono text-[11px] text-text placeholder:text-muted focus:border-primary outline-none"
+          className="field ml-3 w-28 text-[11px] placeholder:text-muted"
         />
-        <span className="ml-auto text-[11px]">
-          {health === null ? (
-            <span className="text-down">API OFFLINE</span>
-          ) : health.mode === 'demo' ? (
-            <span className="border border-gold text-gold px-2 py-0.5 rounded-sm text-[10px] tracking-[0.12em]">
-              SIMULATED DATA
-            </span>
-          ) : (() => {
-            const stale = Object.entries(streamed?.venues ?? {}).filter(
-              ([, v]) => v.state !== 'live',
-            )
-            if (streamOn && stale.length > 0) {
-              const [name, v] = stale[0]
-              return (
-                <span
-                  className="text-gold text-[10px] tracking-[0.12em]"
-                  title="this venue's feed has not updated recently; quotes for it may be stale"
-                >
-                  ! {name.toUpperCase()} {v.age_s != null ? `STALE ${Math.round(v.age_s)}s` : 'CONNECTING'}
-                </span>
-              )
-            }
-            return (
-              <span
-                className="text-up text-[10px] tracking-[0.12em]"
-                title={
-                  streamOn
-                    ? 'streaming: Polymarket websocket + Kalshi fast-poll, pushed on change'
-                    : 'polling venue REST APIs every 3s'
-                }
-              >
-                ● LIVE {streamOn ? '· STREAM' : '· POLL'}
-              </span>
-            )
-          })()}
-        </span>
+        <span className="ml-auto">{status}</span>
       </header>
       <EdgeAlert edges={edges} onSelect={setSelected} />
       {view === 'curate' ? (
@@ -404,36 +388,34 @@ export default function App() {
           readonly={health?.readonly ?? false}
           onPairsChanged={(next) => setPairs(sortPairs(next))}
         />
-      ) : view === 'cards' ? (
-        <PairCards pairs={pairs} />
       ) : view === 'crypto' ? (
         <CryptoView />
       ) : view === 'book' ? (
         <main className="flex-1 flex gap-1 min-h-0">
-          <div className="flex-1 max-w-[64rem] flex flex-col min-h-0">
-            <Panel title="BOOK · SELF-REPORTED POSITIONS · RISK">
-              <RiskPanel
-                report={risk}
-                error={riskError}
-                pairs={pairs}
-                readonly={health?.readonly ?? false}
-                onSaved={fetchRisk}
-              />
-            </Panel>
-          </div>
+          <Panel title="Book" extra="self-reported positions">
+            <RiskPanel
+              report={risk}
+              error={riskError}
+              pairs={pairs}
+              readonly={health?.readonly ?? false}
+              onSaved={fetchRisk}
+            />
+          </Panel>
           {(account?.byok || health?.byok) && (
-            <div className="flex-1 flex flex-col min-h-0">
-              <Panel title="KALSHI ACCOUNT · BYOK · READ-ONLY">
-                <AccountPanel report={account} pairs={pairs} />
-              </Panel>
-            </div>
+            <Panel title="Kalshi account" extra="read-only">
+              <AccountPanel report={account} pairs={pairs} />
+            </Panel>
           )}
         </main>
       ) : (
         <main className="flex-1 grid grid-cols-[minmax(360px,34rem)_minmax(420px,1fr)] gap-1 min-h-0">
           <Panel
-            title={`PAIRS · ${groups.verified.length} VERIFIED`}
-            extra={filter ? `${groups.visible.length} match` : 'fee-adjusted lock edges, ranked'}
+            title="Pairs"
+            extra={
+              filter
+                ? `${groups.visible.length} match`
+                : `${groups.verified.length} verified · edges after fees, at size`
+            }
           >
             {pairs.length === 0 || divergence.length === 0 ? (
               <Skeleton rows={8} />
@@ -446,7 +428,7 @@ export default function App() {
               />
             )}
           </Panel>
-          <Panel title="MARKET">
+          <Panel title="Market">
             <MarketPanel
               pair={activePair}
               item={activeItem}
@@ -459,14 +441,10 @@ export default function App() {
           </Panel>
         </main>
       )}
-      <footer className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-7 shrink-0 text-[10px] text-muted">
-        <span>TINLI v0 · cross-venue analytics for prediction markets</span>
-        <span>read-only public market data · quotes may be delayed · not investment advice</span>
-        <button
-          onClick={() => setIntro('full')}
-          className="ml-auto tracking-[0.15em] hover:text-hover"
-        >
-          HELP
+      <footer className="flex items-center border border-line bg-panel rounded-sm px-3 h-7 shrink-0 text-[10px] text-muted">
+        <span>Public market data, read-only. Quotes may be delayed. Not investment advice.</span>
+        <button onClick={() => setIntro('full')} className="label ml-auto hover:text-hover">
+          Help
         </button>
       </footer>
     </div>
