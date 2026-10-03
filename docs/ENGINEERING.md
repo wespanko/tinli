@@ -221,26 +221,40 @@ Windows: make is ezwinports (`winget install ezwinports.make`).
 - First-load skeletons instead of panel pop-in; `python run.py [demo]` is
   the one-command start (bootstraps venv/npm on first run; make remains).
 
-### Terminal UI (M5 + redesign)
-- Progressive disclosure: the default screen is two panes. PAIRS is the
-  watchlist and divergence screener merged — one row per pair with K·PM
-  mids, raw basis, EDGE¢ at executable size (gold when positive on a
-  verified pair) and lock size; verified pairs ranked by edge on top,
+### Terminal UI (M5 + redesigns)
+- The first screen is the BOARD: a LIVE EDGES strip (every verified pair
+  with a positive after-fee edge at executable size, each card showing edge
+  per contract and, when a bankroll is set, the size that bankroll buys,
+  its capital and what it locks) over one dense grid of every pair (Kalshi
+  and Polymarket bid·ask, raw basis, edge per contract, edge at size,
+  size, days, excess return). Verified pairs ranked by edge on top,
   Unverified and Settled under collapsible dividers that start closed
-  (choice persisted in localStorage). MARKET shows venue quotes, basis
-  history and the depth-walked lock economics; depth curves and raw
-  ladders sit behind one Depth toggle. The self-reported book + risk
-  engine (and the BYOK account panel) live in the BOOK view. The
-  first-run intro is two paragraphs plus keys; Full guide / Help / `?`
-  unfold the complete explainer.
-- Copy and labels (Sep 2026 polish): say each thing once, in the help
-  overlay, not in every row. Panel titles are one or two words; the only
-  middot chain is the basis chart header. Captions are the shared `label`
-  utility (10px, 0.06em tracking) — no wider tracking anywhere. Summary
-  numbers are caption-over-value strips, not bordered tile grids; an empty
-  state is one sentence. Slugs, file paths and env var names stay out of
-  the UI except where the reader must type them. Comments explain why,
-  never which milestone.
+  (choice persisted in localStorage). Clicking a row or pressing Enter
+  opens the pair's MARKET PAGE full width with the pair list as a left
+  rail: venue quotes and basis, then LOCK SIZING beside basis history and
+  depth (raw books behind a toggle). Esc returns to the board.
+- Sizing (Oct 2026): the bankroll lives in the top bar and in the browser
+  (`tinli-bankroll`), never on the server; it rides along as
+  `?bankroll=` on /v1/lock and /v1/risk. The market page leads with the
+  bankroll fill (contracts, legs at average prices, capital, locked or
+  lost at settlement, which limit bound) or, without a bankroll, the
+  optimal size; a losing lock says so with the break-even shortfall and
+  the depth the books absorb, and is still sized so the cost of being
+  wrong is visible. BOOK adds a `Your p` input per position (kept in the
+  browser, `tinli-est-prob`); with it the half-Kelly fraction and
+  contract count come from the stateless /v1/kelly, so read-only hosted
+  instances size too. The self-reported book + risk engine (and the BYOK
+  account panel) stay in BOOK. The first-run intro is two paragraphs plus
+  keys; Full guide / Help / `?` unfold the complete explainer.
+- Chrome (Oct 2026): panels are one surface with no border — the 1px app
+  background between them is the grid; inside a panel, a caption on a
+  hairline heads each section. Body 12px; captions are the shared `label`
+  utility (10px, 0.06em tracking, no wider tracking anywhere); numbers
+  use `num` (mono, tabular); key numbers 24px. Summary numbers are
+  caption-over-value strips (`Stat`), never bordered tile grids; an empty
+  state is one sentence. Copy says each thing once, in the help overlay.
+  Slugs, file paths and env var names stay out of the UI except where the
+  reader must type them. Comments explain why, never which milestone.
 - Post-redesign visual system: real type hierarchy, bundled **Inter (labels,
   names, prose) + JetBrains Mono (every number and id slug)**, CVD-validated
   up/down colors, depth charts. Don't regress this.

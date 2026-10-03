@@ -6,6 +6,8 @@ import type { DivergenceItem, Market, OrderbookLevel, PairQuote } from './types.
 
 export type {
   AccountPosition,
+  BankrollFill,
+  KellyQuote,
   AccountPositionRisk,
   AccountReport,
   BasisStats,

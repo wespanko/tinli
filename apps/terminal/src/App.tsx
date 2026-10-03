@@ -15,15 +15,15 @@ import type {
 } from './types'
 import { cents } from './format'
 import AccountPanel from './components/AccountPanel'
+import Board from './components/Board'
 import CryptoView from './components/CryptoView'
 import CurateView from './components/CurateView'
 import EdgeAlert, { liveEdges } from './components/EdgeAlert'
 import IntroPanel from './components/IntroPanel'
-import MarketPanel from './components/MarketPanel'
+import MarketPage from './components/MarketPage'
 import Panel from './components/Panel'
-import Skeleton from './components/Skeleton'
 import RiskPanel from './components/RiskPanel'
-import PairList from './components/PairList'
+import Skeleton from './components/Skeleton'
 import { groupRows, sortPairs } from './pairs'
 
 type View = 'terminal' | 'crypto' | 'book' | 'curate'
@@ -31,9 +31,11 @@ const VIEWS: View[] = ['terminal', 'crypto', 'book', 'curate']
 type Intro = 'off' | 'short' | 'full'
 
 const POLL_MS = 3000
+const EDGE_LOCK_POLL_MS = 10_000
 const STREAM_RETRY_MS = 15_000
 const INTRO_KEY = 'tinli-intro-seen'
 const ALERTS_KEY = 'tinli-alerts-on'
+const BANKROLL_KEY = 'tinli-bankroll'
 const SHOW_UNVERIFIED_KEY = 'tinli-show-unverified'
 const SHOW_SETTLED_KEY = 'tinli-show-settled'
 
@@ -41,6 +43,11 @@ function getJson<T>(url: string): Promise<T | null> {
   return fetch(url)
     .then((r) => (r.ok ? (r.json() as Promise<T>) : null))
     .catch(() => null)
+}
+
+export function parseBankroll(text: string): number | null {
+  const n = parseFloat(text.replace(/[^0-9.]/g, ''))
+  return Number.isFinite(n) && n > 0 ? n : null
 }
 
 export default function App() {
@@ -53,13 +60,21 @@ export default function App() {
   const [kalshiBook, setKalshiBook] = useState<Orderbook | null>(null)
   const [pmBook, setPmBook] = useState<Orderbook | null>(null)
   const [lock, setLock] = useState<LockReport | null>(null)
+  const [edgeLocks, setEdgeLocks] = useState<Record<string, LockReport>>({})
   const [history, setHistory] = useState<HistoryPoint[]>([])
   const [historyStats, setHistoryStats] = useState<BasisStats | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
   const [view, setView] = useState<View>('terminal')
   const [intro, setIntro] = useState<Intro>(() =>
     localStorage.getItem(INTRO_KEY) !== '1' ? 'short' : 'off',
   )
+  const [bankrollText, setBankrollText] = useState(() => localStorage.getItem(BANKROLL_KEY) ?? '')
+  const bankroll = useMemo(() => parseBankroll(bankrollText), [bankrollText])
+  const bankrollRef = useRef<number | null>(null)
+  bankrollRef.current = bankroll
+  const bankrollQuery = (first = '?') => (bankroll != null ? `${first}bankroll=${bankroll}` : '')
+
   // the noise groups (unverified, settled) start collapsed; the choice sticks
   const [show, setShow] = useState({
     unverified: localStorage.getItem(SHOW_UNVERIFIED_KEY) === '1',
@@ -68,10 +83,7 @@ export default function App() {
   const toggleGroup = (g: 'unverified' | 'settled') =>
     setShow((prev) => {
       const next = { ...prev, [g]: !prev[g] }
-      localStorage.setItem(
-        g === 'unverified' ? SHOW_UNVERIFIED_KEY : SHOW_SETTLED_KEY,
-        next[g] ? '1' : '0',
-      )
+      localStorage.setItem(g === 'unverified' ? SHOW_UNVERIFIED_KEY : SHOW_SETTLED_KEY, next[g] ? '1' : '0')
       return next
     })
   const [alertsOn, setAlertsOn] = useState(() => localStorage.getItem(ALERTS_KEY) === '1')
@@ -87,7 +99,8 @@ export default function App() {
   // positions.yaml mistake, and the stale report must be labeled as such.
   // Also called directly after a book save so the panel updates immediately.
   const fetchRisk = () => {
-    fetch('/v1/risk')
+    const b = bankrollRef.current
+    fetch(`/v1/risk${b != null ? `?bankroll=${b}` : ''}`)
       .then(async (r) => {
         if (r.ok) {
           setRisk((await r.json()) as RiskReport)
@@ -97,7 +110,7 @@ export default function App() {
           setRiskError(body?.detail ?? `HTTP ${r.status}`)
         }
       })
-      .catch(() => {}) // network-level failure: header already shows API OFFLINE
+      .catch(() => {}) // network-level failure: header already shows API offline
   }
 
   // one 3s heartbeat for everything except the per-pair books. While the
@@ -110,11 +123,7 @@ export default function App() {
       if (!streamOnRef.current) {
         getJson<Pair[]>('/v1/pairs').then((d) => {
           if (!alive || !d || streamOnRef.current) return
-          const sorted = sortPairs(d)
-          setPairs(sorted)
-          // pin the initial selection ONCE — the list re-sorts every poll, and
-          // a pairs[0] fallback would flip the MARKET panel under the reader
-          setSelected((prev) => prev ?? sorted[0]?.event_key ?? null)
+          setPairs(sortPairs(d))
         })
         getJson<DivergenceItem[]>('/v1/divergence').then(
           (d) => alive && d && !streamOnRef.current && setDivergence(d),
@@ -146,9 +155,7 @@ export default function App() {
         if (!alive) return
         const update = JSON.parse(ev.data) as StreamUpdate
         setStreamed(update)
-        const sorted = sortPairs(update.pairs)
-        setPairs(sorted)
-        setSelected((prev) => prev ?? sorted[0]?.event_key ?? null)
+        setPairs(sortPairs(update.pairs))
         setDivergence(update.divergence)
       }
       es.onerror = () => {
@@ -172,20 +179,28 @@ export default function App() {
   }, [health?.mode, health?.stream])
 
   // one ranked list: pairs joined with their lock edges, grouped so the
-  // noise can collapse. '/' filter narrows it; MARKET keeps the active pair
-  // even when the filter or a collapsed group hides it (deliberate: don't
-  // yank the reader)
+  // noise can collapse. '/' filter narrows it; the market page keeps the
+  // active pair even when the filter or a collapsed group hides it
   const groups = useMemo(
     () => groupRows(pairs, divergence, filter, show),
     [pairs, divergence, filter, show],
   )
 
-  const activeKey = selected ?? pairs[0]?.event_key ?? null
+  const activeKey = selected ?? groups.visible[0]?.pair.event_key ?? pairs[0]?.event_key ?? null
   const activePair = pairs.find((p) => p.event_key === activeKey) ?? null
   const activeItem = divergence.find((d) => d.event_key === activeKey) ?? null
+  const edges = liveEdges(divergence)
+  const edgeKeys = edges.map((e) => e.event_key).join(',')
 
-  // terminal-style keys: j/k or arrows drive the list, / filters, 1-4
-  // switch views, ? help, Esc closes/clears. Never while typing.
+  const openPair = (key: string) => {
+    setSelected(key)
+    setOpen(true)
+    setView('terminal')
+  }
+
+  // terminal-style keys: j/k or arrows drive the list, enter opens the
+  // market page, / filters, 1-4 switch views, ? help, esc backs out.
+  // Never while typing.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
@@ -195,6 +210,7 @@ export default function App() {
           t.blur()
           if (t === filterRef.current) setFilter('')
         } else if (intro !== 'off') setIntro('off')
+        else if (open) setOpen(false)
         return
       }
       if (typing) return
@@ -205,6 +221,10 @@ export default function App() {
       }
       if (e.key === '?') {
         setIntro((v) => (v === 'off' ? 'full' : 'off'))
+        return
+      }
+      if (e.key === 'Enter' && view === 'terminal' && activeKey) {
+        setOpen(true)
         return
       }
       const numbered = VIEWS[parseInt(e.key, 10) - 1]
@@ -221,36 +241,57 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [groups, activeKey, intro])
+  }, [groups, activeKey, intro, open, view])
 
-  // books ride the same cadence: `pairs` is replaced every heartbeat, which
-  // re-runs this effect — no second timer needed
+  // books and the lock for the active pair ride the heartbeat: `pairs` is
+  // replaced every tick, which re-runs this effect — no second timer
   useEffect(() => {
     if (!activePair) return
     let alive = true
     if (activePair.kalshi) {
-      getJson<Orderbook>(
-        `/v1/markets/${encodeURIComponent(activePair.kalshi.id)}/orderbook`,
-      ).then((b) => alive && b && setKalshiBook(b))
+      getJson<Orderbook>(`/v1/markets/${encodeURIComponent(activePair.kalshi.id)}/orderbook`).then(
+        (b) => alive && b && setKalshiBook(b),
+      )
     }
     if (activePair.polymarket) {
-      getJson<Orderbook>(
-        `/v1/markets/${encodeURIComponent(activePair.polymarket.id)}/orderbook`,
-      ).then((b) => alive && b && setPmBook(b))
+      getJson<Orderbook>(`/v1/markets/${encodeURIComponent(activePair.polymarket.id)}/orderbook`).then(
+        (b) => alive && b && setPmBook(b),
+      )
     }
-    getJson<LockReport>(`/v1/lock/${encodeURIComponent(activePair.event_key)}`).then(
+    getJson<LockReport>(`/v1/lock/${encodeURIComponent(activePair.event_key)}${bankrollQuery()}`).then(
       (l) => alive && l && setLock(l),
     )
     return () => {
       alive = false
     }
-  }, [pairs, activeKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pairs, activeKey, bankroll]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // the board's edge cards need each live edge's lock, sized: slower cadence
+  useEffect(() => {
+    if (!edgeKeys) {
+      setEdgeLocks({})
+      return
+    }
+    let alive = true
+    const load = () => {
+      for (const key of edgeKeys.split(',')) {
+        getJson<LockReport>(`/v1/lock/${encodeURIComponent(key)}${bankrollQuery()}`).then(
+          (l) => alive && l && setEdgeLocks((prev) => ({ ...prev, [key]: l })),
+        )
+      }
+    }
+    load()
+    const id = setInterval(load, EDGE_LOCK_POLL_MS)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [edgeKeys, bankroll]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // account book (BYOK) moves at fill cadence, not tick cadence: 30s
   useEffect(() => {
     let alive = true
-    const load = () =>
-      getJson<AccountReport>('/v1/account').then((a) => alive && a && setAccount(a))
+    const load = () => getJson<AccountReport>('/v1/account').then((a) => alive && a && setAccount(a))
     load()
     const id = setInterval(load, 30_000)
     return () => {
@@ -259,21 +300,18 @@ export default function App() {
     }
   }, [health?.byok]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // history moves at snapshot cadence, not tick cadence: refetch on selection
-  // change and every 30s, not every 3s heartbeat
+  // history moves at snapshot cadence: refetch on selection change and every 30s
   useEffect(() => {
     if (!activeKey) return
     let alive = true
     setHistory([])
     setHistoryStats(null)
     const load = () =>
-      getJson<HistoryResponse>(`/v1/history/${encodeURIComponent(activeKey)}?hours=24`).then(
-        (h) => {
-          if (!alive || !h || h.event_key !== activeKey) return
-          setHistory(h.points)
-          setHistoryStats(h.stats)
-        },
-      )
+      getJson<HistoryResponse>(`/v1/history/${encodeURIComponent(activeKey)}?hours=24`).then((h) => {
+        if (!alive || !h || h.event_key !== activeKey) return
+        setHistory(h.points)
+        setHistoryStats(h.stats)
+      })
     load()
     const id = setInterval(load, 30_000)
     return () => {
@@ -283,9 +321,7 @@ export default function App() {
   }, [activeKey])
 
   // browser notification when a verified pair's executable edge turns
-  // positive. Alert on ENTER into the positive set only; the banner
-  // persists while the edge lives.
-  const edges = liveEdges(divergence)
+  // positive. Alert on ENTER into the positive set only.
   const prevEdgeKeys = useRef<Set<string>>(new Set())
   useEffect(() => {
     const keys = new Set(edges.map((e) => e.event_key))
@@ -310,6 +346,11 @@ export default function App() {
     setAlertsOn(next)
   }
 
+  const setBankroll = (text: string) => {
+    setBankrollText(text)
+    localStorage.setItem(BANKROLL_KEY, text)
+  }
+
   const closeIntro = () => {
     localStorage.setItem(INTRO_KEY, '1')
     setIntro('off')
@@ -318,11 +359,7 @@ export default function App() {
   const status = (() => {
     if (health === null) return <span className="label text-down">API offline</span>
     if (health.mode === 'demo') {
-      return (
-        <span className="label border border-gold text-gold px-2 py-0.5 rounded-sm">
-          Simulated data
-        </span>
-      )
+      return <span className="label border border-gold text-gold px-2 py-0.5 rounded-sm">Simulated data</span>
     }
     const stale = Object.entries(streamed?.venues ?? {}).filter(([, v]) => v.state !== 'live')
     if (streamOn && stale.length > 0) {
@@ -334,32 +371,45 @@ export default function App() {
       )
     }
     return (
-      <span
-        className="label text-up"
-        title={streamOn ? 'pushed on change: Polymarket websocket, Kalshi fast-poll' : 'polling every 3s'}
-      >
+      <span className="label text-up" title={streamOn ? 'pushed on change' : 'polling every 3s'}>
         ● Live{streamOn ? '' : ' · poll'}
       </span>
     )
   })()
 
   return (
-    <div className="h-screen flex flex-col gap-1 p-1">
+    <div className="h-screen flex flex-col gap-px p-px">
       {intro !== 'off' && <IntroPanel onClose={closeIntro} full={intro === 'full'} />}
-      <header className="flex items-center gap-3 border border-line bg-panel rounded-sm px-3 h-9 shrink-0">
+      <header className="flex items-center gap-3 panel flex-row px-3 h-10 shrink-0">
         <span className="font-mono text-gold font-bold tracking-[0.2em] text-[14px]">TINLI</span>
         <span className="text-muted text-[11px]">Kalshi · Polymarket</span>
         <nav className="ml-3 flex border border-line rounded-sm overflow-hidden">
           {VIEWS.map((v) => (
             <button
               key={v}
-              onClick={() => setView(v)}
+              onClick={() => {
+                setView(v)
+                if (v === 'terminal') setOpen(false)
+              }}
               className={`label px-2.5 py-1 ${view === v ? 'bg-primary text-text' : 'hover:text-hover'}`}
             >
               {v}
             </button>
           ))}
         </nav>
+        <label
+          className="ml-3 flex items-center gap-1 field w-36 h-6 text-[11px]"
+          title="capital available for a lock; sizes every edge and the Kelly columns. Stays in this browser."
+        >
+          <span className="text-muted">$</span>
+          <input
+            value={bankrollText}
+            onChange={(e) => setBankroll(e.target.value)}
+            placeholder="bankroll"
+            inputMode="decimal"
+            className="bg-transparent outline-none w-full num placeholder:text-dim"
+          />
+        </label>
         <button
           onClick={toggleAlerts}
           title="browser notification when a verified pair turns positive"
@@ -377,11 +427,11 @@ export default function App() {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="/ filter"
-          className="field ml-3 w-28 text-[11px] placeholder:text-muted"
+          className="field ml-3 w-28 h-6 text-[11px] placeholder:text-dim"
         />
         <span className="ml-auto">{status}</span>
       </header>
-      <EdgeAlert edges={edges} onSelect={setSelected} />
+      {view !== 'terminal' && <EdgeAlert edges={edges} onSelect={openPair} />}
       {view === 'curate' ? (
         <CurateView
           pairs={pairs}
@@ -391,13 +441,14 @@ export default function App() {
       ) : view === 'crypto' ? (
         <CryptoView />
       ) : view === 'book' ? (
-        <main className="flex-1 flex gap-1 min-h-0">
-          <Panel title="Book" extra="self-reported positions">
+        <main className="flex-1 flex gap-px min-h-0">
+          <Panel title="Book" extra="self-reported positions, marked live">
             <RiskPanel
               report={risk}
               error={riskError}
               pairs={pairs}
               readonly={health?.readonly ?? false}
+              bankroll={bankroll}
               onSaved={fetchRisk}
             />
           </Panel>
@@ -407,41 +458,39 @@ export default function App() {
             </Panel>
           )}
         </main>
-      ) : (
-        <main className="flex-1 grid grid-cols-[minmax(360px,34rem)_minmax(420px,1fr)] gap-1 min-h-0">
-          <Panel
-            title="Pairs"
-            extra={
-              filter
-                ? `${groups.visible.length} match`
-                : `${groups.verified.length} verified · edges after fees, at size`
-            }
-          >
-            {pairs.length === 0 || divergence.length === 0 ? (
-              <Skeleton rows={8} />
-            ) : (
-              <PairList
-                groups={groups}
-                selected={activeKey}
-                onToggle={toggleGroup}
-                onSelect={setSelected}
-              />
-            )}
-          </Panel>
-          <Panel title="Market">
-            <MarketPanel
-              pair={activePair}
-              item={activeItem}
-              history={history}
-              historyStats={historyStats}
-              kalshiBook={kalshiBook}
-              pmBook={pmBook}
-              lock={lock}
-            />
-          </Panel>
+      ) : pairs.length === 0 || divergence.length === 0 ? (
+        <main className="flex-1 panel">
+          <Skeleton rows={10} />
         </main>
+      ) : open && activePair ? (
+        <MarketPage
+          pair={activePair}
+          item={activeItem}
+          lock={lock}
+          history={history}
+          historyStats={historyStats}
+          kalshiBook={kalshiBook}
+          pmBook={pmBook}
+          bankroll={bankroll}
+          groups={groups}
+          selected={activeKey}
+          onSelect={setSelected}
+          onToggle={toggleGroup}
+          onClose={() => setOpen(false)}
+        />
+      ) : (
+        <Board
+          groups={groups}
+          edges={edges}
+          locks={edgeLocks}
+          bankroll={bankroll}
+          selected={activeKey}
+          filter={filter}
+          onOpen={openPair}
+          onToggle={toggleGroup}
+        />
       )}
-      <footer className="flex items-center border border-line bg-panel rounded-sm px-3 h-7 shrink-0 text-[10px] text-muted">
+      <footer className="flex items-center panel flex-row px-3 h-7 shrink-0 text-[10px] text-muted">
         <span>Public market data, read-only. Quotes may be delayed. Not investment advice.</span>
         <button onClick={() => setIntro('full')} className="label ml-auto hover:text-hover">
           Help

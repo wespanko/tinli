@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
-/* Design tokens — the only place colors are defined. Gold is for CTAs and
-   key numbers only. Radius ≤ 4px, 1px borders, no shadows. up/down are
-   direction semantics (bids/asks, signed P&L): text and thin washes, never
-   large fills. */
+/* Design tokens — the only place colors are defined. Gold is for edges,
+   the bankroll-sized profit, and warnings. up/down are direction semantics
+   (bids/asks, signed P&L): text and thin washes, never large fills. */
 @theme {
-  --color-bg: #0a1524;
-  --color-panel: #0f1e33;
-  --color-panel-2: #132540;
-  --color-line: #1e3a5c;
+  --color-bg: #081222;
+  --color-panel: #0d1a2e;
+  --color-panel-2: #122238;
+  --color-line: #1b3252;
   --color-primary: #2774ae;
   --color-hover: #8bb8e8;
   --color-gold: #ffd100;
   --color-text: #e6edf5;
-  --color-muted: #8fa3b8;
+  --color-muted: #8a9db3;
+  --color-dim: #5d6f85;
   --color-up: #2ebd85;
   --color-down: #e5484d;
 
@@ -31,34 +31,41 @@
   }
   body {
     @apply bg-bg text-text;
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.4;
   }
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-line) transparent;
   }
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  }
 }
 
-/* Shared pieces. `label` is the small-caps caption used for panel titles,
+/* Shared pieces. `label` is the small-caps caption used for section titles,
    column headers and stat captions; `btn` is the quiet bordered button and
-   `btn-gold` the one call to action on a screen. */
+   `btn-gold` the one call to action on a screen. `num` is the mono setting
+   every number uses in a table. */
 @utility label {
   @apply font-sans text-[10px] font-medium uppercase text-muted;
   letter-spacing: 0.06em;
 }
 @utility th {
-  @apply font-sans text-[10px] font-medium uppercase text-muted py-1.5;
+  @apply font-sans text-[10px] font-medium uppercase text-muted py-1.5 whitespace-nowrap;
   letter-spacing: 0.06em;
 }
+@utility num {
+  @apply font-mono tabular-nums;
+}
 @utility btn {
-  @apply font-sans text-[10px] font-medium uppercase text-muted border border-line rounded-sm px-2 py-0.5;
+  @apply font-sans text-[10px] font-medium uppercase text-muted border border-line rounded-sm px-2 py-0.5 whitespace-nowrap;
   letter-spacing: 0.06em;
-  &:hover { color: var(--color-hover); }
+  &:hover { color: var(--color-hover); border-color: var(--color-hover); }
   &:disabled { opacity: 0.5; }
 }
 @utility btn-gold {
-  @apply font-sans text-[10px] font-medium uppercase text-gold border border-gold rounded-sm px-2.5 py-0.5;
+  @apply font-sans text-[10px] font-medium uppercase text-gold border border-gold rounded-sm px-2.5 py-0.5 whitespace-nowrap;
   letter-spacing: 0.06em;
   &:hover { background-color: color-mix(in oklab, var(--color-gold) 10%, transparent); }
   &:disabled { opacity: 0.5; }
@@ -66,4 +73,12 @@
 @utility field {
   @apply bg-bg border border-line rounded-sm px-1.5 py-0.5 font-mono text-[12px] text-text outline-none;
   &:focus { border-color: var(--color-primary); }
+}
+/* a panel: one surface, no border; the 1px app background between panels is the grid */
+@utility panel {
+  @apply bg-panel rounded-sm min-h-0 flex flex-col;
+}
+/* a section header inside a panel: caption on a hairline */
+@utility section-head {
+  @apply flex items-center gap-3 h-8 px-3 border-b border-line shrink-0;
 }

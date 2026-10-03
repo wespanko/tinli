@@ -33,12 +33,14 @@ export default function IntroPanel({
         </p>
         <p className="mt-2">
           Most gaps disappear once fees are counted. A <span className="text-gold">gold edge</span>{' '}
-          is a real one. Pairs whose resolution rules have not been compared stay collapsed under
-          Unverified, because a gap between two different contracts is not an edge.
+          is a real one. Enter a bankroll in the top bar and every edge is sized for it: contracts
+          per leg, capital, and what settles. Pairs whose resolution rules have not been compared
+          stay collapsed under Unverified, because a gap between two different contracts is not an
+          edge.
         </p>
 
         <p className="font-mono text-[12px] text-muted mt-3">
-          j k move · / filter · 1-4 views · ? help · esc close
+          j k move · enter opens a pair · esc back · / filter · 1-4 views · ? help
         </p>
 
         {expanded && (
@@ -47,9 +49,21 @@ export default function IntroPanel({
             <p>
               Each pair is priced three ways: raw basis (Kalshi mid minus Polymarket mid), edge
               per contract after fees, and edge at executable size with each venue's fee
-              rounding. Edges round down, never up. The market panel walks both books for the
-              full lock curve and quotes legging risk and carry beside it. Alerts, in the top
-              bar, sends a browser notification when a verified pair turns positive.
+              rounding. Edges round down, never up. A pair's page walks both books for the full
+              lock curve and quotes legging risk and carry beside it. Alerts, in the top bar,
+              sends a browser notification when a verified pair turns positive.
+            </p>
+
+            <div className={h}>Sizing</div>
+            <p>
+              With a bankroll set, the lock is sized as the largest whole-contract position whose
+              capital, both legs plus all fees, fits, and never past the size where the next
+              contract loses money. The page says which limit bound: your bankroll, the books, or
+              the edge. When a pair is not a lock at the current asks it says so, with the amount
+              the gap has to close before one exists and the depth the books would absorb. In
+              Book, type your own YES probability next to a position and the half-Kelly fraction
+              and contract count appear, sized against the mark. The bankroll and your estimates
+              stay in this browser.
             </p>
 
             <div className={h}>Unverified</div>

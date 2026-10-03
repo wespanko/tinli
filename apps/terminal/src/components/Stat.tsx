@@ -6,22 +6,22 @@ export default function Stat({
   label,
   value,
   sub,
-  big = false,
+  size = 'md',
   className = '',
 }: {
   label: string
   value: ReactNode
   sub?: ReactNode
-  big?: boolean
+  size?: 'sm' | 'md' | 'lg'
   className?: string
 }) {
+  const v =
+    size === 'lg' ? 'text-[24px] leading-7' : size === 'sm' ? 'text-[13px] leading-5' : 'text-[16px] leading-6'
   return (
     <div className={`min-w-0 ${className}`}>
       <div className="label">{label}</div>
-      <div className={`font-mono text-text ${big ? 'text-[22px] leading-7' : 'text-[15px] leading-6'}`}>
-        {value}
-      </div>
-      {sub && <div className="font-mono text-[10px] text-muted leading-4">{sub}</div>}
+      <div className={`num text-text ${v}`}>{value}</div>
+      {sub && <div className="num text-[10px] text-muted leading-4 whitespace-nowrap">{sub}</div>}
     </div>
   )
 }

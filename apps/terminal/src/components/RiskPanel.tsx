@@ -1,8 +1,10 @@
-import { useState } from 'react'
-import type { Pair, Position, RiskReport } from '../types'
-import { cents, pct, qty, signedUsd, usd } from '../format'
+import { useEffect, useState } from 'react'
+import type { KellyQuote, Pair, Position, PositionRisk, RiskReport } from '../types'
+import { cents, money, pct, qty, signedUsd, usd } from '../format'
 import Signed from './Signed'
 import Stat from './Stat'
+
+const EST_KEY = 'tinli-est-prob'
 
 type Draft = {
   market_id: string
@@ -24,23 +26,111 @@ function toDraft(p: Position): Draft {
   }
 }
 
+function loadEstimates(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(EST_KEY) ?? '{}') as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
+/** Kelly for one row: the user's YES probability (from the positions file,
+    or typed here and kept in this browser) against the current mark. The
+    math runs server-side through /v1/kelly so read-only instances size too. */
+function KellyCells({
+  row,
+  estimate,
+  bankroll,
+  onEstimate,
+}: {
+  row: PositionRisk
+  estimate: string
+  bankroll: number | null
+  onEstimate: (v: string) => void
+}) {
+  const [quote, setQuote] = useState<KellyQuote | null>(null)
+  const p = parseFloat(estimate)
+  const valid = Number.isFinite(p) && p >= 0 && p <= 1 && row.mark != null
+  useEffect(() => {
+    if (!valid) {
+      setQuote(null)
+      return
+    }
+    let alive = true
+    const id = setTimeout(() => {
+      const params = new URLSearchParams({
+        price: row.mark!,
+        est_prob: String(p),
+        bankroll: String(bankroll ?? 1),
+        side: row.position.side,
+      })
+      fetch(`/v1/kelly?${params}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((q) => alive && setQuote(q))
+        .catch(() => {})
+    }, 250)
+    return () => {
+      alive = false
+      clearTimeout(id)
+    }
+  }, [valid, p, row.mark, row.position.side, bankroll])
+  return (
+    <>
+      <td className="px-1 w-16">
+        <input
+          className="field w-full h-6 text-right"
+          value={estimate}
+          placeholder="p"
+          inputMode="decimal"
+          title="your own YES probability, 0-1; kept in this browser"
+          onChange={(e) => onEstimate(e.target.value)}
+        />
+      </td>
+      <td className="num text-right px-2 text-muted">
+        {quote?.kelly_half != null ? pct(quote.kelly_half) : '—'}
+      </td>
+      <td className={`num text-right pl-2 ${quote?.contracts_half ? 'text-text' : 'text-muted'}`}>
+        {bankroll == null ? (
+          <span title="enter a bankroll in the top bar">—</span>
+        ) : quote?.contracts_half != null ? (
+          <span title={`${money(quote.stake_half)} at half Kelly · ${quote.contracts_full} at full`}>
+            {qty(quote.contracts_half)}
+          </span>
+        ) : (
+          '—'
+        )}
+      </td>
+    </>
+  )
+}
+
 export default function RiskPanel({
   report,
   error,
   pairs,
   readonly,
+  bankroll,
   onSaved,
 }: {
   report: RiskReport | null
   error: string | null
   pairs: Pair[]
   readonly: boolean
+  bankroll: number | null
   onSaved: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<Draft[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [estimates, setEstimates] = useState<Record<string, string>>(loadEstimates)
+  const setEstimate = (marketId: string, v: string) =>
+    setEstimates((prev) => {
+      const next = { ...prev, [marketId]: v }
+      if (v.trim() === '') delete next[marketId]
+      localStorage.setItem(EST_KEY, JSON.stringify(next))
+      return next
+    })
 
   if (!report && !error) return <div className="p-3 text-muted text-[12px]">loading…</div>
   if (!report) return <div className="p-3 text-gold text-[12px]">{error}</div>
@@ -87,9 +177,7 @@ export default function RiskPanel({
       })
       if (!resp.ok) {
         const body = await resp.json().catch(() => null)
-        setSaveError(
-          typeof body?.detail === 'string' ? body.detail : JSON.stringify(body?.detail ?? resp.status),
-        )
+        setSaveError(typeof body?.detail === 'string' ? body.detail : JSON.stringify(body?.detail ?? resp.status))
       } else {
         setEditing(false)
         onSaved()
@@ -102,7 +190,7 @@ export default function RiskPanel({
   }
 
   return (
-    <div className="p-3 flex flex-col gap-4 text-[13px]">
+    <div className="p-4 flex flex-col gap-5 text-[12px]">
       {error && (
         <div className="border border-gold text-gold text-[11px] rounded-sm px-2 py-1.5">
           {error}
@@ -110,17 +198,18 @@ export default function RiskPanel({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-x-10 gap-y-3">
-        <Stat label="VaR 95 · Monte Carlo" value={<span className="text-gold">{usd(r.var_95_monte_carlo)}</span>} big />
+      <div className="flex flex-wrap gap-x-10 gap-y-3 items-end">
+        <Stat label="VaR 95 · Monte Carlo" value={<span className="text-gold">{usd(r.var_95_monte_carlo)}</span>} size="lg" />
         <Stat
           label="Unrealized P&L"
           value={<Signed value={r.total_unrealized_pnl} text={signedUsd(r.total_unrealized_pnl)} />}
-          big
+          size="lg"
         />
         <Stat label="VaR 95 · parametric" value={usd(r.var_95_parametric)} />
         <Stat label="Max loss" value={usd(r.max_loss)} />
         <Stat label="Market value" value={usd(r.total_market_value)} />
         <Stat label="Cost basis" value={usd(r.total_cost_basis)} />
+        {bankroll != null && <Stat label="Bankroll" value={money(bankroll, 0)} sub="sizes the Kelly column" />}
       </div>
 
       {r.unmarked_positions > 0 && !editing && (
@@ -130,27 +219,33 @@ export default function RiskPanel({
       )}
 
       {!editing ? (
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(280px,24rem)] gap-8 items-start">
+        <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_minmax(280px,26rem)] gap-8 items-start">
           <div>
-            <table className="w-full font-mono">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-line">
                   <th className="th text-left">Position</th>
                   <th className="th text-left px-1">Side</th>
-                  <th className="th text-right px-1">Qty</th>
-                  <th className="th text-right px-1">Entry</th>
-                  <th className="th text-right px-1">Mark</th>
-                  <th className="th text-right px-1">P&L</th>
-                  <th className="th text-right pl-1" title="half-Kelly fraction of bankroll, from your est_prob">
+                  <th className="th text-right px-2">Qty</th>
+                  <th className="th text-right px-2">Entry</th>
+                  <th className="th text-right px-2">Mark</th>
+                  <th className="th text-right px-2">P&L</th>
+                  <th className="th text-right px-1" title="your own YES probability; Kelly is zero edge against the market's own price">
+                    Your p
+                  </th>
+                  <th className="th text-right px-2" title="half-Kelly fraction of bankroll at the current mark">
                     K½
+                  </th>
+                  <th className="th text-right pl-2" title="contracts half Kelly buys with your bankroll">
+                    K½ size
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {r.positions.map((row, i) => (
-                  <tr key={i} className="border-b border-line/30">
+                  <tr key={i} className="border-b border-line/40 h-8">
                     <td
-                      className={`font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-56 ${
+                      className={`font-sans py-1 pr-2 whitespace-nowrap overflow-hidden text-ellipsis max-w-64 ${
                         row.mark == null ? 'text-muted' : 'text-text'
                       }`}
                       title={row.mark == null ? 'not in the market feed' : undefined}
@@ -158,57 +253,55 @@ export default function RiskPanel({
                       {eventName(row.event_id) ?? row.position.market_id}
                     </td>
                     <td className="px-1 uppercase text-[11px] text-muted">{row.position.side}</td>
-                    <td className="text-right px-1 tabular-nums text-text">
-                      {qty(row.position.contracts)}
-                    </td>
-                    <td className="text-right px-1 tabular-nums text-muted">
-                      {cents(row.position.entry_price)}
-                    </td>
-                    <td className="text-right px-1 tabular-nums text-text">{cents(row.mark)}</td>
-                    <td className="text-right px-1">
+                    <td className="num text-right px-2 text-text">{qty(row.position.contracts)}</td>
+                    <td className="num text-right px-2 text-muted">{cents(row.position.entry_price)}</td>
+                    <td className="num text-right px-2 text-text">{cents(row.mark)}</td>
+                    <td className="text-right px-2">
                       <Signed value={row.unrealized_pnl} text={signedUsd(row.unrealized_pnl)} />
                     </td>
-                    <td className="text-right pl-1 tabular-nums text-muted">{pct(row.kelly_half)}</td>
+                    <KellyCells
+                      row={row}
+                      estimate={estimates[row.position.market_id] ?? row.position.est_prob ?? ''}
+                      bankroll={bankroll}
+                      onEstimate={(v) => setEstimate(row.position.market_id, v)}
+                    />
                   </tr>
                 ))}
               </tbody>
             </table>
-            {!readonly && (
-              <button onClick={startEdit} className="btn mt-3">
-                Edit book
-              </button>
-            )}
+            <div className="flex items-center gap-3 mt-3">
+              {!readonly && (
+                <button onClick={startEdit} className="btn">
+                  Edit book
+                </button>
+              )}
+              <span className="text-[10px] text-dim">
+                Your p stays in this browser. Kelly is sized against the mark, before spread and fees.
+              </span>
+            </div>
           </div>
 
           {r.by_event.length > 0 && (
-            <table className="w-full font-mono">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-line">
                   <th className="th text-left">Exposure by event</th>
-                  <th className="th text-right px-1" title="yes minus no contracts">
-                    Net
-                  </th>
-                  <th className="th text-right px-1" title="P&L if the event resolves YES">
-                    If yes
-                  </th>
-                  <th className="th text-right pl-1" title="P&L if the event resolves NO">
-                    If no
-                  </th>
+                  <th className="th text-right px-2" title="yes minus no contracts">Net</th>
+                  <th className="th text-right px-2" title="P&L if the event resolves YES">If yes</th>
+                  <th className="th text-right pl-2" title="P&L if the event resolves NO">If no</th>
                 </tr>
               </thead>
               <tbody>
                 {r.by_event.map((e) => (
-                  <tr key={e.event_id} className="border-b border-line/30">
-                    <td className="font-sans py-1.5 pr-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-48 text-text">
+                  <tr key={e.event_id} className="border-b border-line/40 h-8">
+                    <td className="font-sans py-1 pr-2 whitespace-nowrap overflow-hidden text-ellipsis max-w-48 text-text">
                       {eventName(e.event_id)}
                     </td>
-                    <td className="text-right px-1 tabular-nums text-text">
-                      {qty(e.net_yes_contracts)}
-                    </td>
-                    <td className="text-right px-1">
+                    <td className="num text-right px-2 text-text">{qty(e.net_yes_contracts)}</td>
+                    <td className="text-right px-2">
                       <Signed value={e.delta_if_yes} text={signedUsd(e.delta_if_yes)} />
                     </td>
-                    <td className="text-right pl-1">
+                    <td className="text-right pl-2">
                       <Signed value={e.delta_if_no} text={signedUsd(e.delta_if_no)} />
                     </td>
                   </tr>
@@ -220,37 +313,25 @@ export default function RiskPanel({
       ) : (
         <div className="flex flex-col gap-2 max-w-3xl">
           {saveError && (
-            <div className="border border-gold text-gold text-[11px] rounded-sm px-2 py-1.5">
-              {saveError}
-            </div>
+            <div className="border border-gold text-gold text-[11px] rounded-sm px-2 py-1.5">{saveError}</div>
           )}
-          <table className="w-full font-mono">
+          <table className="w-full">
             <thead>
               <tr className="border-b border-line">
                 <th className="th text-left">Market</th>
                 <th className="th text-left px-1">Side</th>
                 <th className="th text-right px-1">Qty</th>
-                <th className="th text-right px-1" title="dollars 0-1, e.g. 0.55">
-                  Entry $
-                </th>
-                <th className="th text-right px-1" title="your YES probability estimate, optional">
-                  Est p
-                </th>
+                <th className="th text-right px-1" title="dollars 0-1, e.g. 0.55">Entry $</th>
+                <th className="th text-right px-1" title="your YES probability estimate, optional">Est p</th>
                 <th className="th"></th>
               </tr>
             </thead>
             <tbody>
               {draft.map((d, i) => (
-                <tr key={i} className="border-b border-line/30">
+                <tr key={i} className="border-b border-line/40">
                   <td className="py-1 pr-1 max-w-44">
-                    <select
-                      className="field w-full"
-                      value={d.market_id}
-                      onChange={(e) => set(i, 'market_id', e.target.value)}
-                    >
-                      {!marketOptions.some((o) => o.id === d.market_id) && (
-                        <option value={d.market_id}>{d.market_id}</option>
-                      )}
+                    <select className="field w-full" value={d.market_id} onChange={(e) => set(i, 'market_id', e.target.value)}>
+                      {!marketOptions.some((o) => o.id === d.market_id) && <option value={d.market_id}>{d.market_id}</option>}
                       {marketOptions.map((o) => (
                         <option key={o.id} value={o.id}>
                           {o.label}
@@ -259,36 +340,19 @@ export default function RiskPanel({
                     </select>
                   </td>
                   <td className="px-1 w-20">
-                    <select
-                      className="field w-full"
-                      value={d.side}
-                      onChange={(e) => set(i, 'side', e.target.value)}
-                    >
+                    <select className="field w-full" value={d.side} onChange={(e) => set(i, 'side', e.target.value)}>
                       <option value="yes">YES</option>
                       <option value="no">NO</option>
                     </select>
                   </td>
                   <td className="px-1 w-20">
-                    <input
-                      className="field w-full text-right"
-                      value={d.contracts}
-                      onChange={(e) => set(i, 'contracts', e.target.value)}
-                    />
+                    <input className="field w-full text-right" value={d.contracts} onChange={(e) => set(i, 'contracts', e.target.value)} />
                   </td>
                   <td className="px-1 w-20">
-                    <input
-                      className="field w-full text-right"
-                      value={d.entry_price}
-                      onChange={(e) => set(i, 'entry_price', e.target.value)}
-                    />
+                    <input className="field w-full text-right" value={d.entry_price} onChange={(e) => set(i, 'entry_price', e.target.value)} />
                   </td>
                   <td className="px-1 w-20">
-                    <input
-                      className="field w-full text-right"
-                      placeholder="—"
-                      value={d.est_prob}
-                      onChange={(e) => set(i, 'est_prob', e.target.value)}
-                    />
+                    <input className="field w-full text-right" placeholder="—" value={d.est_prob} onChange={(e) => set(i, 'est_prob', e.target.value)} />
                   </td>
                   <td className="pl-1 w-8 text-right">
                     <button
@@ -308,14 +372,7 @@ export default function RiskPanel({
               onClick={() =>
                 setDraft((rows) => [
                   ...rows,
-                  {
-                    market_id: marketOptions[0]?.id ?? '',
-                    side: 'yes',
-                    contracts: '100',
-                    entry_price: '0.50',
-                    est_prob: '',
-                    notes: '',
-                  },
+                  { market_id: marketOptions[0]?.id ?? '', side: 'yes', contracts: '100', entry_price: '0.50', est_prob: '', notes: '' },
                 ])
               }
               className="btn"
@@ -328,7 +385,7 @@ export default function RiskPanel({
             <button onClick={() => setEditing(false)} className="btn">
               Cancel
             </button>
-            <span className="text-muted text-[10px] ml-2">writes your positions file</span>
+            <span className="text-dim text-[10px] ml-2">writes your positions file</span>
           </div>
         </div>
       )}

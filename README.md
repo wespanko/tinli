@@ -44,14 +44,17 @@ research layer, in-app pair curation with keyboard navigation, and a
 precise arb model (carry-adjusted edges, whole-contract sizing, legging
 risk). Read-only public market data — no order placement, ever.
 
-The terminal is two panes: one ranked pair list (each pair joined with
-its fee-adjusted lock edge at executable size; unverified and settled
-pairs collapsed under dividers) and the selected pair's market — venue
-quotes, basis history, the depth-walked lock curve with carry and legging
-risk, and depth curves plus raw ladders behind a DEPTH toggle. The
-self-reported book and risk engine live in a BOOK tab. Streamed live
-(Polymarket websocket + Kalshi fast-poll) with a 3s-polling fallback,
-demo badge when on fixtures.
+The terminal opens on a board: live edges on top, each sized for the
+bankroll you enter (contracts per leg, capital, what settles), over one
+dense grid of every pair with both venues' quotes, basis, edge per
+contract and at size, depth, days and excess return. Opening a pair gives
+the market page: quotes, the lock sized for your bankroll (or the
+profit-maximizing size without one), the depth-walked edge curve with
+legging risk and carry, basis history and depth. A losing lock says how
+far the gap has to close before one exists. The BOOK view marks a
+self-reported book and sizes half-Kelly contract counts from your own
+probability estimates. Streamed live (Polymarket websocket + Kalshi
+fast-poll) with a 3s-polling fallback, demo badge when on fixtures.
 
 The CRYPTO view prices every Kalshi BTC/ETH above/below strike
 against the Deribit option chain: a model fair value off the mark-IV
