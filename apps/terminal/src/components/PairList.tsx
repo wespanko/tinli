@@ -1,5 +1,5 @@
 import type { Groups, Row } from '../pairs'
-import { basisCents, kalshiMid } from '../pairs'
+import { basisCents, kalshiMid, positiveEdge } from '../pairs'
 import { cents, pct, qty } from '../format'
 import Signed from './Signed'
 
@@ -57,7 +57,7 @@ function PairRow({
   const k = kMid == null ? null : kMid * 100 // dollars → cents, like PM below
   const pm = p.polymarket ? parseFloat(p.polymarket.yes_price) * 100 : null
   const edge = item?.edge_at_size == null ? null : parseFloat(item.edge_at_size)
-  const executable = p.criteria_verified && edge != null && edge > 0
+  const executable = p.criteria_verified && positiveEdge(item?.edge_at_size)
   const xs = item?.annualized_excess_return
   return (
     <tr

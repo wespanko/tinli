@@ -25,6 +25,14 @@ export function sortPairs(data: Pair[]): Pair[] {
   })
 }
 
+/** Smallest edge (dollars per contract) that still shows as non-zero at
+    two decimal cents. Anything below it is not quoted as positive. */
+export const MIN_EDGE = 0.00005
+
+export function positiveEdge(edge: string | null | undefined): boolean {
+  return edge != null && parseFloat(edge) >= MIN_EDGE
+}
+
 export type Row = { pair: Pair; item: DivergenceItem | null }
 
 export type Groups = {

@@ -1,13 +1,12 @@
 import type { DivergenceItem } from '../types'
 import { cents, qty } from '../format'
+import { positiveEdge } from '../pairs'
 
 /** Banner shown while any verified pair has a positive fee-adjusted edge at
     executable size. Clicking an entry loads the pair. */
 
 export function liveEdges(items: DivergenceItem[]): DivergenceItem[] {
-  return items.filter(
-    (d) => d.criteria_verified && d.edge_at_size != null && parseFloat(d.edge_at_size) > 0,
-  )
+  return items.filter((d) => d.criteria_verified && positiveEdge(d.edge_at_size))
 }
 
 export default function EdgeAlert({

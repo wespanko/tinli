@@ -4,7 +4,7 @@ Trading terminal for prediction markets. One screen across Kalshi and
 Polymarket: unified market data, a fee-aware divergence screener, and a
 portfolio risk engine (exposure, VaR, Kelly sizing).
 
-Site: [tinli.dev](https://tinli.dev)
+Site: [tinli.dev](https://tinli.dev) · Live terminal: [tinli.fly.dev](https://tinli.fly.dev) (read-only, public market data)
 
 ## Research: is the cross-venue arb real?
 
