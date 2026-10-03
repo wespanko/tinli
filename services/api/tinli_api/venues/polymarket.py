@@ -17,7 +17,7 @@ from decimal import Decimal
 
 from tinli_schema import Market, Orderbook, OrderbookLevel
 
-from tinli_api.venues.client import get_json
+from tinli_api.venues.client import VenueHTTPError, get_json
 
 GAMMA = "https://gamma-api.polymarket.com"
 CLOB = "https://clob.polymarket.com"
@@ -119,7 +119,14 @@ def get_gamma_markets(condition_ids: list[str]) -> dict[str, dict]:
 
 
 def get_orderbook(condition_id: str, token_id: str) -> Orderbook:
-    raw = get_json(f"{CLOB}/book", params={"token_id": token_id})
+    try:
+        raw = get_json(f"{CLOB}/book", params={"token_id": token_id})
+    except VenueHTTPError as exc:
+        # the CLOB drops a market's book once it settles; an empty book is
+        # the truthful answer, not an outage
+        if exc.status == 404:
+            return parse_book(condition_id, {}, datetime.now(UTC))
+        raise
     return parse_book(condition_id, raw, datetime.now(UTC))
 
 

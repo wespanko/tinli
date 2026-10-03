@@ -19,7 +19,11 @@ _client: httpx.Client | None = None
 
 
 class VenueHTTPError(Exception):
-    """A venue request failed after all retries."""
+    """A venue request failed after all retries, or answered with a 4xx."""
+
+    def __init__(self, message: str, status: int | None = None):
+        super().__init__(message)
+        self.status = status
 
 
 def _get_client() -> httpx.Client:
@@ -46,9 +50,11 @@ def get_json(url: str, params: dict | None = None, headers=None):
             extra = headers() if callable(headers) else headers
             resp = _get_client().get(url, params=params, headers=extra)
             if resp.status_code == 429 or resp.status_code >= 500:
-                last_error = VenueHTTPError(f"HTTP {resp.status_code} from {url}")
+                last_error = VenueHTTPError(f"HTTP {resp.status_code} from {url}", resp.status_code)
+            elif resp.status_code >= 400:
+                # a definitive answer — retrying will not change it
+                raise VenueHTTPError(f"HTTP {resp.status_code} from {url}", resp.status_code)
             else:
-                resp.raise_for_status()
                 return resp.json()
         except httpx.TransportError as exc:
             last_error = exc

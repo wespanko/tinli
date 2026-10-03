@@ -99,3 +99,17 @@ def test_gamma_single_falls_back_to_closed_then_raises(monkeypatch):
 
     with _pytest.raises(LookupError):
         polymarket.get_gamma_market("0xdead")
+
+
+def test_settled_book_404_is_an_empty_book(monkeypatch):
+    # the CLOB drops a market's book after settlement; the lock endpoint used
+    # to 500 on it — an empty book is the truthful answer
+    from tinli_api.venues.client import VenueHTTPError
+
+    def fake_get_json(url, params=None):
+        raise VenueHTTPError("HTTP 404", 404)
+
+    monkeypatch.setattr(polymarket, "get_json", fake_get_json)
+    book = polymarket.get_orderbook(CID, "123")
+    assert book.bids == [] and book.asks == []
+    assert book.market_id == f"polymarket:{CID}"
