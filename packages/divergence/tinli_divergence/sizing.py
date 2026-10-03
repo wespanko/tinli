@@ -1,4 +1,4 @@
-"""Depth-walked lock sizing: the edge-vs-size curve.
+"""Depth-walked lock sizing: the edge-vs-size curve, and the size a bankroll buys.
 
 The screener's edge_at_size uses TOP-of-book only. This module walks the
 FULL books: leg by leg, segment by segment, it consumes YES-ask levels on
@@ -16,11 +16,15 @@ Conservatism, as everywhere in Tinli:
   continues past it (capped) so the UI can show the decay honestly.
 - Direction is fixed at top-of-book (same rule as the screener) — a
   direction that flips at depth is not modeled.
+- A bankroll buys the largest whole-contract lock whose capital (both legs
+  plus all fees) fits, never more than the profit-maximizing size when one
+  exists: contracts past the optimum lose money and are not sized.
 
 All Decimal. The curve is per-pair, computed on demand from live books.
 """
 
 from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -46,6 +50,19 @@ class SizePoint(BaseModel):
     capital: Decimal = Field(description="cost of both legs plus all fees at this size")
 
 
+Binding = Literal["bankroll", "depth", "edge"]
+
+
+class BankrollFill(SizePoint):
+    """The lock a given bankroll buys, priced as its own execution."""
+
+    bankroll: Decimal
+    binding: Binding = Field(
+        description="what stopped the size: the bankroll ran out, the books "
+        "ran out, or the next contract would lose money"
+    )
+
+
 class LockCurve(BaseModel):
     direction: str | None
     points: list[SizePoint]
@@ -55,20 +72,33 @@ class LockCurve(BaseModel):
     depth_exhausted: bool = Field(
         description="True when the curve ends because a book ran out, not the point cap"
     )
+    depth_contracts: Decimal | None = Field(
+        default=None,
+        description="whole contracts both books can fill together; None when the "
+        "curve was capped before the books ran out",
+    )
+    for_bankroll: BankrollFill | None = Field(
+        default=None,
+        description="size the requested bankroll buys; None when no bankroll was "
+        "given or it cannot afford one contract",
+    )
 
 
-def walk_lock(
+Segment = tuple[Decimal, Decimal, Decimal]  # (yes_price, no_price, contracts)
+
+
+def _segments(
     kalshi_book: Orderbook,
     pm_book: Orderbook,
     kalshi_fees: FeeModel,
     pm_fees: FeeModel,
-) -> LockCurve:
+) -> tuple[str, list[Segment], FeeModel, FeeModel] | None:
     k_ask = kalshi_book.asks[0].price if kalshi_book.asks else None
     p_ask = pm_book.asks[0].price if pm_book.asks else None
     k_bid = kalshi_book.bids[0].price if kalshi_book.bids else None
     p_bid = pm_book.bids[0].price if pm_book.bids else None
     if k_ask is None or p_ask is None or k_bid is None or p_bid is None:
-        return LockCurve(direction=None, points=[], optimal=None, depth_exhausted=True)
+        return None
 
     # Same direction rule as the screener (authoritative rationale in
     # engine.py): compare both directions' fee-adjusted top-of-book edge,
@@ -86,7 +116,7 @@ def walk_lock(
     if k_yes_edge >= p_yes_edge:
         direction = "buy_yes_kalshi_no_polymarket"
         yes_levels = [(lv.price, lv.size) for lv in kalshi_book.asks]
-        no_levels = [(ONE - lv.price, lv.size) for lv in pm_book.bids]  # best-first ✓
+        no_levels = [(ONE - lv.price, lv.size) for lv in pm_book.bids]  # best-first
         yes_fees, no_fees = kalshi_fees, pm_fees
     else:
         direction = "buy_yes_polymarket_no_kalshi"
@@ -96,7 +126,7 @@ def walk_lock(
 
     # merge the two ladders into fill segments: each segment is a run at one
     # (yes_price, no_price) pair, sized by whichever level exhausts first
-    segments: list[tuple[Decimal, Decimal, Decimal]] = []
+    segments: list[Segment] = []
     yi = ni = 0
     yes_rem = yes_levels[0][1]
     no_rem = no_levels[0][1]
@@ -113,6 +143,54 @@ def walk_lock(
         if no_rem == 0:
             ni += 1
             no_rem = no_levels[ni][1] if ni < len(no_levels) else ZERO
+    return direction, segments, yes_fees, no_fees
+
+
+def _fill(
+    segments: list[Segment], yes_fees: FeeModel, no_fees: FeeModel, n: Decimal
+) -> tuple[Decimal, Decimal, Decimal, Decimal]:
+    """cost, fees, yes-notional, no-notional for a lock of exactly n
+    contracts; fees charged per (possibly partial) segment — sum of
+    ceilings only ever overstates."""
+    remaining, cost, fees, acc_yes, acc_no = n, ZERO, ZERO, ZERO, ZERO
+    for py, pn, seg in segments:
+        take = min(seg, remaining)
+        cost += (py + pn) * take
+        fees += yes_fees.taker_fee(py, take) + no_fees.taker_fee(pn, take)
+        acc_yes += py * take
+        acc_no += pn * take
+        remaining -= take
+        if remaining == 0:
+            break
+    return cost, fees, acc_yes, acc_no
+
+
+def _point(segments: list[Segment], yes_fees: FeeModel, no_fees: FeeModel, n: Decimal) -> SizePoint:
+    cost, fees, acc_yes, acc_no = _fill(segments, yes_fees, no_fees, n)
+    capital = cost + fees
+    profit = n - capital  # lock pays $1 x n at settlement
+    return SizePoint(
+        size=n,
+        avg_yes=(acc_yes / n).quantize(SIX_DP),
+        avg_no=(acc_no / n).quantize(SIX_DP),
+        per_contract_edge=(profit / n).quantize(SIX_DP, rounding=ROUND_FLOOR),
+        total_profit=profit.quantize(CENT, rounding=ROUND_FLOOR),
+        # capital REQUIRED rounds up, like every risk number
+        capital=capital.quantize(CENT, rounding=ROUND_CEILING),
+    )
+
+
+def walk_lock(
+    kalshi_book: Orderbook,
+    pm_book: Orderbook,
+    kalshi_fees: FeeModel,
+    pm_fees: FeeModel,
+    bankroll: Decimal | None = None,
+) -> LockCurve:
+    built = _segments(kalshi_book, pm_book, kalshi_fees, pm_fees)
+    if built is None:
+        return LockCurve(direction=None, points=[], optimal=None, depth_exhausted=True)
+    direction, segments, yes_fees, no_fees = built
 
     # breakpoints are segment boundaries floored to WHOLE contracts — the
     # executable unit both venues always accept (same rationale as the
@@ -131,40 +209,41 @@ def walk_lock(
         if len(breakpoints) >= MAX_POINTS:
             break
 
-    def _fill(n: Decimal) -> tuple[Decimal, Decimal, Decimal, Decimal]:
-        """cost, fees, yes-notional, no-notional for a lock of exactly n
-        contracts; fees charged per (possibly partial) segment — sum of
-        ceilings only ever overstates."""
-        remaining, cost, fees, acc_yes, acc_no = n, ZERO, ZERO, ZERO, ZERO
-        for py, pn, seg in segments:
-            take = min(seg, remaining)
-            cost += (py + pn) * take
-            fees += yes_fees.taker_fee(py, take) + no_fees.taker_fee(pn, take)
-            acc_yes += py * take
-            acc_no += pn * take
-            remaining -= take
-            if remaining == 0:
-                break
-        return cost, fees, acc_yes, acc_no
-
-    points: list[SizePoint] = []
-    for n in breakpoints:
-        cost, fees, acc_yes, acc_no = _fill(n)
-        capital = cost + fees
-        profit = n - capital  # lock pays $1 x n at settlement
-        points.append(
-            SizePoint(
-                size=n,
-                avg_yes=(acc_yes / n).quantize(SIX_DP),
-                avg_no=(acc_no / n).quantize(SIX_DP),
-                per_contract_edge=(profit / n).quantize(SIX_DP, rounding=ROUND_FLOOR),
-                total_profit=profit.quantize(CENT, rounding=ROUND_FLOOR),
-                # capital REQUIRED rounds up, like every risk number
-                capital=capital.quantize(CENT, rounding=ROUND_CEILING),
-            )
-        )
-
+    points = [_point(segments, yes_fees, no_fees, n) for n in breakpoints]
     best = max(points, key=lambda p: p.total_profit, default=None)
     optimal = best if best is not None and best.total_profit > 0 else None
     exhausted = len(breakpoints) < MAX_POINTS
-    return LockCurve(direction=direction, points=points, optimal=optimal, depth_exhausted=exhausted)
+    total_depth = sum((seg for _, _, seg in segments), ZERO).to_integral_value(rounding=ROUND_FLOOR)
+    depth_contracts = total_depth if exhausted and total_depth > 0 else None
+
+    for_bankroll: BankrollFill | None = None
+    if bankroll is not None and bankroll > 0 and total_depth > 0:
+        # never size past the profit maximum: those contracts lose money
+        cap = min(total_depth, optimal.size) if optimal is not None else total_depth
+        # capital is monotone in n, so the largest affordable n is a binary search
+        lo, hi = Decimal(0), cap
+        while lo < hi:
+            mid = ((lo + hi + 1) // 2)
+            capital = sum(_fill(segments, yes_fees, no_fees, mid)[:2], ZERO)
+            if capital <= bankroll:
+                lo = mid
+            else:
+                hi = mid - 1
+        if lo > 0:
+            pt = _point(segments, yes_fees, no_fees, lo)
+            if lo < cap:
+                binding: Binding = "bankroll"
+            elif optimal is not None and cap == optimal.size and cap < total_depth:
+                binding = "edge"
+            else:
+                binding = "depth"
+            for_bankroll = BankrollFill(**pt.model_dump(), bankroll=bankroll, binding=binding)
+
+    return LockCurve(
+        direction=direction,
+        points=points,
+        optimal=optimal,
+        depth_exhausted=exhausted,
+        depth_contracts=depth_contracts,
+        for_bankroll=for_bankroll,
+    )

@@ -220,3 +220,74 @@ def test_optimal_is_the_profit_maximum_and_positive(kb, ka, pb, pa):
     else:
         assert curve.optimal.total_profit > 0
         assert curve.optimal.total_profit == max(p.total_profit for p in curve.points)
+
+
+def _two_level():
+    # same books as test_two_level_walk_zero_fees: capital(n) = 0.94n for
+    # n <= 80, 75.20 + 0.96(n-80) for 80 < n <= 100, 94.40 + 0.98(n-100) after
+    return (
+        book("kalshi", bids=[("0.44", "100")], asks=[("0.46", "100"), ("0.48", "50")]),
+        book("polymarket", bids=[("0.52", "80"), ("0.50", "120")], asks=[("0.54", "200")]),
+    )
+
+
+def test_bankroll_buys_largest_affordable_whole_lock():
+    k, p = _two_level()
+    # $50 / 0.94 = 53.19 -> 53 contracts, capital 49.82, profit 3.18
+    curve = walk_lock(k, p, NullFees(), NullFees(), bankroll=Decimal("50"))
+    fill = curve.for_bankroll
+    assert fill is not None
+    assert fill.size == Decimal("53")
+    assert fill.capital == Decimal("49.82")
+    assert fill.total_profit == Decimal("3.18")
+    assert fill.binding == "bankroll"
+    assert fill.bankroll == Decimal("50")
+    assert curve.depth_contracts == Decimal("150")
+
+
+def test_bankroll_past_depth_binds_on_depth():
+    k, p = _two_level()
+    # full depth is 150 contracts at capital 143.40; a bigger bankroll stops there
+    curve = walk_lock(k, p, NullFees(), NullFees(), bankroll=Decimal("1000"))
+    assert curve.for_bankroll is not None
+    assert curve.for_bankroll.size == Decimal("150")
+    assert curve.for_bankroll.capital == Decimal("143.40")
+    assert curve.for_bankroll.binding == "depth"
+
+
+def test_bankroll_never_sizes_past_the_profit_maximum():
+    # the interior-optimum book: 100 profitable contracts, then a losing level
+    curve = walk_lock(
+        book("kalshi", bids=[("0.40", "5")], asks=[("0.46", "100"), ("0.60", "100")]),
+        book("polymarket", bids=[("0.52", "100"), ("0.38", "100")], asks=[("0.54", "5")]),
+        NullFees(),
+        NullFees(),
+        bankroll=Decimal("500"),
+    )
+    assert curve.for_bankroll is not None
+    assert curve.for_bankroll.size == Decimal("100")
+    assert curve.for_bankroll.binding == "edge"
+
+
+def test_bankroll_too_small_for_one_contract_is_none():
+    k, p = _two_level()
+    curve = walk_lock(k, p, NullFees(), NullFees(), bankroll=Decimal("0.50"))
+    assert curve.for_bankroll is None
+    assert curve.points  # the curve itself is unaffected
+
+
+def test_losing_lock_is_still_sized_for_a_bankroll():
+    # asks sum to 1.02: every contract loses 2c, no optimal — but the user
+    # asked what the trade would cost, so the fill is still reported
+    curve = walk_lock(
+        book("kalshi", bids=[("0.40", "50")], asks=[("0.52", "50")]),
+        book("polymarket", bids=[("0.50", "50")], asks=[("0.60", "50")]),
+        NullFees(),
+        NullFees(),
+        bankroll=Decimal("10.20"),
+    )
+    assert curve.optimal is None
+    assert curve.for_bankroll is not None
+    assert curve.for_bankroll.size == Decimal("10")
+    assert curve.for_bankroll.total_profit == Decimal("-0.20")
+    assert curve.for_bankroll.binding == "bankroll"

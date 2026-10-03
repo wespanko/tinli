@@ -28,6 +28,7 @@ from tinli_api.routes import (
     VenueStreamStatus,
     HistoryPoint,
     HistoryResponse,
+    KellyQuote,
     LockReport,
     PairQuote,
     PositionsUpdate,
@@ -39,7 +40,7 @@ OUT = REPO / "apps" / "terminal" / "src" / "types.gen.ts"
 # Top-level models; nested models (VenueTop, PositionRisk, OrderbookLevel,
 # EventExposure, ...) arrive automatically via each schema's $defs.
 MODELS = [Market, Orderbook, Position, DivergenceItem, RiskReport, PairQuote,
-          HistoryPoint, HistoryResponse, PositionsUpdate, LockReport,
+          HistoryPoint, HistoryResponse, PositionsUpdate, LockReport, KellyQuote,
           VenueStreamStatus, StreamUpdate,
           AccountPosition, AccountPositionRisk, AccountReport,
           CandidatesResponse, PairMutationResponse,

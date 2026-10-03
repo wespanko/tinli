@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
 from tinli_divergence import (
+    BankrollFill,
     DivergenceItem,
     KalshiFees,
     PolymarketFees,
@@ -16,7 +17,7 @@ from tinli_divergence import (
     walk_lock,
 )
 from tinli_crypto import CryptoLadder, compute_ladder
-from tinli_risk import RiskReport, build_report
+from tinli_risk import RiskReport, build_report, half_kelly, kelly_contracts, kelly_fraction
 from tinli_schema import AccountPosition, Market, Orderbook, Position
 
 from tinli_api.datasource import (
@@ -138,6 +139,9 @@ def history(event_key: str, hours: int = Query(default=24, ge=1, le=168)) -> His
     return HistoryResponse(event_key=event_key, hours=hours, points=points, stats=stats)
 
 
+ZERO = Decimal("0")
+ONE = Decimal("1")
+CENT = Decimal("0.01")
 FOUR_DP = Decimal("0.0001")
 DAYS_PER_YEAR = Decimal("365")
 MIN_HORIZON_DAYS = Decimal("0.25")  # 6h floor: don't annualize into absurdity
@@ -175,12 +179,31 @@ class LockReport(BaseModel):
         description="simple annualized return on capital at the optimal size; "
         "None when there is no profitable size or no close time",
     )
+    depth_contracts: Decimal | None = Field(
+        default=None,
+        description="whole contracts both books can fill together at any price; "
+        "None when the curve was capped before the books ran out",
+    )
+    break_even_cents: Decimal | None = Field(
+        default=None,
+        description="cents per contract the first fill is short of breaking even "
+        "after fees (0 when the first contract already pays); the gap between "
+        "the two asks must close by this much before a lock exists",
+    )
+    for_bankroll: BankrollFill | None = Field(
+        default=None,
+        description="the lock the requested bankroll buys; None without a bankroll "
+        "or when it cannot afford one contract",
+    )
     assumptions: list[str]
     fetched_at: datetime
 
 
+BANKROLL = Query(default=None, gt=0, description="capital available for this lock, dollars")
+
+
 @router.get("/lock/{event_key}")
-def lock(event_key: str) -> LockReport:
+def lock(event_key: str, bankroll: Decimal | None = BANKROLL) -> LockReport:
     """Depth-walked lock curve for one pair: edge vs size off the FULL books,
     with exact per-level fees, plus capital, horizon and annualized return at
     the profit-maximizing size. Math in tinli_divergence.sizing."""
@@ -196,8 +219,16 @@ def lock(event_key: str) -> LockReport:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     pm_fees = PolymarketFees(pair.pm_fee_category)
-    curve = walk_lock(k_book, pm_book, KalshiFees(), pm_fees)
+    curve = walk_lock(k_book, pm_book, KalshiFees(), pm_fees, bankroll=bankroll)
     fetched_at = max(k_book.fetched_at, pm_book.fetched_at)
+    # how far the first contract is from paying: a shortfall rounds UP
+    break_even: Decimal | None = None
+    if curve.points:
+        first = curve.points[0].per_contract_edge
+        break_even = (
+            ZERO if first >= 0
+            else (-first * Decimal(100)).quantize(CENT, rounding=ROUND_CEILING)
+        )
 
     assumptions = list(LOCK_ASSUMPTIONS)
     if pm_fees.assumed_worst_case:
@@ -241,13 +272,63 @@ def lock(event_key: str) -> LockReport:
         depth_exhausted=curve.depth_exhausted,
         days_to_resolution=days,
         annualized_return=annualized,
+        depth_contracts=curve.depth_contracts,
+        break_even_cents=break_even,
+        for_bankroll=curve.for_bankroll,
         assumptions=assumptions,
         fetched_at=fetched_at,
     )
 
 
+class KellyQuote(BaseModel):
+    """Stateless Kelly sizing for one binary contract at `price` given the
+    user's YES probability. Works on read-only instances: nothing is stored."""
+
+    price: Decimal
+    side: Literal["yes", "no"]
+    est_prob: Decimal = Field(description="user's YES probability")
+    p_win: Decimal = Field(description="win probability for the held side")
+    bankroll: Decimal
+    kelly_full: Decimal | None
+    kelly_half: Decimal | None
+    stake_full: Decimal | None = Field(description="dollars at full Kelly, floored to the cent")
+    stake_half: Decimal | None
+    contracts_full: Decimal | None
+    contracts_half: Decimal | None
+    assumptions: list[str]
+
+
+KELLY_ASSUMPTIONS = [
+    "Kelly uses your probability against the price given, ignoring spread and fees; "
+    "a real fill crosses the spread and pays taker fees, so the true edge is smaller.",
+    "Full Kelly is aggressive; half Kelly is the conventional practitioner default.",
+    "Stakes and contract counts round down, never up.",
+]
+
+
+@router.get("/kelly")
+def kelly(
+    price: Decimal = Query(gt=0, lt=1, description="price of the side you would buy, dollars 0-1"),
+    est_prob: Decimal = Query(ge=0, le=1, description="your YES probability"),
+    bankroll: Decimal = Query(gt=0),
+    side: Literal["yes", "no"] = "yes",
+) -> KellyQuote:
+    p_win = est_prob if side == "yes" else ONE - est_prob
+    full = kelly_fraction(price, p_win)
+    half = half_kelly(price, p_win)
+    stake = lambda f: None if f is None else (f * bankroll).quantize(CENT, rounding=ROUND_FLOOR)
+    return KellyQuote(
+        price=price, side=side, est_prob=est_prob, p_win=p_win, bankroll=bankroll,
+        kelly_full=full, kelly_half=half,
+        stake_full=stake(full), stake_half=stake(half),
+        contracts_full=kelly_contracts(full, bankroll, price),
+        contracts_half=kelly_contracts(half, bankroll, price),
+        assumptions=KELLY_ASSUMPTIONS,
+    )
+
+
 @router.get("/risk")
-def risk() -> RiskReport:
+def risk(bankroll: Decimal | None = BANKROLL) -> RiskReport:
     """Risk report for the self-reported book in data/positions.yaml
     (override with TINLI_POSITIONS), marked against the current feed.
 
@@ -271,7 +352,7 @@ def risk() -> RiskReport:
     by_id = {m.id: m for m in markets}
     marked_at = [m.fetched_at for m in markets if m.id in {p.market_id for p in positions}]
     fetched_at = max(marked_at) if marked_at else datetime.now(UTC)
-    return build_report(positions, by_id, fetched_at=fetched_at)
+    return build_report(positions, by_id, fetched_at=fetched_at, bankroll=bankroll)
 
 
 class PositionsUpdate(BaseModel):

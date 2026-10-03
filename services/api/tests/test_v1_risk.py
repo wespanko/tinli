@@ -6,6 +6,8 @@ may make about it is that it parses."""
 
 from pathlib import Path
 
+from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -186,3 +188,15 @@ def test_missing_positions_file_is_an_empty_report(client, tmp_path, monkeypatch
     assert report["positions"] == []
     assert float(report["var_95_parametric"]) == 0
     assert float(report["max_loss"]) == 0
+
+
+def test_risk_bankroll_adds_kelly_contract_counts(client):
+    rows = client.get("/v1/risk", params={"bankroll": "1000"}).json()["positions"]
+    with_p = [r for r in rows if r["position"].get("est_prob")]
+    assert with_p, "the example book carries one position with est_prob"
+    for r in with_p:
+        if r["kelly_half"] is not None:
+            assert r["kelly_contracts_half"] is not None
+            assert Decimal(r["kelly_contracts_half"]) >= 0
+    without = [r for r in rows if not r["position"].get("est_prob")]
+    assert all(r["kelly_contracts_half"] is None for r in without)

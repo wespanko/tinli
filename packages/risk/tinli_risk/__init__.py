@@ -7,7 +7,7 @@ from tinli_risk.engine import (
     build_report,
     yes_mark,
 )
-from tinli_risk.kelly import half_kelly, kelly_fraction
+from tinli_risk.kelly import half_kelly, kelly_contracts, kelly_fraction
 from tinli_risk.var import EventPnl, max_loss, monte_carlo_var, parametric_var
 
 __version__ = "0.1.0"

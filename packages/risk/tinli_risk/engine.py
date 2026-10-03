@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from tinli_schema import Market, Position
 
-from tinli_risk.kelly import half_kelly, kelly_fraction
+from tinli_risk.kelly import half_kelly, kelly_contracts, kelly_fraction
 from tinli_risk.var import EventPnl, max_loss, monte_carlo_var, parametric_var
 
 ZERO = Decimal("0")
@@ -46,6 +46,10 @@ class PositionRisk(BaseModel):
     max_loss: Decimal | None = Field(description="loss from current mark if the event resolves against the side")
     kelly_full: Decimal | None = Field(description="requires est_prob; None otherwise")
     kelly_half: Decimal | None
+    kelly_contracts_full: Decimal | None = Field(
+        default=None, description="whole contracts full Kelly buys at the mark; requires a bankroll"
+    )
+    kelly_contracts_half: Decimal | None = None
 
 
 class EventExposure(BaseModel):
@@ -68,6 +72,9 @@ class RiskReport(BaseModel):
     mc_draws: int
     mc_seed: int
     unmarked_positions: int
+    bankroll: Decimal | None = Field(
+        default=None, description="bankroll the Kelly contract counts were sized against"
+    )
     assumptions: list[str]
     fetched_at: datetime
 
@@ -84,6 +91,7 @@ def build_report(
     fetched_at: datetime,
     mc_draws: int = 20_000,
     mc_seed: int = 7,
+    bankroll: Decimal | None = None,
 ) -> RiskReport:
     rows: list[PositionRisk] = []
     # per event: [prob_yes marks seen, delta_if_yes, delta_if_no, net yes contracts]
@@ -136,6 +144,14 @@ def build_report(
                 max_loss=value,
                 kelly_full=kelly_fraction(mark, p_win) if p_win is not None else None,
                 kelly_half=half_kelly(mark, p_win) if p_win is not None else None,
+                kelly_contracts_full=(
+                    kelly_contracts(kelly_fraction(mark, p_win), bankroll, mark)
+                    if p_win is not None and bankroll is not None else None
+                ),
+                kelly_contracts_half=(
+                    kelly_contracts(half_kelly(mark, p_win), bankroll, mark)
+                    if p_win is not None and bankroll is not None else None
+                ),
             )
         )
 
@@ -173,6 +189,7 @@ def build_report(
         mc_draws=mc_draws,
         mc_seed=mc_seed,
         unmarked_positions=unmarked,
+        bankroll=bankroll,
         assumptions=assumptions,
         fetched_at=fetched_at,
     )

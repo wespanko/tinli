@@ -89,6 +89,8 @@ export type PositionRisk = {
   max_loss: string | null
   kelly_full: string | null
   kelly_half: string | null
+  kelly_contracts_full: string | null
+  kelly_contracts_half: string | null
 }
 
 export type RiskReport = {
@@ -103,6 +105,7 @@ export type RiskReport = {
   mc_draws: number
   mc_seed: number
   unmarked_positions: number
+  bankroll: string | null
   assumptions: string[]
   fetched_at: string
 }
@@ -145,6 +148,17 @@ export type PositionsUpdate = {
   positions: Position[]
 }
 
+export type BankrollFill = {
+  size: string
+  avg_yes: string
+  avg_no: string
+  per_contract_edge: string
+  total_profit: string
+  capital: string
+  bankroll: string
+  binding: "bankroll" | "depth" | "edge"
+}
+
 export type SizePoint = {
   size: string
   avg_yes: string
@@ -165,8 +179,26 @@ export type LockReport = {
   depth_exhausted: boolean
   days_to_resolution: string | null
   annualized_return: string | null
+  depth_contracts: string | null
+  break_even_cents: string | null
+  for_bankroll: BankrollFill | null
   assumptions: string[]
   fetched_at: string
+}
+
+export type KellyQuote = {
+  price: string
+  side: "yes" | "no"
+  est_prob: string
+  p_win: string
+  bankroll: string
+  kelly_full: string | null
+  kelly_half: string | null
+  stake_full: string | null
+  stake_half: string | null
+  contracts_full: string | null
+  contracts_half: string | null
+  assumptions: string[]
 }
 
 export type VenueStreamStatus = {

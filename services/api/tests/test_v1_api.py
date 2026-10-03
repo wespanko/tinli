@@ -8,6 +8,8 @@ rot on every refresh.
 import json
 from pathlib import Path
 
+from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -183,3 +185,49 @@ def test_lock_unverified_pair_carries_trap_warning(client):
     lock = client.get("/v1/lock/lebron-next-gsw").json()
     assert lock["criteria_verified"] is False
     assert any("UNVERIFIED" in a for a in lock["assumptions"])
+
+
+def test_lock_without_bankroll_has_no_fill_but_break_even(client):
+    lock = client.get("/v1/lock/fed-sep26-no-change").json()
+    assert lock["for_bankroll"] is None
+    if lock["points"]:
+        assert lock["break_even_cents"] is not None
+        assert Decimal(lock["break_even_cents"]) >= 0
+
+
+def test_lock_with_bankroll_sizes_a_whole_lock_within_budget(client):
+    lock = client.get("/v1/lock/fed-sep26-no-change", params={"bankroll": "250"}).json()
+    fill = lock["for_bankroll"]
+    if lock["points"]:
+        assert fill is not None
+        assert Decimal(fill["size"]) == Decimal(fill["size"]).to_integral_value()
+        assert Decimal(fill["capital"]) <= Decimal("250")
+        assert fill["binding"] in ("bankroll", "depth", "edge")
+        assert fill["bankroll"] == "250"
+
+
+def test_lock_rejects_non_positive_bankroll(client):
+    assert client.get("/v1/lock/fed-sep26-no-change", params={"bankroll": "0"}).status_code == 422
+
+
+def test_kelly_endpoint_hand_computed(client):
+    # f = (0.6 - 0.44)/0.56 -> 0.2857; stake 285.70 on $1000; 649 contracts
+    q = client.get(
+        "/v1/kelly", params={"price": "0.44", "est_prob": "0.6", "bankroll": "1000"}
+    ).json()
+    assert q["kelly_full"] == "0.2857"
+    assert q["stake_full"] == "285.70"
+    assert q["contracts_full"] == "649"
+    assert q["kelly_half"] == "0.1428"
+    assert q["contracts_half"] == "324"  # 142.80 / 0.44 = 324.5 -> 324
+    assert q["assumptions"]
+
+
+def test_kelly_no_side_converts_probability(client):
+    # holding NO at 0.40 with YES prob 0.5 -> p_win 0.5, f = (0.5-0.4)/0.6 = 0.1666
+    q = client.get(
+        "/v1/kelly",
+        params={"price": "0.40", "est_prob": "0.5", "bankroll": "100", "side": "no"},
+    ).json()
+    assert q["p_win"] == "0.5"
+    assert q["kelly_full"] == "0.1666"

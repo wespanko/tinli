@@ -36,3 +36,11 @@ def kelly_fraction(price: Decimal, p_win: Decimal) -> Decimal | None:
 def half_kelly(price: Decimal, p_win: Decimal) -> Decimal | None:
     f = kelly_fraction(price, p_win)
     return None if f is None else (f * HALF).quantize(FOUR_DP, rounding=ROUND_FLOOR)
+
+
+def kelly_contracts(fraction: Decimal | None, bankroll: Decimal, price: Decimal) -> Decimal | None:
+    """Whole contracts a Kelly fraction of `bankroll` buys at `price`, floored.
+    None when the fraction is undefined; zero when there is no edge."""
+    if fraction is None or price <= ZERO:
+        return None
+    return (fraction * bankroll / price).to_integral_value(rounding=ROUND_FLOOR)
